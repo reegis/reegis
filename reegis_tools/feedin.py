@@ -216,6 +216,32 @@ def create_windpowerlib_sets():
     return windsets
 
 
+def feedin_wind_sets(weather, data_height, wind_parameter_set):
+    """Create a pv feed-in time series from a given weather data set and a
+    set of pvlib parameter sets. The result of every parameter set will be a
+    column in the resulting DataFrame.
+
+    Parameters
+    ----------
+    weather : pandas.DataFrame
+        Weather data set. See module header.
+    data_height :
+        Data heigth of the weather data.
+    wind_parameter_set : dict
+        Parameter sets can be created using `create_windpowerlib_sets()`.
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    """
+    df = pd.DataFrame()
+    for turbine in wind_parameter_set.values():
+        mc = feedin_windpowerlib(weather, data_height, turbine)
+        df[turbine['turbine_name'].replace(' ', '_')] = mc
+    return df
+
+
 def feedin_windpowerlib(weather, turbine, data_height, installed_capacity=1):
     """Use the windpowerlib to generate normalised feedin time series.
 
@@ -225,7 +251,7 @@ def feedin_windpowerlib(weather, turbine, data_height, installed_capacity=1):
         Parameters of the wind turbine (hub height, diameter of the rotor,
         identifier of the turbine to get cp-series, nominal power).
     weather : pandas.DataFrame
-        Weather data set.
+        Weather data set. See module header.
     data_height :
         Data heigth of the weather data.
     installed_capacity : float
@@ -245,14 +271,27 @@ def feedin_windpowerlib(weather, turbine, data_height, installed_capacity=1):
         installed_capacity)
 
 
-from datetime import datetime as time
+# from datetime import datetime as time
 import os
-import bisect
-from pvlib.location import Location
+# import bisect
+# from pvlib.location import Location
 
 
 def normalised_feedin_by_region_wind(pp, feedin_de21, feedin_coastdat,
                                      overwrite):
+    """
+
+    Parameters
+    ----------
+    pp
+    feedin_de21
+    feedin_coastdat
+    overwrite
+
+    Returns
+    -------
+
+    """
     vtype = 'Wind'
 
     # Check for existing in-files and non-existing out-files

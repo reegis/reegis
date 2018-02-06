@@ -98,14 +98,20 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
     # Fetch coastdat data heights from ini file.
     data_height = cfg.get_dict('coastdat_data_height')
 
-    # Fetch coastdat region-keys from weather file.
-    coastdat_keys = weather.keys()
-
     # Create basic file and path pattern for the resulting files
-    feedin_path = os.path.join(cfg.get('paths', 'feedin'),
-                               'coastdat', str(year))
+    coastdat_path = os.path.join(cfg.get('paths', 'feedin'), 'coastdat')
+    feedin_path = os.path.join(coastdat_path, str(year))
     feedin_file = os.path.join(feedin_path, '{type}',
                                cfg.get('feedin', 'file_pattern'))
+
+    # Fetch coastdat region-keys from weather file.
+    key_file = os.path.join(coastdat_path, 'coastdat_keys.csv')
+    if not os.path.isfile(key_file):
+        coastdat_keys = weather.keys()
+        pd.Series(coastdat_keys).to_csv(key_file)
+    else:
+        coastdat_keys = pd.read_csv(key_file, index_col=[0],
+                                    squeeze=True, header=None)
 
     txt_create = "Creating normalised {0} feedin time series for {1}."
     hdf = {'wind': {}, 'solar': {}}
@@ -144,7 +150,6 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
 
     # Loop over all regions
     for coastdat_key in coastdat_keys:
-
         # Get weather data set for one location
         local_weather = weather[coastdat_key]
 
@@ -169,7 +174,7 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
         # Create one DataFrame for each wind-set and store into the file
         for wind_key, wind_set in wind_sets.items():
             hdf['wind'][wind_key][coastdat_key] = (
-                feedin.feeding_wind_sets(local_weather, data_height, wind_set))
+                feedin.feedin_wind_sets(local_weather, data_height, wind_set))
 
         # Start- time logging *******
         remain -= 1
