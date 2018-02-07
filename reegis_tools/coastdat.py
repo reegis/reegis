@@ -17,9 +17,12 @@ __license__ = "GPLv3"
 import os
 import datetime
 import logging
+import requests
+import shutil
+import configparser
+import calendar
 
 # External libraries
-import calendar
 import pandas as pd
 import pvlib
 import shapely.wkt as wkt
@@ -41,6 +44,25 @@ except ImportError:
     coastdat = None
     db = None
     exc = None
+
+
+def get_coastdat_data(year, filename):
+    try:
+        ini_key = 'coastdat{0}'.format(year)
+        url = cfg.get('weather', ini_key)
+        # tools.download_file(filename, url, overwrite=False)
+    except configparser.NoOptionError:
+        logging.error("No url found to download coastdat2 data for {0}".format(
+            year))
+        url = None
+
+    if url is not None:
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            logging.info("Downloading the coastdat2 file of {0}...".format(
+                year))
+            with open(filename, 'wb') as f:
+                shutil.copyfileobj(response.raw, f)
 
 
 def adapt_coastdat_weather_to_pvlib(w, loc):
@@ -89,11 +111,15 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
                      cfg.get('weather', 'grid_centroid')),
         index_col='gid')
 
-    # Open coastdat-weather data hdf5 file for the given year.
-    weather = pd.HDFStore(
-        os.path.join(cfg.get('paths', 'weather'),
-                     cfg.get('weather', 'file_pattern').format(year=year)),
-        mode='r')
+    # Open coastdat-weather data hdf5 file for the given year or try to
+    # download it if the file is not found.
+    weather_file_name = os.path.join(
+        cfg.get('paths', 'weather'),
+        cfg.get('weather', 'file_pattern').format(year=year))
+    if not os.path.isfile(weather_file_name):
+        get_coastdat_data(year, weather_file_name)
+
+    weather = pd.HDFStore(weather_file_name, mode='r')
 
     # Fetch coastdat data heights from ini file.
     data_height = cfg.get_dict('coastdat_data_height')
