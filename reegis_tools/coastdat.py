@@ -89,10 +89,14 @@ def adapt_coastdat_weather_to_pvlib(w, loc):
     return w
 
 
-def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
+def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
+                                        overwrite=False):
     """
-    Loop over all weather data sets and calculate a normalised time series
-    for each data set with the given parameters of the power plants.
+    Loop over all weather data sets (regions) and calculate a normalised time
+    series for each data set with the given parameters of the power plants.
+
+    This file could be more elegant and shorter but it will be rewritten soon
+    with the new feedinlib features.
 
     year : int
         The year of the weather data set to use.
@@ -147,11 +151,13 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
         os.makedirs(os.path.join(feedin_path, 'solar'), exist_ok=True)
         # Create the pv-sets defined in the solar.ini
         pv_sets = feedin.create_pvlib_sets()
+
         # Open a file for each main set (subsets are stored in columns)
         for pv_key, pv_set in pv_sets.items():
-            hdf['solar'][pv_key] = pd.HDFStore(
-                feedin_file.format(type='solar', year=year, set_name=pv_key),
-                mode='w')
+            filename = feedin_file.format(
+                type='solar', year=year, set_name=pv_key)
+            if not os.path.isfile(filename) or overwrite:
+                hdf['solar'][pv_key] = pd.HDFStore(filename, mode='w')
     else:
         pv_sets = {}
 
@@ -163,9 +169,10 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
         wind_sets = feedin.create_windpowerlib_sets()
         # Open a file for each main set (subsets are stored in columns)
         for wind_key, wind_set in wind_sets.items():
-            hdf['wind'][wind_key] = pd.HDFStore(
-                feedin_file.format(type='wind', year=year, set_name=wind_key),
-                mode='w')
+            filename = feedin_file.format(
+                type='wind', year=year, set_name=wind_key)
+            if not os.path.isfile(filename) or overwrite:
+                hdf['wind'][wind_key] = pd.HDFStore(filename, mode='w')
     else:
         wind_sets = {}
 
@@ -180,7 +187,9 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
         local_weather = weather[coastdat_key]
 
         # Adapt the coastdat weather format to the needs of pvlib.
-        if solar:
+        # The expression "len(list(hdf['solar'].keys()))" returns the number
+        # of open hdf5 files. If no file is open, there is nothing to do.
+        if solar and len(list(hdf['solar'].keys())) > 0:
             # Get coordinates for the weather location
             local_point = data_points.loc[int(coastdat_key[2:])]
 
@@ -194,13 +203,16 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
 
             # Create one DataFrame for each pv-set and store into the file
             for pv_key, pv_set in pv_sets.items():
-                hdf['solar'][pv_key][coastdat_key] = feedin.feedin_pv_sets(
-                    local_weather_pv, location, pv_set)
+                if pv_key in hdf['solar']:
+                    hdf['solar'][pv_key][coastdat_key] = feedin.feedin_pv_sets(
+                        local_weather_pv, location, pv_set)
 
         # Create one DataFrame for each wind-set and store into the file
         for wind_key, wind_set in wind_sets.items():
-            hdf['wind'][wind_key][coastdat_key] = (
-                feedin.feedin_wind_sets(local_weather, data_height, wind_set))
+            if wind_key in hdf['wind']:
+                hdf['wind'][wind_key][coastdat_key] = (
+                    feedin.feedin_wind_sets(
+                        local_weather, data_height, wind_set))
 
         # Start- time logging *******
         remain -= 1
@@ -210,7 +222,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True):
             remain_time = elapsed_time / done * remain
             end_time = datetime.datetime.now() + datetime.timedelta(
                 seconds=remain_time)
-            msg = "Actual time: {:%H:%M}, estimated end time: {:%H:%M}"
+            msg = "Actual time: {:%H:%M}, estimated end time: {:%H:%M}, "
+            msg += "done: {0}, remain: {1}".format(done, remain)
             logging.info(msg.format(datetime.datetime.now(), end_time))
         # End - time logging ********
 
@@ -442,11 +455,5 @@ def coastdat_id2coord():
 
 if __name__ == "__main__":
     logger.define_logging()
-    for y in [2010, 2009]:
-        normalised_feedin_for_each_data_set(y, wind=False, solar=True)
-    # fetch_coastdat2_year_from_db()
-    # fn = '/home/uwe/git_local/reegis_hp/reegis_hp/de21/data/geometries
-    # /intersection_region_coastdatgrid.csv'
-    # for yr in [2012, 2013, 2014]:
-    #     calculate_average_parameter_by_region(
-    #         yr, fn)
+    for y in [2014, 2013, 2012]:
+        normalised_feedin_for_each_data_set(y, wind=True, solar=True)
