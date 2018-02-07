@@ -242,7 +242,7 @@ def feedin_wind_sets(weather, data_height, wind_parameter_set):
     return df
 
 
-def feedin_windpowerlib(weather, turbine, data_height, installed_capacity=1):
+def feedin_windpowerlib(weather, data_height, turbine, installed_capacity=1):
     """Use the windpowerlib to generate normalised feedin time series.
 
     Parameters
