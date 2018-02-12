@@ -135,11 +135,12 @@ def log_undefined_capacity(df, cap_col, total_cap, msg):
     return undefined_cap
 
 
-def complete_opsd_geometries(df, cap_col, category, time=None,
+def complete_opsd_geometries(df, category, time=None,
                              fs_column='federal_state'):
     """
     Try different methods to fill missing coordinates.
     """
+    cap_col = 'capacity'
 
     if 'id' not in df:
         df['id'] = df.index
@@ -220,8 +221,8 @@ def load_original_opsd_file(category, overwrite):
     """Read file if exists."""
 
     orig_csv_file = os.path.join(
-        cfg.get('paths', category),
-        cfg.get('powerplants', 'original_file_pattern').format(cat=category))
+        cfg.get('paths', 'opsd'),
+        cfg.get('opsd', 'original_file_pattern').format(cat=category))
 
     # Download non existing files. If you think that there are newer files you
     # have to set overwrite=True to overwrite existing with downloaded files.
@@ -236,14 +237,14 @@ def load_original_opsd_file(category, overwrite):
         req = requests.get(cfg.get('url', '{0}_readme'.format(category)))
         with open(
                 os.path.join(
-                    cfg.get('paths', category),
-                    cfg.get('powerplants', 'readme_file_pattern').format(
+                    cfg.get('paths', 'opsd'),
+                    cfg.get('opsd', 'readme_file_pattern').format(
                         cat=category)), 'wb') as fout:
             fout.write(req.content)
         req = requests.get(cfg.get('url', '{0}_json'.format(category)))
         with open(os.path.join(
-                cfg.get('paths', category),
-                cfg.get('powerplants', 'json_file_pattern').format(
+                cfg.get('paths', 'opsd'),
+                cfg.get('opsd', 'json_file_pattern').format(
                     cat=category)), 'wb') as fout:
             fout.write(req.content)
 
@@ -260,7 +261,7 @@ def load_original_opsd_file(category, overwrite):
 def prepare_dates(df, date_cols, month):
     # Commission year from float or string
     if df[date_cols[0]].dtype == np.float64:
-        df['com_year'] = df[date_cols[0]].fillna(0).astype(np.int64)
+        df['com_year'] = df[date_cols[0]].fillna(1800).astype(np.int64)
     else:
         df['com_year'] = pd.to_datetime(df[date_cols[0]].fillna(
             '1800-01-01')).dt.year
@@ -277,6 +278,9 @@ def prepare_dates(df, date_cols, month):
             '1800-01-01')).dt.month
         df['decom_month'] = pd.to_datetime(df[date_cols[1]].fillna(
             '2050-12-31')).dt.month
+    else:
+        df['com_month'] = 6
+        df['decom_month'] = 6
 
 
 def prepare_opsd_file(category, prepared_file_name, overwrite):
@@ -286,7 +290,7 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
     # Load original file and set differences between conventional and
     # renewable power plants.
     if category == 'renewable':
-        capacity_column = 'electrical_capacity'
+        # capacity_column = 'electrical_capacity'
         remove_list = [
                 'tso', 'dso', 'dso_id', 'eeg_id', 'bnetza_id', 'federal_state',
                 'postcode', 'municipality_code', 'municipality', 'address',
@@ -296,7 +300,7 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
         month = True
 
     elif category == 'conventional':
-        capacity_column = 'capacity_net_bnetza'
+        # capacity_column = 'capacity_net_bnetza'
         remove_list = None
         date_cols = ('commissioned', 'shutdown')
         month = False
@@ -306,19 +310,21 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
         # This function is adapted to the OPSD data set structure and might not
         # work with other data sets. Set opsd=False to skip it.
 
+    df = df.rename(columns={'electrical_capacity': 'capacity',
+                            'capacity_net_bnetza': 'capacity',
+                            'efficiency_estimate': 'efficiency'})
+
     if len(df.loc[df.lon.isnull()]) > 0:
-        df = complete_opsd_geometries(
-            df, capacity_column, category, fs_column='state')
+        df = complete_opsd_geometries(df, category, fs_column='state')
     else:
         logging.info("Skipped 'complete_opsd_geometries' function.")
 
         # Remove power plants with no capacity:
-    if capacity_column is not None:
-        number = len(df[df[capacity_column].isnull()])
-        df = df[df[capacity_column].notnull()]
-        if number > 0:
-            msg = "{0} power plants were removed, because the capacity was 0."
-            logging.warning(msg.format(number))
+    number = len(df[df['capacity'].isnull()])
+    df = df[df['capacity'].notnull()]
+    if number > 0:
+        msg = "{0} power plants have been removed, because the capacity was 0."
+        logging.warning(msg.format(number))
 
         # To save disc and RAM capacity unused column are removed.
     if remove_list is not None:
@@ -340,16 +346,128 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
 def load_opsd_file(category, overwrite, prepared=True):
     if prepared:
         prepared_file_name = os.path.join(
-            cfg.get('paths', category),
-            cfg.get('powerplants', 'prepared_csv_file_pattern').format(
+            cfg.get('paths', 'opsd'),
+            cfg.get('opsd', 'cleaned_csv_file_pattern').format(
                 cat=category))
         if not os.path.isfile(prepared_file_name) or overwrite:
             df = prepare_opsd_file(category, prepared_file_name, overwrite)
         else:
-            df = pd.read_csv(prepared_file_name)
+            df = pd.read_csv(prepared_file_name, index_col=[0])
     else:
         df = load_original_opsd_file(category, overwrite)
     return df
+
+
+def opsd_power_plants(overwrite=False, csv=False):
+    """
+
+    Parameters
+    ----------
+    csv
+    overwrite
+
+    Returns
+    -------
+
+    """
+    strcols = {
+        'conventional': [
+            'name_bnetza', 'block_bnetza', 'name_uba', 'company', 'street',
+            'postcode', 'city', 'state', 'country_code', 'fuel', 'technology',
+            'chp', 'commissioned_original', 'status', 'type', 'eic_code_plant',
+            'eic_code_block', 'efficiency_source', 'energy_source_level_1',
+            'energy_source_level_2', 'energy_source_level_3', 'eeg',
+            'network_node', 'voltage', 'network_operator', 'merge_comment',
+            'geometry', 'federal_states'],
+        'renewable': [
+            'commissioning_date', 'decommissioning_date',
+            'energy_source_level_1', 'energy_source_level_2',
+            'energy_source_level_3', 'technology', 'voltage_level', 'comment',
+            'geometry', 'federal_states']}
+
+    if csv:
+        opsd_file_name = os.path.join(
+            cfg.get('paths', 'opsd'),
+            cfg.get('opsd', 'opsd_prepared_csv_pattern'))
+        hdf = None
+    else:
+        opsd_file_name = os.path.join(
+            cfg.get('paths', 'opsd'), cfg.get('opsd', 'opsd_prepared'))
+        hdf = pd.HDFStore(opsd_file_name, mode='a')
+
+    # If the power plant file does not exist, download and prepare it.
+    for category in ['conventional', 'renewable']:
+        # Define file and path pattern for power plant file.
+        cleaned_file_name = os.path.join(
+            cfg.get('paths', 'opsd'),
+            cfg.get('opsd', 'cleaned_csv_file_pattern').format(
+                cat=category))
+        if csv:
+            exist = os.path.isfile(opsd_file_name) and not overwrite
+        else:
+            exist = '/{0}'.format(category) in hdf.keys() and not overwrite
+
+        if not exist:
+            logging.info("Preparing {0} opsd power plants".format(category))
+            df = load_opsd_file(category, overwrite, prepared=True)
+            pp = geo.Geometry('{0} power plants'.format(category), df=df)
+            pp = spatial_preparation_power_plants(pp)
+            if csv:
+                pp.df.to_csv(opsd_file_name)
+            else:
+                pp.df[strcols[category]] = pp.df[strcols[category]].astype(str)
+                hdf['category'] = pp.df
+            logging.info("Opsd power plants stored to {0}".format(
+                opsd_file_name))
+
+        if os.path.isfile(cleaned_file_name):
+            os.remove(cleaned_file_name)
+    if hdf is not None:
+        hdf.close()
+    return opsd_file_name
+
+
+def spatial_preparation_power_plants(pp):
+    """Add spatial names to DataFrame. Three columns will be added to the
+    power plant table:
+
+    federal_states: The federal state of Germany
+    model_region: The name of the model region defined by the user.
+    coastdat: The id of the nearest coastdat weather data set.
+
+    Parameters
+    ----------
+    pp : reegis_tools.Geometry
+        An object containing Germany's power plants.
+
+    Returns
+    -------
+    reegis_tools.Geometry
+
+    """
+
+    if pp.gdf is None:
+        logging.info("Create GeoDataFrame from lat/lon.")
+        pp.create_geo_df()
+
+    logging.info("Remove invalid geometries")
+    pp.remove_invalid_geometries()
+
+    # Add column with name of the federal state (Bayern, Berlin,...)
+    federal_states = geo.Geometry('federal states')
+    federal_states.load(cfg.get('paths', 'geometry'),
+                        cfg.get('geometry', 'federalstates_polygon'))
+    pp.gdf = geo.spatial_join_with_buffer(pp, federal_states)
+
+    # Add column with coastdat id
+    coastdat = geo.Geometry('coastdat2')
+    coastdat.load(cfg.get('paths', 'geometry'),
+                  cfg.get('geometry', 'coastdatgrid_polygon'))
+    pp.gdf = geo.spatial_join_with_buffer(pp, coastdat)
+
+    # Update DataFrame with the new content of the GeoDataFrame.
+    pp.gdf2df()
+    return pp
 
 
 def create_patch_offshore_wind():
@@ -417,10 +535,10 @@ def create_patch_offshore_wind():
                 else:
                     cap = start
                     for m in range(11):
-                        cap += (sub[
-                                    (sub.index.get_level_values(0) <
-                                     pd.datetime(y, m + 2, 1))].sum() - cap) * (
-                                   (11 - m) / 12)
+                        cap += (
+                            sub[(sub.index.get_level_values(0) <
+                                 pd.datetime(y, m + 2, 1))].sum() - cap) * (
+                                     (11 - m) / 12)
                     df.loc[(y, r, ci)] = cap
 
     # Write file
@@ -469,4 +587,5 @@ def patch_offshore_wind():
 
 if __name__ == "__main__":
     logger.define_logging()
-    create_patch_offshore_wind()
+    opsd_power_plants(overwrite=True, csv=False)
+    # create_patch_offshore_wind()
