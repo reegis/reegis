@@ -32,12 +32,16 @@ Option2 = value2 \n
 import os
 import logging
 import configparser as cp
+import sys
+
 
 FILE = None
-
 cfg = cp.RawConfigParser()
 cfg.optionxform = str
 _loaded = False
+
+# Path of the package that imports this package.
+importer = os.path.dirname(sys.modules['__main__'].__file__)
 
 
 def get_ini_filenames():
@@ -45,6 +49,7 @@ def get_ini_filenames():
     files = list()
 
     paths.append(os.path.join(os.path.dirname(__file__)))
+    paths.append(importer)
     paths.append(os.path.join(os.path.expanduser("~"), '.oemof'))
 
     for p in paths:
@@ -72,7 +77,7 @@ def init(file):
     cfg.read(file)
     global _loaded
     _loaded = True
-    set_de21_paths()
+    set_reegis_paths()
 
 
 def get(section, key):
@@ -141,10 +146,10 @@ def get_dict(section):
     return dc
 
 
-def set(section, key, value):
-    if not _loaded:
-        init(FILE)
-    return cfg.set(section, key, value)
+# def set(section, key, value):
+#     if not _loaded:
+#         init(FILE)
+#     return cfg.set(section, key, value)
 
 
 def extend_path(basic_path, new_dir):
@@ -154,111 +159,44 @@ def extend_path(basic_path, new_dir):
     return pathname
 
 
-def set_de21_paths():
+def set_reegis_paths():
     # initialise de21 configuration
-    logging.info('Loading de21 configuration....')
+    logging.info('Loading reegis configuration....')
 
     # Set default paths for 'basic' and 'data' if set to 'None' in the ini-file
-    if get('paths', 'basic') is None:
+    basicpath = get('root_paths', 'package_data')
+    if basicpath is None:
         basicpath = os.path.join(os.path.dirname(__file__), 'data')
-        cfg.set('paths', 'basic', basicpath)
         logging.debug("Set default path for basic path: {0}".format(basicpath))
+    cfg.set('paths', 'package_data', basicpath)
 
-    if get('paths', 'data') is None:
-        datapath = os.path.join(os.path.expanduser("~"), 'reegis', 'de21')
-        cfg.set('paths', 'data', datapath)
+    datapath = get('root_paths', 'local_data')
+    if datapath is None:
+        datapath = os.path.join(os.path.expanduser("~"), 'reegis')
         logging.debug("Set default path for data path: {0}".format(datapath))
+    cfg.set('paths', 'local_data', datapath)
+
+    if importer != os.path.join(os.path.dirname(__file__)):
+        importer_name = importer.split(os.sep)[-1]
+        cfg.set('paths', '{0}'.format(importer_name), importer)
 
     # *************************************************************************
     # ********* Set sub-paths according to ini-file ***************************
     # *************************************************************************
+    for key in get_dict('path_names').keys():
+        names = get_list('path_names', key)
+        pathname = os.path.join(get('paths', names[0]), *names[1:])
+        cfg.set('paths', key, pathname)
+        os.makedirs(pathname, exist_ok=True)
 
-    # general sources
-    cfg.set('paths', 'general', extend_path(
-        get('paths', get('general_sources', 'path')),
-        get('general_sources', 'dir')))
+    if not cfg.has_section('paths_pattern'):
+        cfg.add_section('paths_pattern')
 
-    # weather
-    cfg.set('paths', 'weather', extend_path(
-        get('paths', get('weather', 'path')),
-        get('weather', 'dir')))
-
-    # geometry
-    cfg.set('paths', 'geometry', extend_path(
-        get('paths', get('geometry', 'path')),
-        get('geometry', 'dir')))
-
-    # power plants
-    cfg.set('paths', 'powerplants', extend_path(
-        get('paths', get('powerplants', 'path')),
-        get('powerplants', 'dir')))
-    cfg.set('paths', 'conventional', extend_path(
-        get('paths', get('conventional', 'path')),
-        get('conventional', 'dir')))
-    cfg.set('paths', 'renewable', extend_path(
-        get('paths', get('renewable', 'path')),
-        get('renewable', 'dir')))
-
-    # static sources
-    cfg.set('paths', 'static', extend_path(
-        get('paths', get('static_sources', 'path')),
-        get('static_sources', 'dir')))
-
-    # messages
-    cfg.set('paths', 'messages', extend_path(
-        get('paths', get('paths', 'msg_path')),
-        get('paths', 'msg_dir')))
-
-    # storages
-    cfg.set('paths', 'storages', extend_path(
-        get('paths', get('storages', 'path')),
-        get('storages', 'dir')))
-
-    # transmission
-    cfg.set('paths', 'transmission', extend_path(
-        get('paths', get('transmission', 'path')),
-        get('transmission', 'dir')))
-
-    # commodity sources
-    cfg.set('paths', 'commodity', extend_path(
-        get('paths', get('commodity_sources', 'path')),
-        get('commodity_sources', 'dir')))
-
-    # time series
-    cfg.set('paths', 'time_series', extend_path(
-        get('paths', get('time_series', 'path')),
-        get('time_series', 'dir')))
-
-    # demand
-    cfg.set('paths', 'demand', extend_path(
-        get('paths', get('demand', 'path')),
-        get('demand', 'dir')))
-
-    # feedin*
-    cfg.set('paths', 'feedin', extend_path(
-        get('paths', get('feedin', 'path')),
-        get('feedin', 'dir')))
-
-    # analysis
-    cfg.set('paths', 'analysis', extend_path(
-        get('paths', get('analysis', 'path')),
-        get('analysis', 'dir')))
-
-    # external
-    cfg.set('paths', 'external', extend_path(
-        get('paths', get('external', 'path')),
-        get('external', 'dir')))
-
-    # plots
-    cfg.set('paths', 'plots', extend_path(
-        get('paths', get('plots', 'path')),
-        get('plots', 'dir')))
-
-    # scenario_data
-    cfg.set('paths', 'scenario_data', extend_path(
-        get('paths', get('scenario_data', 'path')),
-        get('scenario_data', 'dir')))
+    for key in get_dict('path_pattern_names').keys():
+        names = get_list('path_pattern_names', key)
+        pathname = os.path.join(get('paths', names[0]), *names[1:])
+        cfg.set('paths_pattern', key, pathname)
 
 
 if __name__ == "__main__":
-    main()
+    print(get('paths', 'package_data'))
