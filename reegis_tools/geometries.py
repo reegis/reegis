@@ -41,23 +41,30 @@ class Geometry:
         self.lon_column = 'lon'
         self.lat_column = 'lat'
 
-    def load(self, path=None, filename=None, fullname=None):
+    def load(self, path=None, filename=None, fullname=None, hdf_key=None):
         """Load csv-file into a DataFrame and a GeoDataFrame."""
-        self.load_csv(path, filename, fullname)
+        if hdf_key is None:
+            self.load_csv(path, filename, fullname)
+        else:
+            self.load_hdf(path, filename, fullname, hdf_key)
         self.create_geo_df()
         return self
+
+    def load_hdf(self, path=None, filename=None, fullname=None, key=None):
+        if fullname is None:
+            fullname = os.path.join(path, filename)
+        self.df = pd.read_hdf(fullname, key, mode='r')
 
     def load_csv(self, path=None, filename=None, fullname=None):
         """Load csv-file into a DataFrame."""
         if fullname is None:
             fullname = os.path.join(path, filename)
         self.df = pd.read_csv(fullname)
+
         # Make the first column the index if all values are unique.
-        logging.info("Test*********************************************")
         first_col = self.df.columns[0]
         if not any(self.df[first_col].duplicated()):
             self.df.set_index(first_col, drop=True, inplace=True)
-        logging.info("Done")
 
     def lat_lon2point(self, df):
         """Create shapely point object of latitude and longitude."""
@@ -81,10 +88,10 @@ class Geometry:
             self.df['geometry'] = self.df.apply(self.lat_lon2point, axis=1)
         elif isinstance(self.df.iloc[0]['geometry'], str):
             self.df['geometry'] = self.df['geometry'].apply(wkt_loads)
-        else:
-            msg = "Could not create GeoDataFrame {0}. Missing geometries."
-            logging.error(msg.format(self.name))
-            return None
+        # else:
+            # msg = "Could not create GeoDataFrame {0}. Missing geometries."
+            # logging.error(msg.format(self.name))
+            # return None
         if self.gdf is None or update:
             self.gdf = gpd.GeoDataFrame(self.df, crs='epsg:4326',
                                         geometry='geometry')
@@ -96,6 +103,7 @@ class Geometry:
         The geometry column will be converted to a WKT-string.
         """
         self.df = pd.DataFrame(self.gdf)
+        self.df['geometry'] = self.df['geometry'].astype(str)
 
     def remove_invalid_geometries(self):
         if self.gdf is not None:
@@ -193,6 +201,7 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
         name = "_".join(geo2.name.split())
 
     jgdf = jgdf.rename(columns={jcol: name})
+    jgdf[name] = jgdf[name].fillna('unknown')
     logging.info(
         "New column '{0}' added to GeoDataFrame.".format(name))
     return jgdf
