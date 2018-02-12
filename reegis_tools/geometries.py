@@ -190,7 +190,9 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
         if bf == limit:
             logging.info("Stop buffering. Reached buffer limit.")
 
-    del jgdf['buffer']
+    # delete the temporary buffer column
+    if 'buffer' in jgdf.columns:
+        del jgdf['buffer']
 
     # Remove all columns but the join-id column (jcol) from the GeoDf.
     for col in diff_cols:
