@@ -393,7 +393,12 @@ def opsd_power_plants(overwrite=False, csv=False):
     else:
         opsd_file_name = os.path.join(
             cfg.get('paths', 'opsd'), cfg.get('opsd', 'opsd_prepared'))
-        hdf = pd.HDFStore(opsd_file_name, mode='a')
+        if os.path.isfile(opsd_file_name) and not overwrite:
+            hdf = None
+        else:
+            if os.path.isfile(opsd_file_name):
+                os.remove(opsd_file_name)
+            hdf = pd.HDFStore(opsd_file_name, mode='a')
 
     # If the power plant file does not exist, download and prepare it.
     for category in ['conventional', 'renewable']:
@@ -405,7 +410,7 @@ def opsd_power_plants(overwrite=False, csv=False):
         if csv:
             exist = os.path.isfile(opsd_file_name) and not overwrite
         else:
-            exist = '/{0}'.format(category) in hdf.keys() and not overwrite
+            exist = hdf is None
 
         if not exist:
             logging.info("Preparing {0} opsd power plants".format(category))
@@ -416,7 +421,7 @@ def opsd_power_plants(overwrite=False, csv=False):
                 pp.df.to_csv(opsd_file_name)
             else:
                 pp.df[strcols[category]] = pp.df[strcols[category]].astype(str)
-                hdf['category'] = pp.df
+                hdf[category] = pp.df
             logging.info("Opsd power plants stored to {0}".format(
                 opsd_file_name))
 
@@ -470,122 +475,6 @@ def spatial_preparation_power_plants(pp):
     return pp
 
 
-def create_patch_offshore_wind():
-    offsh = pd.read_csv(
-        os.path.join(cfg.get('paths', 'static'),
-                     cfg.get('static_sources', 'patch_offshore_wind')),
-        header=[0, 1], index_col=[0])
-
-    # Convert commissioning to datetime column
-    offsh['Wikipedia', 'commissioning'] = pd.to_datetime(
-        offsh['Wikipedia', 'commissioning'])
-
-    # Create GeoDataFrame
-    offsh.columns = offsh.columns.droplevel()
-
-    offsh['capacity'] = pd.to_numeric(offsh['capacity'])
-    offsh['commissioning (planned)'] = offsh['commissioning (planned)'].apply(
-        str)
-
-    goffsh = geo.Geometry(name="Offshore wind patch", df=offsh)
-    goffsh.create_geo_df()
-
-    # Add column with region names of the model_region
-    model_region = geo.Geometry('model region')
-    model_region.load(cfg.get('paths', 'geometry'),
-                      cfg.get('geometry', 'region_polygon'))
-    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, model_region)
-
-    # Add column with coastdat id
-    coastdat = geo.Geometry('coastdat2')
-    coastdat.load(cfg.get('paths', 'geometry'),
-                  cfg.get('geometry', 'coastdatgrid_polygon'))
-    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, coastdat)
-
-    # Get year from commissioning date
-    goffsh.gdf = goffsh.gdf.loc[goffsh.gdf.commissioning.notnull()]
-    goffsh.gdf['year'] = goffsh.gdf.commissioning.map(lambda x: int(x.year))
-
-    # Create DataFrame for grouping
-    my_idx = pd.MultiIndex(levels=[[], [], []], labels=[[], [], []],
-                           names=['year', 'region', 'coastdat'])
-    df = pd.DataFrame(index=my_idx, columns=['capacity'])
-
-    repp = goffsh.gdf.groupby(
-        ['model_region', 'coastdat2', 'commissioning']).sum()['capacity [MW]']
-
-    # group power plants
-    for r in goffsh.gdf.model_region.unique():
-        logging.info('{0}'.format(r))
-        coastdat_ids = repp.loc[r].index.get_level_values(
-                    0).unique()
-        for ci in coastdat_ids:
-            logging.debug('{0}: {1}'.format(r, ci))
-            sub = repp.loc[(r, ci)]
-            for y in range(1998, 2018):
-                start = sub[
-                    (sub.index.get_level_values(0) < pd.datetime(y, 1, 1))
-                    ].sum()
-                next_y = sub[
-                    (sub.index.get_level_values(0) < pd.datetime(y + 1, 1,
-                                                                 1))
-                    ].sum()
-                if next_y == start:
-                    df.loc[(y, r, ci)] = next_y
-                else:
-                    cap = start
-                    for m in range(11):
-                        cap += (
-                            sub[(sub.index.get_level_values(0) <
-                                 pd.datetime(y, m + 2, 1))].sum() - cap) * (
-                                     (11 - m) / 12)
-                    df.loc[(y, r, ci)] = cap
-
-    # Write file
-    filepath_pattern = os.path.join(cfg.get('paths', 'renewable'),
-                                    cfg.get('', ''))
-    df = df.sort_index()
-    filepath = filepath_pattern.format(cat='patch_offshore')
-    df.to_csv(filepath)
-
-
-def patch_offshore_wind():
-    """
-    A patch file is used to replace the wind capacity of the regions DE19-DE21
-    in the grouped-file.
-
-    The old file will be stored with '.old'. The grouped-file will be replaced.
-
-    """
-    filepath_pattern = os.path.join(cfg.get('paths', 'renewable'),
-                                    cfg.get('', 'pattern_grouped'))
-    repp = pd.read_csv(filepath_pattern.format(cat='renewable'),
-                       index_col=[0, 1, 2, 3])
-    # repp.to_csv(filepath_pattern.format(cat='renewable') + '.old')
-    offsh = pd.read_csv(filepath_pattern.format(cat='patch_offshore'),
-                        index_col=[0, 1, 2])
-
-    repp = repp.drop('DE21', level='region')
-    repp = repp.drop('DE20', level='region')
-    repp = repp.drop('DE19', level='region')
-
-    for y in range(1990, 2018):
-        try:
-            regions = offsh.loc[y].index.get_level_values(0).unique()
-        except KeyError:
-            regions = []
-        for r in regions:
-            coastdat_ids = offsh.loc[y, r].index.get_level_values(0).unique()
-            for cid in coastdat_ids:
-                if offsh.loc[(y, r, cid), 'capacity'] > 0:
-                    print(y, r, cid)
-                    repp.loc[('Wind', y, r, cid), 'capacity'] = (
-                        offsh.loc[(y, r, cid), 'capacity'])
-    repp.sort_index(inplace=True)
-    repp.to_csv(filepath_pattern.format(cat='renewable'))
-
-
 if __name__ == "__main__":
     logger.define_logging()
-    opsd_power_plants(overwrite=True, csv=False)
-    # create_patch_offshore_wind()
+    opsd_power_plants(overwrite=False, csv=False)

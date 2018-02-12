@@ -23,9 +23,62 @@ from oemof.tools import logger
 # Internal modules
 import reegis_tools.config as cfg
 import reegis_tools.opsd as opsd
+import reegis_tools.geometries as geo
 
 
-def pp_opsd2reegis():
+def patch_offshore_wind(orig_df, columns):
+    df = pd.DataFrame(columns=columns)
+
+    offsh = pd.read_csv(
+        os.path.join(cfg.get('paths', 'static_sources'),
+                     cfg.get('static_sources', 'patch_offshore_wind')),
+        header=[0, 1], index_col=[0])
+    offsh = offsh.loc[offsh['reegis', 'com_year'].notnull(), 'reegis']
+    for col in offsh.columns:
+        df[col] = offsh[col]
+    df['decom_year'] = 2050
+    df['decom_month'] = 12
+    df['energy_source_level_1'] = 'Renewable energy'
+    df['energy_source_level_2'] = 'Wind'
+    df['energy_source_level_3'] = 'Offshore'
+    goffsh = geo.Geometry(name="Offshore wind patch", df=df)
+    goffsh.create_geo_df()
+
+    # Add column with region names of the model_region
+    new_col = 'federal_states'
+    if new_col in goffsh.gdf:
+        del goffsh.gdf[new_col]
+    federal_states = geo.Geometry(new_col)
+    federal_states.load(cfg.get('paths', 'geometry'),
+                        cfg.get('geometry', 'federalstates_polygon'))
+    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, federal_states)
+
+    # Add column with coastdat id
+    new_col = 'coastdat2'
+    if new_col in goffsh.gdf:
+        del goffsh.gdf[new_col]
+    coastdat = geo.Geometry(new_col)
+    coastdat.load(cfg.get('paths', 'geometry'),
+                  cfg.get('geometry', 'coastdatgrid_polygon'))
+    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, coastdat)
+    goffsh.gdf2df()
+
+    new_cap = goffsh.df['capacity'].sum()
+    old_cap = orig_df.loc[orig_df['technology'] == 'Offshore',
+                          'capacity'].sum()
+
+    # Remove Offshore technology from power plant table
+    orig_df = orig_df.loc[orig_df['technology'] != 'Offshore']
+
+    patched_df = pd.DataFrame(pd.concat([orig_df, goffsh.df],
+                                        ignore_index=True))
+    logging.warning(
+        "Offshore wind is patched. {0} MW were replaced by {1} MW".format(
+            old_cap, new_cap))
+    return patched_df
+
+
+def pp_opsd2reegis(offshore_patch=True):
     filename_in = os.path.join(cfg.get('paths', 'opsd'),
                                cfg.get('opsd', 'opsd_prepared'))
     filename_out = os.path.join(cfg.get('paths', 'powerplants'),
@@ -47,6 +100,8 @@ def pp_opsd2reegis():
     pp = {}
     for cat in ['renewable', 'conventional']:
         pp[cat] = pd.read_hdf(filename_in, cat, mode='r')
+        if cat == 'renewable' and offshore_patch:
+            pp[cat] = patch_offshore_wind(pp[cat], keep_cols)
         pp[cat] = pp[cat].drop(columns=set(pp[cat].columns) - keep_cols)
         pp[cat] = pp[cat].replace('nan', np.nan)
         pp[cat] = pp[cat].loc[pp[cat].comment.isnull()]
@@ -59,6 +114,7 @@ def pp_opsd2reegis():
 
     pp = pd.DataFrame(pd.concat([pp['renewable'], pp['conventional']],
                                 ignore_index=True))
+
     pp['thermal_capacity'] = pp['thermal_capacity'].fillna(
         pp['chp_capacity_uba'])
     del pp['chp_capacity_uba']
@@ -66,7 +122,7 @@ def pp_opsd2reegis():
     pp[string_cols] = pp[string_cols].astype(str)
     pp.to_hdf(filename_out, 'pp', mode='w')
 
-    logging.info("Opsd power plants with de21 region stored in {0}".format(
+    logging.info("Reegis power plants based on opsd stored in {0}".format(
         filename_out))
     return filename_out
 
