@@ -129,9 +129,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
     data_height = cfg.get_dict('coastdat_data_height')
 
     # Create basic file and path pattern for the resulting files
-    coastdat_path = os.path.join(cfg.get('paths', 'feedin'), 'coastdat')
-    feedin_path = os.path.join(coastdat_path, str(year))
-    feedin_file = os.path.join(feedin_path, '{type}',
+    coastdat_path = os.path.join(cfg.get('paths_pattern', 'coastdat'))
+    feedin_file = os.path.join(coastdat_path,
                                cfg.get('feedin', 'file_pattern'))
 
     # Fetch coastdat region-keys from weather file.
@@ -148,7 +147,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
     if solar:
         logging.info(txt_create.format('solar', year))
         # Add directory if not present
-        os.makedirs(os.path.join(feedin_path, 'solar'), exist_ok=True)
+        os.makedirs(coastdat_path.format(year=year, type='solar'),
+                    exist_ok=True)
         # Create the pv-sets defined in the solar.ini
         pv_sets = feedin.create_pvlib_sets()
 
@@ -164,7 +164,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
     if wind:
         logging.info(txt_create.format('wind', year))
         # Add directory if not present
-        os.makedirs(os.path.join(feedin_path, 'wind'), exist_ok=True)
+        os.makedirs(coastdat_path.format(year=year, type='wind'),
+                    exist_ok=True)
         # Create the pv-sets defined in the wind.ini
         wind_sets = feedin.create_windpowerlib_sets()
         # Open a file for each main set (subsets are stored in columns)

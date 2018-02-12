@@ -22,5 +22,6 @@ setup(name='reegis_tools',
                         'numpy',
                         'geoplot',
                         'workalendar',
-                        'owslib', 'pyproj']
+                        'owslib',
+                        'pyproj']
       )
