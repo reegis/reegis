@@ -79,6 +79,20 @@ def patch_offshore_wind(orig_df, columns):
 
 
 def pp_opsd2reegis(offshore_patch=True):
+    """
+    Adapt opsd power plants to a more generalised reegis API with a reduced
+    number of columns
+
+    Parameters
+    ----------
+    offshore_patch : bool
+        Will overwrite the offshore wind power plants with own data set if set
+        to True.
+
+    Returns
+    -------
+    str : Filename of the output file.
+    """
     filename_in = os.path.join(cfg.get('paths', 'opsd'),
                                cfg.get('opsd', 'opsd_prepared'))
     filename_out = os.path.join(cfg.get('paths', 'powerplants'),
