@@ -112,14 +112,14 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
     # Get coordinates of the coastdat data points.
     data_points = pd.read_csv(
         os.path.join(cfg.get('paths', 'geometry'),
-                     cfg.get('weather', 'grid_centroid')),
+                     cfg.get('coastdat', 'coastdatgrid_centroid')),
         index_col='gid')
 
     # Open coastdat-weather data hdf5 file for the given year or try to
     # download it if the file is not found.
     weather_file_name = os.path.join(
-        cfg.get('paths', 'weather'),
-        cfg.get('weather', 'file_pattern').format(year=year))
+        cfg.get('paths', 'coastdat'),
+        cfg.get('coastdat', 'file_pattern').format(year=year))
     if not os.path.isfile(weather_file_name):
         get_coastdat_data(year, weather_file_name)
 
@@ -130,11 +130,13 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
 
     # Create basic file and path pattern for the resulting files
     coastdat_path = os.path.join(cfg.get('paths_pattern', 'coastdat'))
+
     feedin_file = os.path.join(coastdat_path,
                                cfg.get('feedin', 'file_pattern'))
 
     # Fetch coastdat region-keys from weather file.
-    key_file = os.path.join(coastdat_path, 'coastdat_keys.csv')
+    key_file_path = coastdat_path.format(year='', type='')[:-2]
+    key_file = os.path.join(key_file_path, 'coastdat_keys.csv')
     if not os.path.isfile(key_file):
         coastdat_keys = weather.keys()
         pd.Series(coastdat_keys).to_csv(key_file)
@@ -233,7 +235,7 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
             hdf[k1][k2].close()
     weather.close()
     logging.info("All feedin time series for {0} are stored in {1}".format(
-        year, feedin_path))
+        year, coastdat_path.format(year=year, type='')))
 
 
 def get_average_wind_speed(weather_path, grid_geometry_file, geometry_path,
@@ -440,7 +442,7 @@ def fetch_coastdat2_year_from_db(years=None, overwrite=False):
             logging.info("Weather data for {0} exists. Skipping.".format(year))
 
 
-def coastdat_id2coord():
+def coastdat_id2coord_from_db():
     """
     Creating a file with the latitude and longitude for all coastdat2 data
     sets.
@@ -456,5 +458,5 @@ def coastdat_id2coord():
 
 if __name__ == "__main__":
     logger.define_logging()
-    for y in [2014, 2013, 2012]:
+    for y in [2008]:
         normalised_feedin_for_each_data_set(y, wind=True, solar=True)

@@ -59,7 +59,7 @@ def patch_offshore_wind(orig_df, columns):
         del goffsh.gdf[new_col]
     coastdat = geo.Geometry(new_col)
     coastdat.load(cfg.get('paths', 'geometry'),
-                  cfg.get('geometry', 'coastdatgrid_polygon'))
+                  cfg.get('coastdat', 'coastdatgrid_polygon'))
     goffsh.gdf = geo.spatial_join_with_buffer(goffsh, coastdat)
     goffsh.gdf2df()
 

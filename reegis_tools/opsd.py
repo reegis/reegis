@@ -467,7 +467,7 @@ def spatial_preparation_power_plants(pp):
     # Add column with coastdat id
     coastdat = geo.Geometry('coastdat2')
     coastdat.load(cfg.get('paths', 'geometry'),
-                  cfg.get('geometry', 'coastdatgrid_polygon'))
+                  cfg.get('coastdat', 'coastdatgrid_polygon'))
     pp.gdf = geo.spatial_join_with_buffer(pp, coastdat)
 
     # Update DataFrame with the new content of the GeoDataFrame.

@@ -170,11 +170,11 @@ def set_reegis_paths():
         logging.debug("Set default path for basic path: {0}".format(basicpath))
     cfg.set('paths', 'package_data', basicpath)
 
-    datapath = get('root_paths', 'local_data')
+    datapath = get('root_paths', 'local_root')
     if datapath is None:
         datapath = os.path.join(os.path.expanduser("~"), 'reegis')
         logging.debug("Set default path for data path: {0}".format(datapath))
-    cfg.set('paths', 'local_data', datapath)
+    cfg.set('paths', 'local_root', datapath)
 
     if importer != os.path.join(os.path.dirname(__file__)):
         importer_name = importer.split(os.sep)[-1]
