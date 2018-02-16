@@ -34,7 +34,7 @@ import windpowerlib
 import pvlib
 
 # oemof libraries
-from oemof.tools import logger
+from oemof import tools
 
 # Internal modules
 import reegis_tools.config as cfg
@@ -270,7 +270,7 @@ def feedin_windpowerlib(weather, data_height, turbine, installed_capacity=1):
 
 
 if __name__ == "__main__":
-    logger.define_logging()
+    tools.logger.define_logging()
     import os
     y = 2012
     hd_file = pd.HDFStore(os.path.join(

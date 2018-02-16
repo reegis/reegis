@@ -25,5 +25,5 @@ setup(name='reegis_tools',
                         'owslib',
                         'pyproj',
                         'pytz',
-                        'dateutil']
+                        'python-dateutil']
       )

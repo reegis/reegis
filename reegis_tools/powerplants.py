@@ -91,7 +91,7 @@ def pp_opsd2reegis(offshore_patch=True):
 
     Returns
     -------
-    str : Filename of the output file.
+    str : Filename of the stored file.
     """
     filename_in = os.path.join(cfg.get('paths', 'opsd'),
                                cfg.get('opsd', 'opsd_prepared'))
@@ -108,20 +108,34 @@ def pp_opsd2reegis(offshore_patch=True):
                    'energy_source_level_2', 'energy_source_level_3',
                    'federal_states', 'geometry']
 
+    # Create opsd power plant tables if they do not exist.
     if not os.path.isfile(filename_in):
         filename_in = opsd.opsd_power_plants()
 
     pp = {}
     for cat in ['renewable', 'conventional']:
+        # Read opsd power plant tables
         pp[cat] = pd.read_hdf(filename_in, cat, mode='r')
+
+        # Patch offshore wind energy with investigated data.
         if cat == 'renewable' and offshore_patch:
             pp[cat] = patch_offshore_wind(pp[cat], keep_cols)
         pp[cat] = pp[cat].drop(columns=set(pp[cat].columns) - keep_cols)
+
+        # Replace 'nan' strings with nan values.
         pp[cat] = pp[cat].replace('nan', np.nan)
+
+        # Remove lines with comments. Comments mark suspicious data.
         pp[cat] = pp[cat].loc[pp[cat].comment.isnull()]
+
+        # Fill missing 'energy_source_level_1' values with 'unknown' and
+        # the category from opsd.
         pp[cat]['energy_source_level_1'] = (
             pp[cat]['energy_source_level_1'].fillna(
                 'unknown from {0}'.format(cat)))
+
+        # Fill missing 'energy_source_level_2' values with values from
+        # 'energy_source_level_1' column.
         pp[cat]['energy_source_level_2'] = (
             pp[cat]['energy_source_level_2'].fillna(
                 pp[cat]['energy_source_level_1']))
@@ -129,11 +143,18 @@ def pp_opsd2reegis(offshore_patch=True):
     pp = pd.DataFrame(pd.concat([pp['renewable'], pp['conventional']],
                                 ignore_index=True))
 
+    # Merge 'chp_capacity_uba' into 'thermal_capacity' column.
     pp['thermal_capacity'] = pp['thermal_capacity'].fillna(
         pp['chp_capacity_uba'])
     del pp['chp_capacity_uba']
 
+    # Remove storages (Speicher) from power plant table
+    pp = pp.loc[pp['energy_source_level_2'] != 'Speicher']
+
+    # Convert all values to strings in string-columns
     pp[string_cols] = pp[string_cols].astype(str)
+
+    # Store power plant table to hdf5 file.
     pp.to_hdf(filename_out, 'pp', mode='w')
 
     logging.info("Reegis power plants based on opsd stored in {0}".format(
@@ -162,4 +183,10 @@ def add_capacity_by_year(year, pp=None, filename=None, key='pp'):
 
 if __name__ == "__main__":
     logger.define_logging()
-    pp_opsd2reegis()
+    filename = pp_opsd2reegis()
+    exit(0)
+    filename = os.path.join(cfg.get('paths', 'powerplants'),
+                            cfg.get('powerplants', 'reegis_pp'))
+    df = pd.read_hdf(filename, 'pp', mode='r')
+    for col in df.columns:
+        print(col, df[col].unique())

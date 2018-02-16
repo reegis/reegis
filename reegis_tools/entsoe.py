@@ -1,4 +1,14 @@
-# http://data.open-power-system-data.org/time_series/2016-10-28/time_series_60min_singleindex.csv
+# -*- coding: utf-8 -*-
+
+""" Download and prepare entsoe load profile from opsd data portal.
+
+Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
+__license__ = "GPLv3"
+
 
 import os
 import logging
@@ -23,7 +33,7 @@ def read_original_timeseries_file(overwrite=False):
                         cfg.get('entsoe', 'json_file'))
 
     if not os.path.isfile(orig_csv_file) or overwrite:
-        req = requests.get(cfg.get('url', 'timeseries_data'))
+        req = requests.get(cfg.get('entsoe', 'timeseries_data'))
         if not overwrite:
             logging.warning("File not found. Try to download it from server.")
         else:
@@ -34,10 +44,10 @@ def read_original_timeseries_file(overwrite=False):
             fout.write(req.content)
         logging.warning("Downloaded from {0} and copied to '{1}'.".format(
             cfg.get('url', 'timeseries_data'), orig_csv_file))
-        req = requests.get(cfg.get('url', 'timeseries_readme'))
+        req = requests.get(cfg.get('entsoe', 'timeseries_readme'))
         with open(readme, 'wb') as fout:
             fout.write(req.content)
-        req = requests.get(cfg.get('url', 'timeseries_json'))
+        req = requests.get(cfg.get('entsoe', 'timeseries_json'))
         with open(json, 'wb') as fout:
             fout.write(req.content)
 
