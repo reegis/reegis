@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# -*- coding: utf-8 -*-
+
 """ Download and prepare entsoe load profile from opsd data portal.
 
 Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
@@ -10,15 +12,22 @@ __copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
 __license__ = "GPLv3"
 
 
+# Python libraries
 import os
 import logging
-import requests
 import datetime
+
+# External packages
+import requests
 import pytz
 import dateutil
 import pandas as pd
-import reegis_tools.config as cfg
+
+# oemof packages
 from oemof.tools import logger
+
+# internal modules
+import reegis_tools.config as cfg
 
 
 def read_original_timeseries_file(overwrite=False):

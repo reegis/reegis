@@ -1,5 +1,6 @@
-"""
-Reegis geometry tools.
+# -*- coding: utf-8 -*-
+
+"""Reegis geometry tools.
 
 Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
 

@@ -1,41 +1,28 @@
-import pandas as pd
-from matplotlib import pyplot as plt
-from oemof.tools import logger
+# -*- coding: utf-8 -*-
+
+"""Processing a list of power plants in Germany.
+
+Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
+__license__ = "GPLv3"
+
+
+# Python libraries
 import os
 import calendar
-import logging
-import requests
-from shapely.geometry import Point
-import datetime
-from shapely.wkt import loads as wkt_loads
+
+# External libraries
+import pandas as pd
 import geopandas as gpd
-import warnings
+from matplotlib import pyplot as plt
+from shapely.geometry import Point
+from shapely.wkt import loads as wkt_loads
 
-
-def download_file(filename, url, overwrite=False):
-    """
-    Check if file exist and download it if necessary.
-
-    Parameters
-    ----------
-    filename : str
-        Full filename with path.
-    url : str
-        Full URL to the file to download.
-    overwrite : boolean (default False)
-        If set to True the file will be downloaded even though the file exits.
-    """
-    if not os.path.isfile(filename) or overwrite:
-        logging.warning("File not found. Try to download it from server.")
-        req = requests.get(url)
-        with open(filename, 'wb') as fout:
-            fout.write(req.content)
-        logging.info("Downloaded from {0} and copied to '{1}'.".format(
-            url, filename))
-        r = req.status_code
-    else:
-        r = 1
-    return r
+# oemof packages
+from oemof.tools import logger
 
 
 def postgis2shapely(postgis):
@@ -48,30 +35,6 @@ def postgis2shapely(postgis):
 def lat_lon2point(df):
     """Create shapely point object of latitude and longitude."""
     return Point(df['lon'], df['lat'])
-
-
-def create_intersection_table():
-    state_polygon_file = os.path.join(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))
-    coastdat_centroid_file = os.path.join(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'coastdatgrid_centroid'))
-    outfile = os.path.join(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'intersection_coastdat_state'))
-    coastdat_centroid = pd.read_csv(coastdat_centroid_file, index_col=[0])
-    coastdat_centroid.rename(columns={'st_x': 'lon', 'st_y': 'lat'},
-                             inplace=True)
-
-    gdf = create_geo_df(coastdat_centroid)
-    gdf = add_spatial_name(gdf, state_polygon_file, 'state', 'coastdat2state',
-                           jcol='iso', buffer=False)
-    gdf = gdf.loc[gdf.state.notnull()]
-    del gdf['geom']
-    del gdf['lon']
-    del gdf['lat']
-    gdf.to_csv(outfile)
 
 
 def geo_csv_from_shp(shapefile, outfile, id_col, tmp_file='tmp.csv'):
@@ -141,7 +104,6 @@ def plz2ireg():
     plzireg = plzireg.groupby(plzireg.index).first()
     ireggeo = pd.DataFrame(pd.concat([plzgeo, plzireg], axis=1))
     ireggeo.to_csv(os.path.join(iregpath, 'ireg_geo.csv'))
-    import geopandas as gpd
     import geoplot
     ireggeo = ireggeo[ireggeo['geom'].notnull()]
     ireggeo['geom'] = geoplot.postgis2shapely(ireggeo.geom)
@@ -194,24 +156,29 @@ def bmwe():
     spath = '/home/uwe/chiba/Promotion/Kraftwerke und Speicher/'
     sfile1 = 'installation_bmwe.csv'
     sfile2 = 'strom_bmwe.csv'
-    sfile3 = 'hydro.csv'
-    inst = pd.read_csv(os.path.join(spath, sfile1), index_col=[0]).astype(float)
-    strom = pd.read_csv(os.path.join(spath, sfile2), index_col=[0]).astype(float)
-    # hydro = pd.read_csv(os.path.join(spath, sfile3), index_col=[0], squeeze=True).astype(float)
+    # sfile3 = 'hydro.csv'
+    inst = pd.read_csv(os.path.join(spath, sfile1), index_col=[0]).astype(
+        float)
+    strom = pd.read_csv(os.path.join(spath, sfile2), index_col=[0]).astype(
+        float)
+    # hydro = pd.read_csv(os.path.join(spath, sfile3), index_col=[0],
+    #                     squeeze=True).astype(float)
     cols = pd.MultiIndex(levels=[[], []], labels=[[], []],
                          names=['type', 'value'])
     df = pd.DataFrame(index=inst.index, columns=cols)
     for col in inst.columns:
         df[col, 'capacity'] = inst[col]
         df[col, 'energy'] = strom[col]
-    df.to_csv('/home/uwe/git_local/reegis-hp/reegis_hp/de21/data/static/energy_capacity_bmwi_readme.csv')
+    df.to_csv('/home/uwe/git_local/reegis-hp/reegis_hp/de21/data/static/'
+              'energy_capacity_bmwi_readme.csv')
 
 
 def prices():
     # from matplotlib import pyplot as plt
     spath = '/home/uwe/git_local/reegis-hp/reegis_hp/de21/data/static/'
     sfile = 'commodity_sources_prices.csv'
-    price = pd.read_csv(os.path.join(spath, sfile), index_col=[0], header=[0, 1])
+    price = pd.read_csv(os.path.join(spath, sfile),
+                        index_col=[0], header=[0, 1])
     print(price)
     price['Erdgas'].plot()
     plt.show()
@@ -219,13 +186,14 @@ def prices():
 
 def load_energiebilanzen():
     spath = '/home/uwe/chiba/Promotion/Energiebilanzen/2014/'
-    sfile = 'Energiebilanz RheinlandPfalz 2014.xlsx'
+    # sfile = 'Energiebilanz RheinlandPfalz 2014.xlsx'
     sfile = 'Energiebilanz BadenWuerttemberg2014.xls'
     filename = os.path.join(spath, sfile)
     header = pd.read_excel(filename, 0, index=[0, 1, 2, 3, 4], header=None
                            ).iloc[:3, 5:].ffill(axis=1)
 
-    eb = pd.read_excel(filename, 0, skiprows=3, index_col=[0, 1, 2, 3, 4], skip_footer=2)
+    eb = pd.read_excel(filename, 0, skiprows=3, index_col=[0, 1, 2, 3, 4],
+                       skip_footer=2)
     eb.columns = pd.MultiIndex.from_arrays(header.values)
     # print(eb)
     # print(eb.loc[pd.IndexSlice[

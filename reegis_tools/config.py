@@ -1,34 +1,16 @@
 # -*- coding: utf-8 -*-
+
+"""Reegis geometry tools.
+
+Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
 """
-Created on Fri Sep  5 12:26:40 2014
-
-:module-author: steffen
-:filename: config.py
+__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
+__license__ = "GPLv3"
 
 
-This module provides a high level layer for reading and writing config files.
-There must be a file called "config.ini" in the root-folder of the project.
-The file has to be of the following structure to be imported correctly.
-
-# this is a comment \n
-# the file structure is like: \n
- \n
-[netCDF] \n
-RootFolder = c://netCDF \n
-FilePrefix = cd2_ \n
- \n
-[mySQL] \n
-host = localhost \n
-user = guest \n
-password = root \n
-database = znes \n
- \n
-[SectionName] \n
-OptionName = value \n
-Option2 = value2 \n
-
-
-"""
+# Python libraries
 import os
 import logging
 import configparser as cp

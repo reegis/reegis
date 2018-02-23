@@ -1,5 +1,6 @@
-"""
-Aggregate the number of inhabitants for a regions/polygons within Germany.
+# -*- coding: utf-8 -*-
+
+"""Aggregate the number of inhabitants for a regions/polygons within Germany.
 
 Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
 
@@ -19,34 +20,40 @@ import logging
 # External libraries
 import pandas as pd
 import geopandas as gpd
+import requests
 
 # oemof libraries
 import oemof.tools.logger
 
 # Internal modules
-import reegis_tools.tools as tools
 import reegis_tools.config as cfg
 import reegis_tools.geometries
 
 
-STATES = {
-    'Baden-Württemberg': 'BW',
-    'Bayern': 'BY',
-    'Berlin': 'BE',
-    'Brandenburg': 'BB',
-    'Bremen': 'HB',
-    'Hamburg': 'HH',
-    'Hessen': 'HE',
-    'Mecklenburg-Vorpommern': 'MV',
-    'Niedersachsen': 'NI',
-    'Nordrhein-Westfalen': 'NW',
-    'Rheinland-Pfalz': 'RP',
-    'Saarland': 'SL',
-    'Sachsen': 'SN',
-    'Sachsen-Anhalt': 'ST',
-    'Schleswig-Holstein': 'SH',
-    'Thüringen': 'TH',
-    }
+def download_file(filename, url, overwrite=False):
+    """
+    Check if file exist and download it if necessary.
+
+    Parameters
+    ----------
+    filename : str
+        Full filename with path.
+    url : str
+        Full URL to the file to download.
+    overwrite : boolean (default False)
+        If set to True the file will be downloaded even though the file exits.
+    """
+    if not os.path.isfile(filename) or overwrite:
+        logging.warning("File not found. Try to download it from server.")
+        req = requests.get(url)
+        with open(filename, 'wb') as fout:
+            fout.write(req.content)
+        logging.info("Downloaded from {0} and copied to '{1}'.".format(
+            url, filename))
+        r = req.status_code
+    else:
+        r = 1
+    return r
 
 
 def get_ew_shp_file(year):
@@ -63,10 +70,10 @@ def get_ew_shp_file(year):
                                                               var1='{0}')
         filename_zip = os.path.join(cfg.get('paths', 'inhabitants'),
                                     cfg.get('inhabitants', 'vg250_ew_zip'))
-        msg = tools.download_file(filename_zip, url.format('ebene'))
+        msg = download_file(filename_zip, url.format('ebene'))
         if msg == 404:
             logging.warning("Wrong URL. Try again with different URL.")
-            tools.download_file(
+            download_file(
                 filename_zip, url.format('ebenen'), overwrite=True)
 
         zip_ref = zipfile.ZipFile(filename_zip, 'r')

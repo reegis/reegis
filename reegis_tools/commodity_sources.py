@@ -1,11 +1,26 @@
-__copyright__ = "Uwe Krien"
+# -*- coding: utf-8 -*-
+
+"""Reegis geometry tools.
+
+Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
 __license__ = "GPLv3"
 
-import pandas as pd
-import os
 
+# Python libraries
+import os
 import logging
+
+# External libraries
+import pandas as pd
+
+# oemof libraries
 from oemof.tools import logger
+
+# internal modules
 import reegis_tools.config as cfg
 import reegis_tools.bmwi
 

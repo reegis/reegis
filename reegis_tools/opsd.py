@@ -1,5 +1,6 @@
-"""
-Download and process the opsd power plants for Germany.
+# -*- coding: utf-8 -*-
+
+"""Download and process the opsd power plants for Germany.
 
 Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
 

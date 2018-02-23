@@ -1,7 +1,26 @@
+# -*- coding: utf-8 -*-
+
+"""Prepare parts of the energy balance of Germany and its federal states.
+
+Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
+__license__ = "GPLv3"
+
+
+# Python libraries
 import os
 import logging
+
+# External packages
 import pandas as pd
+
+# oemof packages
 from oemof.tools import logger
+
+# internal modules
 import reegis_tools.config as cfg
 
 
