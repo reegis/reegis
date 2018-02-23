@@ -34,6 +34,7 @@ from oemof.tools import logger
 import reegis_tools.tools as tools
 import reegis_tools.feedin as feedin
 import reegis_tools.config as cfg
+import reegis_tools.geometries as geometries
 
 # Optional: database tool.
 try:
@@ -326,8 +327,7 @@ def get_average_wind_speed(weather_path, grid_geometry_file, geometry_path,
         logging.info("Skipped: Calculating the average wind speed.")
 
 
-def calculate_average_parameter_by_region(year, filename, outpath,
-                                          outfile=None, parameter='temp_air'):
+def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
     """
     Calculate the average temperature for all regions (de21, states...).
 
@@ -335,9 +335,8 @@ def calculate_average_parameter_by_region(year, filename, outpath,
     ----------
     year : int
         Select the year you want to calculate the average temperature for.
-    filename : str
-        Name of a csv file with two columns. One column with the weather id
-        (id) and one with the region id (region).
+    geo : geometries.Geometry object
+        Polygons to calculate the average parameter for.
     outpath : str
         Place to store the outputfile.
     outfile : str
@@ -350,19 +349,45 @@ def calculate_average_parameter_by_region(year, filename, outpath,
     str : Full file name of the created file.
 
     """
+    logging.info("Getting average {0} for {1} in {2} from coastdat2.".format(
+        parameter, geo.name, year))
+
+    col_name = geo.name.replace(' ', '_')
+
+    # Create a Geometry object for the coastdat centroids.
+    coastdat_geo = geometries.Geometry(name='coastdat')
+    coastdat_geo.load(cfg.get('paths', 'geometry'),
+                      cfg.get('coastdat', 'coastdatgrid_polygon'))
+    coastdat_geo.gdf['geometry'] = coastdat_geo.gdf.centroid
+
+    # Join the tables to create a list of coastdat id's for each region.
+    coastdat_geo.gdf = geometries.spatial_join_with_buffer(
+        coastdat_geo, geo, limit=0)
+
+    # Fix regions with no matches (this my happen if a region ist to small).
+    fix = {}
+    for reg in set(geo.gdf.index) - set(coastdat_geo.gdf[col_name].unique()):
+        reg_point = geo.gdf.representative_point().loc[reg]
+        coastdat_poly = geometries.Geometry(name='coastdat_poly')
+        coastdat_poly.load(cfg.get('paths', 'geometry'),
+                           cfg.get('coastdat', 'coastdatgrid_polygon'))
+        fix[reg] = coastdat_poly.gdf.loc[coastdat_poly.gdf.intersects(
+            reg_point)].index[0]
+
+    # Open the weather file
     weatherfile = os.path.join(
-        cfg.get('paths', 'weather'),
-        cfg.get('weather', 'file_pattern').format(year=year))
-    groups = pd.read_csv(filename, index_col=[0, 1, 2])
-    groups = groups.swaplevel(0, 2).sort_index()
+        cfg.get('paths', 'coastdat'),
+        cfg.get('coastdat', 'file_pattern').format(year=year))
     weather = pd.HDFStore(weatherfile, mode='r')
 
+    # Calculate the average temperature for each region with more than one id.
     avg_value = pd.DataFrame()
-    for region in groups.index.get_level_values(0).unique():
-        w_id_list = groups.loc[region].index.get_level_values(0).unique()
-        number_of_sets = len(w_id_list)
-        tmp = pd.DataFrame(index=weather['A' + str(w_id_list[0])].index)
-        for cid in groups.loc[region].index.get_level_values(0).unique():
+    for region in geo.gdf.index:
+        cd_ids = coastdat_geo.gdf[coastdat_geo.gdf[col_name] == region].index
+        number_of_sets = len(cd_ids)
+        tmp = pd.DataFrame()
+        logging.debug((region, len(cd_ids)))
+        for cid in cd_ids:
             try:
                 cid = int(cid)
             except ValueError:
@@ -372,10 +397,15 @@ def calculate_average_parameter_by_region(year, filename, outpath,
             else:
                 key = cid
             tmp[cid] = weather[key][parameter]
-        avg_value[region] = tmp.sum(1).div(number_of_sets)
+        if len(cd_ids) < 1:
+            key = 'A' + str(fix[region])
+            avg_value[region] = weather[key][parameter]
+        else:
+            avg_value[region] = tmp.sum(1).div(number_of_sets)
     weather.close()
 
-    regions = sorted(groups.index.get_level_values(0).unique())
+    # Create the name an write to file
+    regions = sorted(geo.gdf.index)
     if outfile is None:
         out_name = '{0}_{1}'.format(regions[0], regions[-1])
         outfile = os.path.join(
@@ -386,6 +416,19 @@ def calculate_average_parameter_by_region(year, filename, outpath,
     avg_value.to_csv(outfile)
     logging.info("Average temperature saved to {0}".format(outfile))
     return outfile
+
+
+def federal_state_average_weather(year, parameter):
+    federal_states = geometries.Geometry(name='federal_states')
+    federal_states.load(cfg.get('paths', 'geometry'),
+                        cfg.get('geometry', 'federalstates_polygon'))
+    filename = os.path.join(
+        cfg.get('paths', 'coastdat'),
+        'average_temp_air_BB_TH_{0}.csv'.format(year))
+    if not os.path.isfile(filename):
+        spatial_average_weather(year, federal_states, parameter,
+                                outfile=filename)
+    return pd.read_csv(filename, index_col=[0], parse_dates=True)
 
 
 def fetch_coastdat2_year_from_db(years=None, overwrite=False):
@@ -458,5 +501,6 @@ def coastdat_id2coord_from_db():
 
 if __name__ == "__main__":
     logger.define_logging()
-    for y in [2008]:
-        normalised_feedin_for_each_data_set(y, wind=True, solar=True)
+    # for y in [2008]:
+    #     normalised_feedin_for_each_data_set(y, wind=True, solar=True)
+    print(federal_state_average_weather(2012, 'temp_air'))

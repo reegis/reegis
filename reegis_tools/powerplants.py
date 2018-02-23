@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 
 # oemof libraries
-from oemof.tools import logger
+import oemof.tools.logger
 
 # Internal modules
 import reegis_tools.config as cfg
@@ -34,8 +34,8 @@ def patch_offshore_wind(orig_df, columns):
                      cfg.get('static_sources', 'patch_offshore_wind')),
         header=[0, 1], index_col=[0])
     offsh = offsh.loc[offsh['reegis', 'com_year'].notnull(), 'reegis']
-    for col in offsh.columns:
-        df[col] = offsh[col]
+    for column in offsh.columns:
+        df[column] = offsh[column]
     df['decom_year'] = 2050
     df['decom_month'] = 12
     df['energy_source_level_1'] = 'Renewable energy'
@@ -182,11 +182,11 @@ def add_capacity_by_year(year, pp=None, filename=None, key='pp'):
 
 
 if __name__ == "__main__":
-    logger.define_logging()
-    filename = pp_opsd2reegis()
+    oemof.tools.logger.define_logging()
+    file_name = pp_opsd2reegis()
     exit(0)
-    filename = os.path.join(cfg.get('paths', 'powerplants'),
-                            cfg.get('powerplants', 'reegis_pp'))
-    df = pd.read_hdf(filename, 'pp', mode='r')
-    for col in df.columns:
-        print(col, df[col].unique())
+    file_name = os.path.join(cfg.get('paths', 'powerplants'),
+                             cfg.get('powerplants', 'reegis_pp'))
+    dtf = pd.read_hdf(file_name, 'pp', mode='r')
+    for col in dtf.columns:
+        print(col, dtf[col].unique())

@@ -93,7 +93,7 @@ class Geometry:
             # logging.error(msg.format(self.name))
             # return None
         if self.gdf is None or update:
-            self.gdf = gpd.GeoDataFrame(self.df, crs='epsg:4326',
+            self.gdf = gpd.GeoDataFrame(self.df, crs={'init': 'epsg:4326'},
                                         geometry='geometry')
             logging.info("GeoDataFrame for {0} created.".format(self.name))
         return self
@@ -102,8 +102,14 @@ class Geometry:
         """Update DataFrame with the content of the GeoDataFrame.
         The geometry column will be converted to a WKT-string.
         """
+        print("*******DO NOT USE IT!!!!!***************Use to_csv!!!!!")
         self.df = pd.DataFrame(self.gdf)
         self.df['geometry'] = self.df['geometry'].astype(str)
+
+    def to_csv(self, *args, **kwargs):
+        df = pd.DataFrame(self.gdf)
+        df['geometry'] = df['geometry'].astype(str)
+        df.to_csv(*args, **kwargs)
 
     def remove_invalid_geometries(self):
         if self.gdf is not None:
@@ -112,6 +118,9 @@ class Geometry:
             self.gdf = self.gdf.loc[self.gdf.is_valid]
         else:
             logging.error("No GeoDataFrame to remove invalid geometries from.")
+
+    def plot(self, *args, **kwargs):
+        self.gdf.plot(*args, **kwargs)
 
 
 def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,

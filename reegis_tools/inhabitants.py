@@ -1,14 +1,30 @@
-# http://www.geodatenzentrum.de/auftrag1/archiv/vektor/vg250_ebenen/2015/vg250-ew_2015-12-31.geo84.shape.ebenen.zip
+"""
+Aggregate the number of inhabitants for a regions/polygons within Germany.
 
+Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
+__license__ = "GPLv3"
+
+
+# Python libraries
 import os
-import pandas as pd
-import geopandas as gpd
-from oemof.tools import logger
-import reegis_tools.tools as tools
 import zipfile
 import shutil
 import glob
 import logging
+
+# External libraries
+import pandas as pd
+import geopandas as gpd
+
+# oemof libraries
+import oemof.tools.logger
+
+# Internal modules
+import reegis_tools.tools as tools
 import reegis_tools.config as cfg
 import reegis_tools.geometries
 
@@ -104,7 +120,9 @@ def get_ew_geometry(year):
     return vwg
 
 
-def get_ew_by_region(year, geo, col):
+def get_ew_by_region(year, geo, col=None):
+    if col is None:
+        col = geo.name
     ew = get_ew_geometry(year)
     ew.gdf = reegis_tools.geometries.spatial_join_with_buffer(
         ew, geo)
@@ -112,15 +130,14 @@ def get_ew_by_region(year, geo, col):
 
 
 def get_ew_by_federal_states(year):
-    name = 'federal_state'
-    geo = reegis_tools.geometries.Geometry(name)
+    geo = reegis_tools.geometries.Geometry(name='federal_state')
     geo.load(cfg.get('paths', 'geometry'),
              cfg.get('geometry', 'federalstates_polygon'))
-    return get_ew_by_region(year, geo, name)
+    return get_ew_by_region(year, geo)
 
 
 if __name__ == "__main__":
-    logger.define_logging()
+    oemof.tools.logger.define_logging()
     spatial_file_fs = os.path.join(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
