@@ -341,13 +341,59 @@ def get_states_balance(year=None, grouped=False, overwrite=False):
     return eb
 
 
+def fix_states(year, eb):
+    """This is a fix after a manual analysis of the energy balances."""
+    # *********** BB ********************************************************
+    # BB: Total input calculated by total output
+    # BB: Gas input calculated by total input - sum input without gas.
+    eb.loc[year, 'BB', 'input', 'Heizwerke']['total'] = (
+        eb.loc[year, 'BB', 'output', 'Heizwerke']['total'] * 0.9
+    )
+    total = eb.loc[year, 'BB', 'input', 'Heizwerke']['total']
+    eb.loc[year, 'BB', 'input', 'Heizwerke']['gas'] = (
+            total - eb.loc[year, 'BB', 'input', 'Heizwerke'].sum() + total)
+
+    # *********** BY ********************************************************
+    # BY: The missing fuel for CHP is assumed to be hard coal.
+    kwk_row = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
+    total = eb.loc[year, 'BY', 'input', kwk_row]['total']
+    eb.loc[year, 'BY', 'input', kwk_row]['hard coal'] = (
+        total - eb.loc[year, 'BY', 'input', kwk_row].sum() + total)
+
+    # BY: The missing fuel for heat plants is assumed to be natural gas.
+    total = eb.loc[year, 'BY', 'input', 'Heizwerke']['total']
+    eb.loc[year, 'BY', 'input', 'Heizwerke']['gas'] = (
+            total - eb.loc[year, 'BY', 'input', 'Heizwerke'].sum() + total)
+    return eb
+
+
+def get_conversion_balance(year):
+    chiba_path = '/home/uwe/chiba/'
+    eb_path = 'Promotion/Statstik/Energiebilanzen/Umwandlungsbilanz'
+    eb_file = 'energybalance_conversion_2012_to_2014.xlsx'
+    fn = os.path.join(chiba_path, eb_path, eb_file)
+    eb = pd.read_excel(fn, index_col=[0, 1, 2, 3])
+    eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
+    eb.sort_index(0, inplace=True)
+    eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
+    eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
+    eb = fix_states(year, eb)
+    return eb
+
+
 if __name__ == "__main__":
     logger.define_logging()
-    fn = os.path.join(cfg.get('paths', 'static_sources'),
-                      cfg.get('energy_balance', 'energiebilanzen_laender'))
-    check_balance(orig=True, ebfile=fn)
-    fn = edit_balance()
-    check_balance(orig=False, ebfile=fn)
+    # fn = os.path.join(cfg.get('paths', 'static_sources'),
+    #                   cfg.get('energy_balance', 'energiebilanzen_laender'))
+    # check_balance(orig=True, ebfile=fn)
+    # fn = edit_balance()
+    # check_balance(orig=False, ebfile=fn)
+    # df.to_excel('/home/uwe/tester.xlsx')
+    # df = pd.read_excel('/home/uwe/tester.xlsx', index_col=[0, 1, 2, 3])
+    # print(df.loc[2014, 'NI', 'primary', 'Primärenergieverbrauch im Inland'])
+    # print(df.loc[2014, :, 'output', 'Umwandlungsausstoß insgesamt'][
+    # 'electricity'].div(3.6).round())
+    # print(df.loc[2014, :, 'primary'].sum())
     # print(get_de_balance(year=None, grouped=False).columns)
     # print(get_states_balance(2012, overwrite=True))
     # print(get_domestic_retail_share(2012))
