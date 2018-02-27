@@ -52,7 +52,7 @@ def get_coastdat_data(year, filename):
     try:
         ini_key = 'coastdat{0}'.format(year)
         url = cfg.get('weather', ini_key)
-        # tools.download_file(filename, url, overwrite=False)
+        tools.download_file(filename, url, overwrite=False)
     except configparser.NoOptionError:
         logging.error("No url found to download coastdat2 data for {0}".format(
             year))

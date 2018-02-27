@@ -19,17 +19,9 @@ import pandas as pd
 import geopandas as gpd
 from matplotlib import pyplot as plt
 from shapely.geometry import Point
-from shapely.wkt import loads as wkt_loads
 
 # oemof packages
 from oemof.tools import logger
-
-
-def postgis2shapely(postgis):
-    geometries = list()
-    for geo in postgis:
-        geometries.append(wkt_loads(geo))
-    return geometries
 
 
 def lat_lon2point(df):
