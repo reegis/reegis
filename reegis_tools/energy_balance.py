@@ -368,11 +368,11 @@ def fix_states(year, eb):
 
 
 def get_conversion_balance(year):
-    chiba_path = '/home/uwe/chiba/'
-    eb_path = 'Promotion/Statstik/Energiebilanzen/Umwandlungsbilanz'
-    eb_file = 'energybalance_conversion_2012_to_2014.xlsx'
-    fn = os.path.join(chiba_path, eb_path, eb_file)
-    eb = pd.read_excel(fn, index_col=[0, 1, 2, 3])
+    fn = os.path.join(
+        cfg.get('paths', 'static_sources'),
+        cfg.get('energy_balance', 'energy_balance_states_conversion'))
+
+    eb = pd.read_csv(fn, index_col=[0, 1, 2, 3])
     eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
     eb.sort_index(0, inplace=True)
     eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
@@ -383,17 +383,12 @@ def get_conversion_balance(year):
 
 if __name__ == "__main__":
     logger.define_logging()
+    print(get_conversion_balance(2014))
     # fn = os.path.join(cfg.get('paths', 'static_sources'),
     #                   cfg.get('energy_balance', 'energiebilanzen_laender'))
     # check_balance(orig=True, ebfile=fn)
     # fn = edit_balance()
     # check_balance(orig=False, ebfile=fn)
-    # df.to_excel('/home/uwe/tester.xlsx')
-    # df = pd.read_excel('/home/uwe/tester.xlsx', index_col=[0, 1, 2, 3])
-    # print(df.loc[2014, 'NI', 'primary', 'Primärenergieverbrauch im Inland'])
-    # print(df.loc[2014, :, 'output', 'Umwandlungsausstoß insgesamt'][
-    # 'electricity'].div(3.6).round())
-    # print(df.loc[2014, :, 'primary'].sum())
     # print(get_de_balance(year=None, grouped=False).columns)
     # print(get_states_balance(2012, overwrite=True))
     # print(get_domestic_retail_share(2012))
