@@ -98,4 +98,6 @@ def bmwi_re_energy_capacity():
     return repp.transpose().sort_index(1)
 
 
-get_bmwi_energiedaten_file()
+if __name__ == "__main__":
+    hydro = bmwi_re_energy_capacity()['water']
+    # get_bmwi_energiedaten_file()
