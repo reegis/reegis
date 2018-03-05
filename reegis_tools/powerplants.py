@@ -125,7 +125,7 @@ def pp_opsd2reegis(offshore_patch=True):
                 complete = False
         if not complete:
             logging.debug("Will re-create file with all keys.")
-            filename_in = opsd.opsd_power_plants()
+            filename_in = opsd.opsd_power_plants(overwrite=True)
 
     pp = {}
     for cat in ['renewable', 'conventional']:
