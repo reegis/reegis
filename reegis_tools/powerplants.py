@@ -62,16 +62,16 @@ def patch_offshore_wind(orig_df, columns):
     coastdat.load(cfg.get('paths', 'geometry'),
                   cfg.get('coastdat', 'coastdatgrid_polygon'))
     goffsh.gdf = geo.spatial_join_with_buffer(goffsh, coastdat)
-    goffsh.gdf2df()
+    offsh_df = goffsh.get_df()
 
-    new_cap = goffsh.df['capacity'].sum()
+    new_cap = offsh_df['capacity'].sum()
     old_cap = orig_df.loc[orig_df['technology'] == 'Offshore',
                           'capacity'].sum()
 
     # Remove Offshore technology from power plant table
     orig_df = orig_df.loc[orig_df['technology'] != 'Offshore']
 
-    patched_df = pd.DataFrame(pd.concat([orig_df, goffsh.df],
+    patched_df = pd.DataFrame(pd.concat([orig_df, offsh_df],
                                         ignore_index=True))
     logging.warning(
         "Offshore wind is patched. {0} MW were replaced by {1} MW".format(
