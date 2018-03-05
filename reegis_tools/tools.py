@@ -43,7 +43,11 @@ def download_file(filename, url, overwrite=False):
         If set to True the file will be downloaded even though the file exits.
     """
     if not os.path.isfile(filename) or overwrite:
-        logging.warning("File not found. Try to download it from server.")
+        if overwrite:
+            logging.warning("File {0} will be overwritten.".format(filename))
+        else:
+            logging.warning("File {0} not found.".format(filename))
+        logging.warning("Try to download it from {0}.".format(url))
         req = requests.get(url)
         with open(filename, 'wb') as fout:
             fout.write(req.content)
