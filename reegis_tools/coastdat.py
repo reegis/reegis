@@ -141,6 +141,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
     key_file = os.path.join(key_file_path, 'coastdat_keys.csv')
     if not os.path.isfile(key_file):
         coastdat_keys = weather.keys()
+        if not os.path.isdir(key_file_path):
+            os.makedirs(key_file_path)
         pd.Series(coastdat_keys).to_csv(key_file)
     else:
         coastdat_keys = pd.read_csv(key_file, index_col=[0],
@@ -200,7 +202,7 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
 
             # Create a pvlib Location object
             location = pvlib.location.Location(
-                latitude=local_point['st_y'], longitude=local_point['st_x'])
+                latitude=local_point['lat'], longitude=local_point['lon'])
 
             # Adapt weather data to the needs of the pvlib
             local_weather_pv = adapt_coastdat_weather_to_pvlib(
