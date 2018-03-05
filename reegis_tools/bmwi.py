@@ -48,7 +48,7 @@ def read_bmwi_sheet_7(sub):
     fs['A'] = fs['Unnamed: 0'].apply(
         lambda x: x.replace('nach Anwendungsbereichen ', '')
         if 'Endenergie' in x else float('nan'))
-    print(fs)
+
     fs['A'] = fs['A'].fillna(method='ffill')
     fs = fs[fs['A'].notnull()]
     fs['A'] = fs['A'].apply(
