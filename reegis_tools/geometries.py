@@ -97,6 +97,7 @@ class Geometry:
             self.gdf = gpd.GeoDataFrame(self.df, crs={'init': 'epsg:4326'},
                                         geometry='geometry')
             logging.info("GeoDataFrame for {0} created.".format(self.name))
+        self.df = None
         return self
 
     def gdf2df(self):
@@ -107,10 +108,11 @@ class Geometry:
         self.df = pd.DataFrame(self.gdf)
         self.df['geometry'] = self.df['geometry'].astype(str)
 
-    def to_csv(self, *args, **kwargs):
+    def get_df(self, geo_as_str=True):
         df = pd.DataFrame(self.gdf)
-        df['geometry'] = df['geometry'].astype(str)
-        df.to_csv(*args, **kwargs)
+        if geo_as_str:
+            df['geometry'] = df['geometry'].astype(str)
+        return df
 
     def remove_invalid_geometries(self):
         if self.gdf is not None:

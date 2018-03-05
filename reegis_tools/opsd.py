@@ -419,10 +419,11 @@ def opsd_power_plants(overwrite=False, csv=False):
             pp = geo.Geometry('{0} power plants'.format(category), df=df)
             pp = spatial_preparation_power_plants(pp)
             if csv:
-                pp.df.to_csv(opsd_file_name)
+                pp.get_df().to_csv(opsd_file_name)
             else:
-                pp.df[strcols[category]] = pp.df[strcols[category]].astype(str)
-                hdf[category] = pp.df
+                df = pp.get_df()
+                df[strcols[category]] = df[strcols[category]].astype(str)
+                hdf[category] = df
             logging.info("Opsd power plants stored to {0}".format(
                 opsd_file_name))
 
@@ -471,8 +472,6 @@ def spatial_preparation_power_plants(pp):
                   cfg.get('coastdat', 'coastdatgrid_polygon'))
     pp.gdf = geo.spatial_join_with_buffer(pp, coastdat)
 
-    # Update DataFrame with the new content of the GeoDataFrame.
-    pp.gdf2df()
     return pp
 
 
