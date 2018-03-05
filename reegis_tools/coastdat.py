@@ -379,6 +379,8 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
     weatherfile = os.path.join(
         cfg.get('paths', 'coastdat'),
         cfg.get('coastdat', 'file_pattern').format(year=year))
+    if not os.path.isfile(weatherfile):
+        get_coastdat_data(year, weatherfile)
     weather = pd.HDFStore(weatherfile, mode='r')
 
     # Calculate the average temperature for each region with more than one id.
