@@ -147,12 +147,11 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
     if jcol == 'index':
         jcol = 'index_right'
 
-    logging.info("Doing spatial join with buffer.")
+    logging.info("Doing spatial join...")
 
     # Spatial (left) join with the "within" operation.
     jgdf = gpd.sjoin(geo1.gdf, geo2.gdf, how='left', op='within')
     logging.info('Joined!')
-    # jgdf.to_csv('/home/uwe/test.csv')
 
     diff_cols = set(jgdf.columns) - set(geo1.gdf) - {jcol}
 
@@ -162,10 +161,12 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
     if len_df == 0:
         logging.info("Buffering not necessary.")
     else:
-        logging.info("Buffering {0} non-matching geometries...".format(len_df))
+        msg = "Buffering {0} non-matching geometries ({1}%)..."
+        logging.info(msg.format(len_df, round(len_df / len(jgdf) * 100, 1)))
     if len_df * 5 > len(jgdf):
         msg = "{0} % non-matching geometries seems to be too high."
-        logging.warning(msg.format(len_df / len(jgdf) * 100))
+        logging.warning(msg.format(round(len_df / len(jgdf) * 100)))
+
     while len_df > 0 and bf < limit:
         # Increase the buffer by step.
         bf += step

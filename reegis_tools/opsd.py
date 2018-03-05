@@ -218,31 +218,36 @@ def remove_cols(df, cols):
     return df
 
 
-def load_original_opsd_file(category, overwrite):
+def load_original_opsd_file(category, overwrite, latest=False):
     """Read file if exists."""
 
     orig_csv_file = os.path.join(
         cfg.get('paths', 'opsd'),
         cfg.get('opsd', 'original_file_pattern').format(cat=category))
 
+    if latest:
+        url_section = 'opsd_url_latest'
+    else:
+        url_section = 'opsd_url_2017'
+
     # Download non existing files. If you think that there are newer files you
     # have to set overwrite=True to overwrite existing with downloaded files.
     if not os.path.isfile(orig_csv_file) or overwrite:
         logging.warning("File not found. Try to download it from server.")
         logging.warning("Check URL if download does not work.")
-        req = requests.get(cfg.get('opsd', '{0}_data'.format(category)))
+        req = requests.get(cfg.get(url_section, '{0}_data'.format(category)))
         with open(orig_csv_file, 'wb') as fout:
             fout.write(req.content)
         logging.warning("Downloaded from {0} and copied to '{1}'.".format(
-            cfg.get('opsd', '{0}_data'.format(category)), orig_csv_file))
-        req = requests.get(cfg.get('opsd', '{0}_readme'.format(category)))
+            cfg.get(url_section, '{0}_data'.format(category)), orig_csv_file))
+        req = requests.get(cfg.get(url_section, '{0}_readme'.format(category)))
         with open(
                 os.path.join(
                     cfg.get('paths', 'opsd'),
                     cfg.get('opsd', 'readme_file_pattern').format(
                         cat=category)), 'wb') as fout:
             fout.write(req.content)
-        req = requests.get(cfg.get('opsd', '{0}_json'.format(category)))
+        req = requests.get(cfg.get(url_section, '{0}_json'.format(category)))
         with open(os.path.join(
                 cfg.get('paths', 'opsd'),
                 cfg.get('opsd', 'json_file_pattern').format(
