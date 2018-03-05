@@ -46,8 +46,8 @@ def check_balance(orig, ebfile):
 
     # sum table (fuel)
     ftfile = os.path.join(cfg.get('paths', 'static_sources'),
-                          'sum_table_fuel_groups.xlsx')
-    ft = pd.read_excel(ftfile)
+                          'sum_table_fuel_groups.csv')
+    ft = pd.read_csv(ftfile)
     states = cfg.get_dict('STATES')
     ft['Bundesland'] = ft['Bundesland'].apply(lambda x: states[x])
     ft.set_index(['Jahr', 'Bundesland'], inplace=True)
@@ -56,9 +56,9 @@ def check_balance(orig, ebfile):
 
     # sum table (sector)
     stfile = os.path.join(cfg.get('paths', 'static_sources'),
-                          'sum_table_sectors.xlsx')
+                          'sum_table_sectors.csv')
 
-    st = pd.read_excel(stfile)
+    st = pd.read_csv(stfile)
     st['Bundesland'] = st['Bundesland'].apply(lambda x: states[x])
     st.set_index(['Jahr', 'Bundesland'], inplace=True)
     st.rename(columns=cfg.get_dict('SECTOR_SHORT'), inplace=True)
@@ -181,7 +181,7 @@ def edit_balance():
     # Read energy balance table
     ebfile = os.path.join(cfg.get('paths', 'static_sources'),
                           cfg.get('energy_balance', 'energiebilanzen_laender'))
-    eb = pd.read_excel(ebfile, index_col=[0, 1, 2]).fillna(0)
+    eb = pd.read_csv(ebfile, index_col=[0, 1, 2]).fillna(0)
     eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
     eb.sort_index(0, inplace=True)
     eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
@@ -195,8 +195,8 @@ def edit_balance():
     # ************************************************************************
     # Bavaria (Bayern) - Missing coal values
     # Difference between fuel sum and LAK table
-    missing = {2012: 10529, 2013: 8995}
-    for y in [2012, 2013]:
+    missing = {2012: 10529, 2013: 8995, 2014: 9398}
+    for y in [2012, 2013, 2014]:
         fix = missing[y]
         # the missing value is added to 'hard coal raw' even though it is not
         # specified which hard coal product is missing.
@@ -290,7 +290,7 @@ def get_de_balance(year=None, grouped=False):
     fname_de = os.path.join(
         cfg.get('paths', 'static_sources'),
         cfg.get('energy_balance', 'energy_balance_de_original'))
-    deb = pd.read_excel(fname_de, index_col=[0, 1, 2]).fillna(0)
+    deb = pd.read_csv(fname_de, index_col=[0, 1, 2]).fillna(0)
     deb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
     deb.sort_index(0, inplace=True)
     deb = deb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
@@ -383,12 +383,12 @@ def get_conversion_balance(year):
 
 if __name__ == "__main__":
     logger.define_logging()
-    print(get_conversion_balance(2014))
-    # fn = os.path.join(cfg.get('paths', 'static_sources'),
-    #                   cfg.get('energy_balance', 'energiebilanzen_laender'))
-    # check_balance(orig=True, ebfile=fn)
-    # fn = edit_balance()
-    # check_balance(orig=False, ebfile=fn)
-    # print(get_de_balance(year=None, grouped=False).columns)
-    # print(get_states_balance(2012, overwrite=True))
-    # print(get_domestic_retail_share(2012))
+    # print(get_conversion_balance(2014))
+    fn = os.path.join(cfg.get('paths', 'static_sources'),
+                      cfg.get('energy_balance', 'energiebilanzen_laender'))
+    check_balance(orig=True, ebfile=fn)
+    fn = edit_balance()
+    check_balance(orig=False, ebfile=fn)
+    print(get_de_balance(year=None, grouped=False).columns)
+    print(get_states_balance(2012, overwrite=True))
+    print(get_domestic_retail_share(2012))

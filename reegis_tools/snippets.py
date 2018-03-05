@@ -23,6 +23,9 @@ from shapely.geometry import Point
 # oemof packages
 from oemof.tools import logger
 
+# internal modules
+import reegis_tools.config as cfg
+
 
 def lat_lon2point(df):
     """Create shapely point object of latitude and longitude."""
@@ -43,6 +46,29 @@ def geo_csv_from_shp(shapefile, outfile, id_col, tmp_file='tmp.csv'):
     new.set_index('gid', inplace=True)
     new.to_csv(outfile)
     os.remove(tmp_file)
+
+
+def energy_balance2repo():
+    chiba = '/home/uwe/chiba/'
+    source_path = 'Promotion/Statstik/Energiebilanzen/Endenergiebilanz'
+    csv_path = cfg.get('paths', 'static_sources')
+    filenames = ['energybalance_DE_2012_to_2014.xlsx',
+                 'energybalance_states_2012_to_2014.xlsx',
+                 'sum_table_fuel_groups.xlsx',
+                 'sum_table_sectors.xlsx']
+    for filename in filenames:
+        if 'sum' in filename:
+            idx = [0, 1]
+        else:
+            idx = [0, 1, 2]
+        excelfile = os.path.join(chiba, source_path, filename)
+        csvfile = os.path.join(csv_path, filename.replace('.xlsx', '.csv'))
+        excel2csv(excelfile, csvfile, index_col=idx)
+
+
+def excel2csv(excel_file, csv_file, **kwargs):
+    df = pd.read_excel(excel_file, **kwargs)
+    df.to_csv(csv_file)
 
 
 def sorter():
@@ -206,6 +232,7 @@ if __name__ == "__main__":
     #             coord_file='data_basic/label_federal_state.csv')
     # plot_geocsv('/home/uwe/geo.csv', idx_col='gid')
     logger.define_logging()
+    energy_balance2repo()
     # offshore()
     # load_energiebilanzen()
     # create_intersection_table()
