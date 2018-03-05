@@ -120,7 +120,7 @@ def pp_opsd2reegis(offshore_patch=True):
             try:
                 pd.read_hdf(filename_in, cat, mode='r')
             except KeyError:
-                msg = "File '{0}' exists but key '{0}' is not present."
+                msg = "File '{0}' exists but key '{1}' is not present."
                 logging.debug(msg.format(filename_in, cat))
                 complete = False
         if not complete:
