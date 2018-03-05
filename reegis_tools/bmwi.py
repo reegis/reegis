@@ -30,12 +30,11 @@ def get_bmwi_energiedaten_file():
     return filename
 
 
-def read_bmwi_sheet_7(a=False):
+def read_bmwi_sheet_7(sub):
     filename = get_bmwi_energiedaten_file()
-    if a:
-        sheet = '7a'
-    else:
-        sheet = '7'
+
+    sheet = '7' + sub
+
     fs = pd.DataFrame()
     n = 4
     while 2014 not in fs.columns:
@@ -49,6 +48,7 @@ def read_bmwi_sheet_7(a=False):
     fs['A'] = fs['Unnamed: 0'].apply(
         lambda x: x.replace('nach Anwendungsbereichen ', '')
         if 'Endenergie' in x else float('nan'))
+    print(fs)
     fs['A'] = fs['A'].fillna(method='ffill')
     fs = fs[fs['A'].notnull()]
     fs['A'] = fs['A'].apply(
@@ -99,5 +99,7 @@ def bmwi_re_energy_capacity():
 
 
 if __name__ == "__main__":
+    print(read_bmwi_sheet_7('b'))
+    exit(0)
     hydro = bmwi_re_energy_capacity()['water']
     # get_bmwi_energiedaten_file()
