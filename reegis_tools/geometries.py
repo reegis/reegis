@@ -160,7 +160,10 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
     if len_df == 0:
         logging.info("Buffering not necessary.")
     else:
-        logging.info("Buffering non-matching geometries...")
+        logging.info("Buffering {0} non-matching geometries...".format(len_df))
+    if len_df * 5 > len(jgdf):
+        msg = "{0} % non-matching geometries seems to be too high."
+        logging.warning(msg.format(len_df / len(jgdf) * 100))
     while len_df > 0 and bf < limit:
         # Increase the buffer by step.
         bf += step

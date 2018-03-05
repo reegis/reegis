@@ -111,7 +111,21 @@ def pp_opsd2reegis(offshore_patch=True):
 
     # Create opsd power plant tables if they do not exist.
     if not os.path.isfile(filename_in):
+        msg = "File '{0}' does not exist. Will create it from source files."
+        logging.debug(msg.format(filename_in))
         filename_in = opsd.opsd_power_plants()
+    else:
+        complete = True
+        for cat in ['renewable', 'conventional']:
+            try:
+                pd.read_hdf(filename_in, cat, mode='r')
+            except KeyError:
+                msg = "File '{0}' exists but key '{0}' is not present."
+                logging.debug(msg.format(filename_in, cat))
+                complete = False
+        if not complete:
+            logging.debug("Will re-create file with all keys.")
+            filename_in = opsd.opsd_power_plants()
 
     pp = {}
     for cat in ['renewable', 'conventional']:
