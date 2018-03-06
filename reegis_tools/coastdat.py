@@ -67,7 +67,7 @@ def get_coastdat_data(year, filename):
                 shutil.copyfileobj(response.raw, f)
 
 
-def adapt_coastdat_weather_to_pvlib(w, loc):
+def adapt_coastdat_weather_to_pvlib(weather, loc):
     """
 
     Parameters
@@ -81,6 +81,7 @@ def adapt_coastdat_weather_to_pvlib(w, loc):
     -------
     pandas.DataFrame : Adapted weather data set.
     """
+    w = weather.copy()
     w['temp_air'] = w.temp_air - 273.15
     w['ghi'] = w.dirhi + w.dhi
     clearskydni = loc.get_clearsky(w.index).dni
@@ -88,6 +89,16 @@ def adapt_coastdat_weather_to_pvlib(w, loc):
         w['ghi'], w['dhi'], pvlib.solarposition.get_solarposition(
             w.index, loc.latitude, loc.longitude).zenith,
         clearsky_dni=clearskydni, clearsky_tolerance=1.1)
+    return w
+
+
+def adapt_coastdat_weather_to_windpowerlib(w, data_height):
+    cols = {'v_wind': 'wind_speed',
+            'z0': 'roughness_length',
+            'temp_air': 'temperature'}
+    w.rename(columns=cols, inplace=True)
+    dh = [(key, data_height[key]) for key in w.columns]
+    w.columns = pd.MultiIndex.from_tuples(dh)
     return w
 
 
@@ -215,11 +226,14 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                         local_weather_pv, location, pv_set)
 
         # Create one DataFrame for each wind-set and store into the file
-        for wind_key, wind_set in wind_sets.items():
-            if wind_key in hdf['wind']:
-                hdf['wind'][wind_key][coastdat_key] = (
-                    feedin.feedin_wind_sets(
-                        local_weather, data_height, wind_set))
+        if wind and len(list(hdf['wind'].keys())) > 0:
+            local_weather_wind = adapt_coastdat_weather_to_windpowerlib(
+                local_weather, data_height)
+            for wind_key, wind_set in wind_sets.items():
+                if wind_key in hdf['wind']:
+                    hdf['wind'][wind_key][coastdat_key] = (
+                        feedin.feedin_wind_sets(
+                            local_weather_wind, wind_set))
 
         # Start- time logging *******
         remain -= 1

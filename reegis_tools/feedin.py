@@ -30,7 +30,8 @@ import logging
 
 # External libraries
 import pandas as pd
-import windpowerlib
+from windpowerlib.modelchain import ModelChain
+from windpowerlib.wind_turbine import WindTurbine
 import pvlib
 
 # oemof libraries
@@ -201,20 +202,13 @@ def create_windpowerlib_sets():
     # to create subsets.
     windsets = {}
     for windpowerlib_set in windpowerlib_sets:
-        set_name = cfg.get(windpowerlib_set, 'set_name')
-        windsets[set_name] = {1: {}}
-        windsets[set_name][1]['hub_height'] = cfg.get(
-            windpowerlib_set, 'hub_height')
-        windsets[set_name][1]['d_rotor'] = cfg.get(
-            windpowerlib_set, 'd_rotor')
-        windsets[set_name][1]['turbine_name'] = cfg.get(
-            windpowerlib_set, 'turbine_name')
-        windsets[set_name][1]['nominal_power'] = cfg.get(
-            windpowerlib_set, 'nominal_power')
+        w_set = {1: cfg.get_dict(windpowerlib_set)}
+        set_name = w_set[1].pop('set_name')
+        windsets[set_name] = w_set
     return windsets
 
 
-def feedin_wind_sets(weather, data_height, wind_parameter_set):
+def feedin_wind_sets(weather, wind_parameter_set):
     """Create a pv feed-in time series from a given weather data set and a
     set of pvlib parameter sets. The result of every parameter set will be a
     column in the resulting DataFrame.
@@ -223,8 +217,6 @@ def feedin_wind_sets(weather, data_height, wind_parameter_set):
     ----------
     weather : pandas.DataFrame
         Weather data set. See module header.
-    data_height :
-        Data heigth of the weather data.
     wind_parameter_set : dict
         Parameter sets can be created using `create_windpowerlib_sets()`.
 
@@ -235,12 +227,12 @@ def feedin_wind_sets(weather, data_height, wind_parameter_set):
     """
     df = pd.DataFrame()
     for turbine in wind_parameter_set.values():
-        mc = feedin_windpowerlib(weather, data_height, turbine)
+        mc = feedin_windpowerlib(weather, turbine)
         df[turbine['turbine_name'].replace(' ', '_')] = mc
     return df
 
 
-def feedin_windpowerlib(weather, data_height, turbine, installed_capacity=1):
+def feedin_windpowerlib(weather, turbine, installed_capacity=1):
     """Use the windpowerlib to generate normalised feedin time series.
 
     Parameters
@@ -250,8 +242,6 @@ def feedin_windpowerlib(weather, data_height, turbine, installed_capacity=1):
         identifier of the turbine to get cp-series, nominal power).
     weather : pandas.DataFrame
         Weather data set. See module header.
-    data_height :
-        Data heigth of the weather data.
     installed_capacity : float
         Overall installed capacity for the given wind turbine. The installed
         capacity is set to 1 by default for normalised time series.
@@ -261,10 +251,10 @@ def feedin_windpowerlib(weather, data_height, turbine, installed_capacity=1):
     pandas.DataFrame
 
     """
-    wpp = windpowerlib.wind_turbine.WindTurbine(**turbine)
+    wpp = WindTurbine(**turbine)
     modelchain_data = cfg.get_dict('windpowerlib')
-    mc = windpowerlib.modelchain.ModelChain(wpp, **modelchain_data)
-    mcwpp = mc.run_model(weather, data_height=data_height)
+    mc = ModelChain(wpp, **modelchain_data)
+    mcwpp = mc.run_model(weather)
     return mcwpp.power_output.div(turbine['nominal_power']).multiply(
         installed_capacity)
 
