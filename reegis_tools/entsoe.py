@@ -52,7 +52,7 @@ def read_original_timeseries_file(overwrite=False):
         with open(orig_csv_file, 'wb') as fout:
             fout.write(req.content)
         logging.warning("Downloaded from {0} and copied to '{1}'.".format(
-            cfg.get('url', 'timeseries_data'), orig_csv_file))
+            cfg.get('entsoe', 'timeseries_data'), orig_csv_file))
         req = requests.get(cfg.get('entsoe', 'timeseries_readme'))
         with open(readme, 'wb') as fout:
             fout.write(req.content)

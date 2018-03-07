@@ -91,18 +91,13 @@ def prices_2014_from_znes(src, force_znes=False):
 
 
 def get_commodity_sources():
-    logging.info("Commodity Sources.")
+    logging.info("Get prices and emissions for commodity sources.")
     commodity_sources = initialise_commodity_sources()
-    logging.info("init.")
     commodity_sources = prices_from_bmwi_energiedaten(commodity_sources)
-    logging.info("prices.")
     commodity_sources = emissions_from_znes(commodity_sources)
-    logging.info("emission")
     commodity_sources = prices_2014_from_znes(commodity_sources)
-    logging.info("prices2014")
-    logging.info("limit")
     commodity_sources.sort_index(1, inplace=True)
-    logging.info('done')
+    logging.info("Emissions: [g/J], Costs: [EUR/J]")
     return commodity_sources
 
 
