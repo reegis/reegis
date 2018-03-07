@@ -98,6 +98,20 @@ def bmwi_re_energy_capacity():
     return repp.transpose().sort_index(1)
 
 
+def get_annual_electricity_demand_bmwi(year):
+    """Returns the annual demand for the given year from the BMWI Energiedaten
+    in TWh (Watthours). Will return None if data for the given year is not
+    available.
+    """
+    infile = get_bmwi_energiedaten_file()
+
+    table = pd.read_excel(infile, '21', skiprows=7, index_col=[0])
+    try:
+        return table.loc['   zusammen', year]
+    except KeyError:
+        return None
+
+
 if __name__ == "__main__":
     print(read_bmwi_sheet_7('b'))
     exit(0)
