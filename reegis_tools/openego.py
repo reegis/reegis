@@ -41,9 +41,7 @@ def prepare_ego_demand(egofile):
     # needed anymore.
     ego_demand = pd.DataFrame(ego_demand.gdf)
 
-    # Delete the geometry column, because spatial grouping will be done
-    # only with the region column.
-    del ego_demand['geometry']
+    ego_demand['geometry'] = ego_demand['geometry'].astype(str)
 
     # Write out file (hdf-format).
     ego_demand.to_hdf(egofile, 'demand')
