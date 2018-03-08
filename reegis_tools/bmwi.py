@@ -100,8 +100,8 @@ def bmwi_re_energy_capacity():
 
 def get_annual_electricity_demand_bmwi(year):
     """Returns the annual demand for the given year from the BMWI Energiedaten
-    in TWh (Watthours). Will return None if data for the given year is not
-    available.
+    in TWh (Tera Watt hours). Will return None if data for the given year is
+    not available.
     """
     infile = get_bmwi_energiedaten_file()
 
@@ -113,7 +113,8 @@ def get_annual_electricity_demand_bmwi(year):
 
 
 if __name__ == "__main__":
-    print(read_bmwi_sheet_7('b'))
-    exit(0)
+    # print(get_annual_electricity_demand_bmwi(2014))
+    # print(read_bmwi_sheet_7('b'))
     hydro = bmwi_re_energy_capacity()['water']
+    print(hydro)
     # get_bmwi_energiedaten_file()
