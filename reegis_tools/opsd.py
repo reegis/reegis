@@ -336,13 +336,6 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
     if remove_list is not None:
         df = remove_cols(df, remove_list)
 
-    # Remove all power plants with other than a 'DE' country code.
-    if 'country_codes' in df:
-        country_codes = list(df.country_code.unique())
-        country_codes.remove('DE')
-        for c_code in country_codes:
-            df.loc[df.country_code == c_code, 'region'] = c_code
-
     prepare_dates(df, date_cols, month)
 
     df.to_csv(prepared_file_name)
@@ -471,6 +464,14 @@ def spatial_preparation_power_plants(pp):
                         cfg.get('geometry', 'federalstates_polygon'))
     pp.gdf = geo.spatial_join_with_buffer(pp, federal_states)
 
+    # Add country code to federal state if country code is not 'DE'.
+    if 'country_code' in pp.gdf.columns:
+        country_codes = list(pp.gdf.country_code.unique())
+        country_codes.remove('DE')
+        for c_code in country_codes:
+            pp.gdf.loc[pp.gdf.country_code == c_code, 'federal_states'] = (
+                c_code)
+
     # Add column with coastdat id
     coastdat = geo.Geometry('coastdat2')
     coastdat.load(cfg.get('paths', 'geometry'),
@@ -482,4 +483,17 @@ def spatial_preparation_power_plants(pp):
 
 if __name__ == "__main__":
     logger.define_logging()
-    opsd_power_plants(overwrite=False, csv=False)
+    hdf = pd.HDFStore('/home/uwe/express/reegis/data/powerplants/reegis_pp.h5', mode='r')
+    print(hdf['pp'].loc[hdf['pp']['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro.csv'))
+    re = pd.read_csv('/home/uwe/express/reegis/data2/powerplants/opsd/renewable_power_plants_DE.csv')
+    print(re.columns)
+    re.loc[re['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro2.csv')
+
+    re = pd.read_csv('/home/uwe/express/reegis/data2/powerplants/opsd/conventional_power_plants_DE.csv')
+    print(re.columns)
+    re.loc[re['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro3.csv')
+
+    re = pd.read_hdf('/home/uwe/express/reegis/data/powerplants/opsd/opsd_power_plants_DE_prepared.h5', 'conventional', mode='r')
+    print(re.columns)
+    re.loc[re['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro4.csv')
+    # opsd_power_plants(overwrite=False, csv=False)

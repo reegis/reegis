@@ -102,12 +102,12 @@ def pp_opsd2reegis(offshore_patch=True):
     keep_cols = {'decom_year', 'comment', 'chp', 'energy_source_level_1',
                  'thermal_capacity', 'com_year', 'com_month',
                  'chp_capacity_uba', 'energy_source_level_3', 'decom_month',
-                 'geometry', 'energy_source_level_2', 'capacity',
+                 'geometry', 'energy_source_level_2', 'capacity', 'technology',
                  'federal_states', 'com_year', 'coastdat2', 'efficiency'}
 
     string_cols = ['chp', 'comment', 'energy_source_level_1',
                    'energy_source_level_2', 'energy_source_level_3',
-                   'federal_states', 'geometry']
+                   'federal_states', 'geometry', 'technology']
 
     # Create opsd power plant tables if they do not exist.
     if not os.path.isfile(filename_in):
@@ -126,7 +126,7 @@ def pp_opsd2reegis(offshore_patch=True):
         if not complete:
             logging.debug("Will re-create file with all keys.")
             filename_in = opsd.opsd_power_plants(overwrite=True)
-
+    #
     pp = {}
     for cat in ['renewable', 'conventional']:
         # Read opsd power plant tables
@@ -135,6 +135,7 @@ def pp_opsd2reegis(offshore_patch=True):
         # Patch offshore wind energy with investigated data.
         if cat == 'renewable' and offshore_patch:
             pp[cat] = patch_offshore_wind(pp[cat], keep_cols)
+
         pp[cat] = pp[cat].drop(columns=set(pp[cat].columns) - keep_cols)
 
         # Replace 'nan' strings with nan values.
