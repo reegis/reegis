@@ -36,6 +36,7 @@ import reegis_tools.tools as tools
 import reegis_tools.feedin as feedin
 import reegis_tools.config as cfg
 import reegis_tools.geometries as geometries
+import reegis_tools.bmwi
 
 # Optional: database tool.
 try:
@@ -72,7 +73,7 @@ def adapt_coastdat_weather_to_pvlib(weather, loc):
 
     Parameters
     ----------
-    w : pandas.DataFrame
+    weather : pandas.DataFrame
         Coastdat2 weather data set.
     loc : pvlib.location.Location
         The coordinates of the weather data point.
@@ -81,7 +82,7 @@ def adapt_coastdat_weather_to_pvlib(weather, loc):
     -------
     pandas.DataFrame : Adapted weather data set.
     """
-    w = weather.copy()
+    w = pd.DataFrame(weather.copy())
     w['temp_air'] = w.temp_air - 273.15
     w['ghi'] = w.dirhi + w.dhi
     clearskydni = loc.get_clearsky(w.index).dni
@@ -443,7 +444,7 @@ def federal_state_average_weather(year, parameter):
                         cfg.get('geometry', 'federalstates_polygon'))
     filename = os.path.join(
         cfg.get('paths', 'coastdat'),
-        'average_temp_air_BB_TH_{0}.csv'.format(year))
+        'average_{0}_BB_TH_{1}.csv'.format(parameter, year))
     if not os.path.isfile(filename):
         spatial_average_weather(year, federal_states, parameter,
                                 outfile=filename)
@@ -516,6 +517,120 @@ def coastdat_id2coord_from_db():
     data = pd.DataFrame(results.fetchall(), columns=columns)
     data.set_index('gid', inplace=True)
     data.to_csv(os.path.join('data', 'basic', 'id2latlon.csv'))
+
+
+def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile):
+    cat = category.lower()
+
+    logging.info("Aggregating {0} feed-in for {1}...".format(cat, year))
+
+    # Define the path for the input files.
+    coastdat_path = os.path.join(cfg.get('paths_pattern', 'coastdat')).format(
+        year=year, type=cat)
+    if not os.path.isdir(coastdat_path):
+        normalised_feedin_for_each_data_set(year)
+    # Prepare the lists for the loops
+    set_names = []
+    set_name = None
+    pwr = dict()
+    columns = dict()
+    replace_str = 'coastdat_{0}_{1}_'.format(year, category)
+    for file in os.listdir(coastdat_path):
+        if file[-2:] == 'h5':
+            set_name = file[:-3].replace(replace_str, '')
+            set_names.append(set_name)
+            pwr[set_name] = pd.HDFStore(os.path.join(coastdat_path, file))
+            columns[set_name] = pwr[set_name]['/A1129087'].columns
+
+    # Create DataFrame with MultiColumns to take the results
+    my_index = pwr[set_name]['/A1129087'].index
+    my_cols = pd.MultiIndex(levels=[[], [], []], labels=[[], [], []],
+                            names=[u'region', u'set', u'subset'])
+    feed_in = pd.DataFrame(index=my_index, columns=my_cols)
+
+    # Loop over all aggregation regions
+    # Sum up time series for one region and divide it by the
+    # capacity of the region to get a normalised time series.
+    for region in regions:
+        try:
+            coastdat_ids = pp.loc[(category, region)].index
+        except KeyError:
+            coastdat_ids = []
+        number_of_coastdat_ids = len(coastdat_ids)
+        logging.info("{0} - {1} ({2})".format(
+            year, region, number_of_coastdat_ids))
+        logging.debug("{0}".format(coastdat_ids))
+
+        # Loop over all sets that have been found in the coastdat path
+        if number_of_coastdat_ids > 0:
+            for name in set_names:
+                # Loop over all sub-sets that have been found within each file.
+                for col in columns[name]:
+                    temp = pd.DataFrame(index=my_index)
+
+                    # Loop over all coastdat ids, that intersect with the
+                    # actual region.
+                    for coastdat_id in coastdat_ids:
+                        # Create a tmp table for each coastdat id.
+                        coastdat_key = '/A{0}'.format(int(coastdat_id))
+                        pp_inst = float(pp.loc[(category, region, coastdat_id),
+                                               'capacity_{0}'.format(year)])
+                        temp[coastdat_key] = (
+                            pwr[name][coastdat_key][col][:8760].multiply(
+                                pp_inst))
+                    # Sum up all coastdat columns to one region column
+                    colname = '_'.join(col.split('_')[-3:])
+                    feed_in[region, name, colname] = (
+                        temp.sum(axis=1).divide(float(
+                            pp.loc[(category, region), 'capacity_{0}'.format(
+                                year)].sum())))
+
+    feed_in.to_csv(outfile)
+    for name_of_set in set_names:
+        pwr[name_of_set].close()
+
+
+def aggregate_by_region_hydro(pp, regions, year, outfile_name):
+    hydro = reegis_tools.bmwi.bmwi_re_energy_capacity()['water']
+
+    hydro_capacity = (pp.loc['Hydro', 'capacity'].sum())
+
+    full_load_hours = (hydro.loc[year, 'energy'] /
+                       hydro_capacity * 1000)
+
+    hydro_path = os.path.abspath(os.path.join(
+        *outfile_name.split('/')[:-1]))
+
+    if not os.path.isdir(hydro_path):
+        os.makedirs(hydro_path)
+
+    idx = pd.date_range(start="{0}-01-01 00:00".format(year),
+                        end="{0}-12-31 23:00".format(year),
+                        freq='H', tz='Europe/Berlin')
+    feed_in = pd.DataFrame(columns=regions, index=idx)
+    feed_in[feed_in.columns] = full_load_hours / len(feed_in)
+    feed_in.to_csv(outfile_name)
+
+    # https://shop.dena.de/fileadmin/denashop/media/Downloads_Dateien/esd/
+    # 9112_Pumpspeicherstudie.pdf
+    # S. 110ff
+
+
+def aggregate_by_region_geothermal(regions, year, outfile_name):
+    full_load_hours = cfg.get('feedin', 'geothermal_full_load_hours')
+
+    hydro_path = os.path.abspath(os.path.join(
+        *outfile_name.split('/')[:-1]))
+
+    if not os.path.isdir(hydro_path):
+        os.makedirs(hydro_path)
+
+    idx = pd.date_range(start="{0}-01-01 00:00".format(year),
+                        end="{0}-12-31 23:00".format(year),
+                        freq='H', tz='Europe/Berlin')
+    feed_in = pd.DataFrame(columns=regions, index=idx)
+    feed_in[feed_in.columns] = full_load_hours / len(feed_in)
+    feed_in.to_csv(outfile_name)
 
 
 if __name__ == "__main__":

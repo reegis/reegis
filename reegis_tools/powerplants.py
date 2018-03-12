@@ -197,9 +197,74 @@ def add_capacity_by_year(year, pp=None, filename=None, key='pp'):
     return pp
 
 
+def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
+    """
+
+    Parameters
+    ----------
+    capacity_in : bool
+        Set to True if a capactiy_in column is present.
+    year : int
+    overwrite_capacity : bool
+        By default (False) a new column "capacity_<year>" is created. If set to
+        True the old capacity column will be overwritten.
+
+    Returns
+    -------
+
+    """
+    filename = os.path.join(cfg.get('paths', 'powerplants'),
+                            cfg.get('powerplants', 'reegis_pp'))
+    logging.info("Get reegis power plants for {0}.".format(year))
+    if not os.path.isfile(filename):
+        msg = "File '{0}' does not exist. Will create it from reegis file."
+        logging.debug(msg.format(filename))
+        filename = pp_opsd2reegis()
+    pp = pd.read_hdf(filename, 'pp', mode='r')
+
+    filter_columns = ['capacity_{0}']
+
+    if capacity_in:
+        filter_columns.append('capacity_in_{0}')
+
+    # Get all powerplants for the given year.
+    # If com_month exist the power plants will be considered month-wise.
+    # Otherwise the commission/decommission within the given year is not
+    # considered.
+    for fcol in filter_columns:
+        filter_column = fcol.format(year)
+        orig_column = fcol[:-4]
+        c1 = (pp['com_year'] < year) & (pp['decom_year'] > year)
+        pp.loc[c1, filter_column] = pp.loc[c1, orig_column]
+
+        c2 = pp['com_year'] == year
+        pp.loc[c2, filter_column] = (pp.loc[c2, orig_column] *
+                                     (12 - pp.loc[c2, 'com_month']) / 12)
+        c3 = pp['decom_year'] == year
+        pp.loc[c3, filter_column] = (pp.loc[c3, orig_column] *
+                                     pp.loc[c3, 'com_month'] / 12)
+
+        if overwrite_capacity:
+            pp[orig_column] = 0
+            pp[orig_column] = pp[filter_column]
+            del pp[filter_column]
+
+    return pp
+
+
 if __name__ == "__main__":
     oemof.tools.logger.define_logging()
-    file_name = pp_opsd2reegis()
+    print(get_pp_by_year(2014))
+    exit(0)
+    filename_in = os.path.join(cfg.get('paths', 'opsd'),
+                               cfg.get('opsd', 'opsd_prepared'))
+    pp = pd.read_hdf(filename_in, 'conventional')
+    print(pp.loc[pp.federal_states == 'BE'].to_excel('/home/uwe/berlin_pp_temp.xlsx'))
+
+    # file_name = pp_opsd2reegis()
+    file_name = '/home/uwe/express/reegis/data/powerplants/reegis_pp.h5'
+    pp = pd.read_hdf(file_name, 'pp')
+    print(pp.loc[pp.federal_states == 'BE'].groupby('energy_source_level_2').sum())
     exit(0)
     file_name = os.path.join(cfg.get('paths', 'powerplants'),
                              cfg.get('powerplants', 'reegis_pp'))
