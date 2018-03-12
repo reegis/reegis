@@ -46,8 +46,7 @@ def main():
 
 
 def init(file):
-    """
-    Read config file
+    """Read config file(s).
 
     Parameters
     ----------
@@ -63,18 +62,7 @@ def init(file):
 
 
 def get(section, key):
-    """
-    returns the value of a given key of a given section of the main
-    config file.
-
-    :param section: the section.
-    :type section: str.
-    :param key: the key.
-    :type key: str.
-
-    :returns: the value which will be casted to float, int or boolean.
-    if no cast is successful, the raw string will be returned.
-
+    """Returns the value of a given key in a given section.
     """
     if not _loaded:
         init(FILE)
@@ -99,9 +87,12 @@ def get(section, key):
                     return cfg.get(section, key)
 
 
-def get_list(section, parameter):
+def get_list(section, parameter, sep=','):
+    """Returns the values (separated by sep) of a given key in a given
+    section as a list.
+    """
     try:
-        my_list = get(section, parameter).split(',')
+        my_list = get(section, parameter).split(sep)
         my_list = [x.strip() for x in my_list]
 
     except AttributeError:
@@ -110,15 +101,7 @@ def get_list(section, parameter):
 
 
 def get_dict(section):
-    """
-
-    Parameters
-    ----------
-    section : str
-
-    Returns
-    -------
-    dict
+    """Returns the values of a section as dictionary
     """
     if not _loaded:
         init(FILE)
