@@ -44,12 +44,28 @@ class Geometry:
 
     def load(self, path=None, filename=None, fullname=None, hdf_key=None):
         """Load csv-file into a DataFrame and a GeoDataFrame."""
-        if hdf_key is None:
-            self.load_csv(path, filename, fullname)
+        if fullname is None:
+            fullname = os.path.join(path, filename)
+
+        if fullname[-4:] == '.csv':
+            self.load_csv(fullname=fullname)
+
+        elif fullname[-4:] == '.hdf':
+            self.load_hdf(fullname=fullname, key=hdf_key)
+
+        elif fullname[-4:] == '.shp':
+            self.load_shp(fullname=fullname)
+
         else:
-            self.load_hdf(path, filename, fullname, hdf_key)
+            raise ValueError("Cannot load file with a '{0}' extension.")
+
         self.create_geo_df()
         return self
+
+    def load_shp(self, path=None, filename=None, fullname=None):
+        if fullname is None:
+            fullname = os.path.join(path, filename)
+        self.df = gpd.read_file(fullname)
 
     def load_hdf(self, path=None, filename=None, fullname=None, key=None):
         if fullname is None:
@@ -179,8 +195,10 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
         tmp = jgdf.loc[jgdf[jcol].isnull()]
         del tmp[tmp.geometry.name]
         del tmp[jcol]
+        if 'index_right' in tmp:
+            del tmp['index_right']
         tmp = tmp.set_geometry('buffer')
-
+        print(tmp.columns)
         # Try spatial join with "intersects" with buffered geometries.
         newj = gpd.sjoin(tmp, geo2.gdf, how='left', op='intersects')
 
