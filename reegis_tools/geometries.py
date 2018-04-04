@@ -116,14 +116,6 @@ class Geometry:
         self.df = None
         return self
 
-    def gdf2df(self):
-        """Update DataFrame with the content of the GeoDataFrame.
-        The geometry column will be converted to a WKT-string.
-        """
-        print("*******DO NOT USE IT!!!!!***************Use to_csv!!!!!")
-        self.df = pd.DataFrame(self.gdf)
-        self.df['geometry'] = self.df['geometry'].astype(str)
-
     def get_df(self, geo_as_str=True):
         df = pd.DataFrame(self.gdf)
         if geo_as_str:
@@ -198,7 +190,7 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
         if 'index_right' in tmp:
             del tmp['index_right']
         tmp = tmp.set_geometry('buffer')
-        print(tmp.columns)
+
         # Try spatial join with "intersects" with buffered geometries.
         newj = gpd.sjoin(tmp, geo2.gdf, how='left', op='intersects')
 
