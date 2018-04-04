@@ -87,6 +87,7 @@ class Scenario:
             self.filename = filename
         if not os.path.isdir(os.path.dirname(self.filename)):
             os.makedirs(os.path.dirname(self.filename))
+        self.path = os.path.dirname(self.filename)
         writer = pd.ExcelWriter(self.filename)
         for name, df in sorted(self.table_collection.items()):
             df.to_excel(writer, name)
@@ -120,7 +121,12 @@ class Scenario:
     def dump_results_to_es(self):
         self.es.results['main'] = outputlib.processing.results(self.model)
         self.es.results['meta'] = outputlib.processing.meta_results(self.model)
-        self.es.dump(dpath=self.path, filename=self.name+'.de21')
+        self.es.dump(dpath='/home/uwe', filename='berlin.reegis')
+        fn = os.path.join('/home/uwe', 'berlin.reegis')
+        logging.info("Results dumped to {0}.".format(fn))
+
+    def restore_results(self):
+        self.es.restore(dpath='/home/uwe', filename='berlin.reegis')
 
     def solve(self, with_duals=False):
         solver_name = cfg.get('general', 'solver')
