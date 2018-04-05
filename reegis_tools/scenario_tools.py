@@ -69,7 +69,6 @@ class Scenario:
             self.filename = filename
         xls = pd.ExcelFile(filename)
         for sheet in xls.sheet_names:
-            print(sheet)
             self.table_collection[sheet] = xls.parse(
                 sheet, index_col=[0], header=[0, 1])
 

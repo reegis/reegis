@@ -384,11 +384,11 @@ def get_conversion_balance(year):
 if __name__ == "__main__":
     logger.define_logging()
     # print(get_conversion_balance(2014))
-    fn = os.path.join(cfg.get('paths', 'static_sources'),
-                      cfg.get('energy_balance', 'energiebilanzen_laender'))
-    check_balance(orig=True, ebfile=fn)
-    fn = edit_balance()
-    check_balance(orig=False, ebfile=fn)
+    f = os.path.join(cfg.get('paths', 'static_sources'),
+                     cfg.get('energy_balance', 'energiebilanzen_laender'))
+    check_balance(orig=True, ebfile=f)
+    f = edit_balance()
+    check_balance(orig=False, ebfile=f)
     print(get_de_balance(year=None, grouped=False).columns)
     print(get_states_balance(2012, overwrite=True))
     print(get_domestic_retail_share(2012))
