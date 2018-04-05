@@ -81,6 +81,15 @@ class Scenario:
                 self.table_collection[file[:-4]] = pd.read_csv(
                     filename, index_col=[0], header=[0, 1])
 
+    def check_table(self, table_name):
+        if self.table_collection[table_name].isnull().values.any():
+            c = []
+            for column in self.table_collection[table_name].columns:
+                if self.table_collection[table_name][column].isnull().any():
+                    c.append(column)
+            msg = "Nan Values in the following columns: {0}".format(c)
+            raise ValueError(msg)
+
     def to_excel(self, filename=None):
         if filename is not None:
             self.filename = filename
@@ -147,15 +156,6 @@ class Scenario:
             draw_graph(g, **kwargs)
         return g
 
-
-def check_table(table):
-    if table.isnull().values.any():
-        c = []
-        for column in table.columns:
-            if table[column].isnull().any():
-                c.append(column)
-        msg = "Nan Values in the following columns: {0}".format(c)
-        raise ValueError(msg)
 
 
 def draw_graph(grph, edge_labels=True, node_color='#AFAFAF',
