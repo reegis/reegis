@@ -148,6 +148,16 @@ class Scenario:
         return g
 
 
+def check_table(table):
+    if table.isnull().values.any():
+        c = []
+        for column in table.columns:
+            if table[column].isnull().any():
+                c.append(column)
+        msg = "Nan Values in the following columns: {0}".format(c)
+        raise ValueError(msg)
+
+
 def draw_graph(grph, edge_labels=True, node_color='#AFAFAF',
                edge_color='#CFCFCF', plot=True, node_size=2000,
                with_labels=True, arrows=True, layout='neato'):
