@@ -49,10 +49,9 @@ class Scenario:
         self.year = kwargs.get('year', None)
         self.ignore_errors = kwargs.get('ignore_errors', False)
         self.round_values = kwargs.get('round_values', 0)
-        self.filename = kwargs.get('filename', None)
-        self.path = kwargs.get('path', None)
         self.model = kwargs.get('model', None)
         self.es = kwargs.get('es', self.initialise_energy_system())
+        self.results = None
 
     def initialise_energy_system(self):
         if calendar.isleap(self.year):
@@ -64,22 +63,41 @@ class Scenario:
                                         periods=number_of_time_steps, freq='H')
         return solph.EnergySystem(timeindex=date_time_index)
 
-    def load_excel(self, filename=None):
-        if filename is not None:
-            self.filename = filename
+    def load_excel(self, filename):
+        """Load scenario from an excel-file."""
         xls = pd.ExcelFile(filename)
         for sheet in xls.sheet_names:
             self.table_collection[sheet] = xls.parse(
                 sheet, index_col=[0], header=[0, 1])
 
-    def load_csv(self, path=None):
-        if path is not None:
-            self.path = path
+    def load_csv(self, path):
+        """Load scenario from a csv-collection."""
         for file in os.listdir(path):
             if file[-4:] == '.csv':
-                filename = os.path.join(self.path, file)
+                filename = os.path.join(path, file)
                 self.table_collection[file[:-4]] = pd.read_csv(
                     filename, index_col=[0], header=[0, 1])
+
+    def to_excel(self, filename):
+        """Dump scenario into an excel-file."""
+        # create path if it does not exist
+        if not os.path.isdir(os.path.dirname(filename)):
+            os.makedirs(os.path.dirname(filename))
+        writer = pd.ExcelWriter(filename)
+        for name, df in sorted(self.table_collection.items()):
+            df.to_excel(writer, name)
+        writer.save()
+        logging.info("Scenario saved as excel file to {0}".format(filename))
+
+    def to_csv(self, path):
+        """Dump scenario into a csv-collection."""
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        for name, df in self.table_collection.items():
+            name = name.replace(' ', '_') + '.csv'
+            filename = os.path.join(path, name)
+            df.to_csv(filename)
+        logging.info("Scenario saved as csv-collection to {0}".format(path))
 
     def check_table(self, table_name):
         if self.table_collection[table_name].isnull().values.any():
@@ -87,33 +105,8 @@ class Scenario:
             for column in self.table_collection[table_name].columns:
                 if self.table_collection[table_name][column].isnull().any():
                     c.append(column)
-            msg = "Nan Values in the following columns: {0}".format(c)
-            raise ValueError(msg)
-
-    def to_excel(self, filename=None):
-        if filename is not None:
-            self.filename = filename
-        if not os.path.isdir(os.path.dirname(self.filename)):
-            os.makedirs(os.path.dirname(self.filename))
-        self.path = os.path.dirname(self.filename)
-        writer = pd.ExcelWriter(self.filename)
-        for name, df in sorted(self.table_collection.items()):
-            df.to_excel(writer, name)
-        writer.save()
-        logging.info("Scenario saved as excel file to {0}".format(
-            self.filename))
-
-    def to_csv(self, path):
-        if path is not None:
-            self.path = path
-        if not os.path.isdir(self.path):
-            os.makedirs(self.path)
-        for name, df in self.table_collection.items():
-            name = name.replace(' ', '_') + '.csv'
-            filename = os.path.join(self.path, name)
-            df.to_csv(filename)
-        logging.info("Scenario saved as csv-collection to {0}".format(
-            self.path))
+            msg = "Nan Values in the {0} table (columns: {1})."
+            raise ValueError(msg.format(table_name, c))
 
     def create_nodes(self):
         pass
@@ -126,15 +119,16 @@ class Scenario:
     def create_model(self):
         self.model = solph.Model(self.es)
 
-    def dump_results_to_es(self):
-        self.es.results['main'] = outputlib.processing.results(self.model)
-        self.es.results['meta'] = outputlib.processing.meta_results(self.model)
-        self.es.dump(dpath='/home/uwe', filename='berlin.reegis')
+    def dump_es(self, filename):
+        d_path = os.path.dirname(filename)
+        d_fn = filename.split(os.sep)[-1]
+        self.es.dump(dpath=d_path, filename=d_fn)
         fn = os.path.join('/home/uwe', 'berlin.reegis')
         logging.info("Results dumped to {0}.".format(fn))
 
-    def restore_results(self):
+    def restore_es(self):
         self.es.restore(dpath='/home/uwe', filename='berlin.reegis')
+        self.results = self.es.results['main']
 
     def solve(self, with_duals=False):
         solver_name = cfg.get('general', 'solver')
@@ -145,6 +139,9 @@ class Scenario:
             self.model.receive_duals()
 
         self.model.solve(solver=solver_name, solve_kwargs={'tee': True})
+        self.es.results['main'] = outputlib.processing.results(self.model)
+        self.es.results['meta'] = outputlib.processing.meta_results(self.model)
+        self.results = self.es.results['main']
 
     def plot_nodes(self, show=None, filename=None, **kwargs):
 
@@ -155,7 +152,6 @@ class Scenario:
         if show is True:
             draw_graph(g, **kwargs)
         return g
-
 
 
 def draw_graph(grph, edge_labels=True, node_color='#AFAFAF',
