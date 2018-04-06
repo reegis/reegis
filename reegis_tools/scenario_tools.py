@@ -126,8 +126,10 @@ class Scenario:
         fn = os.path.join('/home/uwe', 'berlin.reegis')
         logging.info("Results dumped to {0}.".format(fn))
 
-    def restore_es(self):
-        self.es.restore(dpath='/home/uwe', filename='berlin.reegis')
+    def restore_es(self, filename):
+        d_path = os.path.dirname(filename)
+        d_fn = filename.split(os.sep)[-1]
+        self.es.restore(dpath=d_path, filename=d_fn)
         self.results = self.es.results['main']
 
     def solve(self, with_duals=False):
