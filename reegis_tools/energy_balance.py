@@ -377,13 +377,14 @@ def get_conversion_balance(year):
     eb.sort_index(0, inplace=True)
     eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
     eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
-    eb = fix_states(year, eb)
+    eb = fix_states(year, eb).loc[year]
     return eb
 
 
 if __name__ == "__main__":
     logger.define_logging()
-    # print(get_conversion_balance(2014))
+    print(get_conversion_balance(2014).loc['BE'])
+    exit(0)
     f = os.path.join(cfg.get('paths', 'static_sources'),
                      cfg.get('energy_balance', 'energiebilanzen_laender'))
     check_balance(orig=True, ebfile=f)
