@@ -255,7 +255,6 @@ def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
     # If com_month exist the power plants will be considered month-wise.
     # Otherwise the commission/decommission within the given year is not
     # considered.
-    print(pp.columns)
     for fcol in filter_columns:
         filter_column = fcol.format(year)
         orig_column = fcol[:-4]
