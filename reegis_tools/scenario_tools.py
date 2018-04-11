@@ -111,26 +111,29 @@ class Scenario:
     def create_nodes(self):
         pass
 
-    def add_nodes2solph(self, es=None):
+    def add_nodes2solph(self, es=None, nodes=None):
         if es is not None:
             self.es = es
-        self.es.add(*self.create_nodes().values())
+        if nodes is None:
+            nodes = self.create_nodes()
+
+        self.es.add(*nodes.values())
 
     def create_model(self):
         self.model = solph.Model(self.es)
 
     def dump_es(self, filename):
         d_path = os.path.dirname(filename)
-        d_fn = filename.split(os.sep)[-1]
+        d_fn = filename.split(os.path.sep)[-1]
         self.es.dump(dpath=d_path, filename=d_fn)
-        fn = os.path.join('/home/uwe', 'berlin.reegis')
-        logging.info("Results dumped to {0}.".format(fn))
+        logging.info("Results dumped to {0}.".format(filename))
 
     def restore_es(self, filename):
         d_path = os.path.dirname(filename)
-        d_fn = filename.split(os.sep)[-1]
+        d_fn = filename.split(os.path.sep)[-1]
         self.es.restore(dpath=d_path, filename=d_fn)
         self.results = self.es.results['main']
+        logging.info("Results restored from {0}.".format(filename))
 
     def solve(self, with_duals=False):
         solver_name = cfg.get('general', 'solver')
