@@ -24,6 +24,7 @@ import oemof.tools.logger
 # Internal modules
 import reegis_tools.config as cfg
 import reegis_tools.opsd as opsd
+import reegis_tools.energy_balance as energy_balance
 import reegis_tools.geometries as geo
 
 
@@ -197,6 +198,28 @@ def add_capacity_by_year(year, pp=None, filename=None, key='pp'):
     return pp
 
 
+def add_capacity_in(pp):
+    """Add a column to the conventional power plants to make it possible to
+    calculate an average efficiency for the summed up groups.
+    """
+    # Calculate the inflow capacity for power plants with an efficiency value.
+    pp['capacity_in'] = pp['capacity'].div(pp['efficiency'])
+
+    # Sum up the valid in/out capacities to calculate an average efficiency
+    cap_valid = pp.loc[pp['efficiency'].notnull(), 'capacity'].sum()
+    cap_in = pp.loc[pp['efficiency'].notnull(), 'capacity_in'].sum()
+
+    # Set the average efficiency for missing efficiency values
+    pp['efficiency'] = pp['efficiency'].fillna(
+        cap_valid / cap_in)
+
+    # Calculate the inflow for all power plants
+    pp['capacity_in'] = pp['capacity'].div(pp['efficiency'])
+
+    logging.info("'capacity_in' column added to power plant table.")
+    return pp
+
+
 def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
     """
 
@@ -225,12 +248,14 @@ def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
     filter_columns = ['capacity_{0}']
 
     if capacity_in:
+        pp = add_capacity_in(pp)
         filter_columns.append('capacity_in_{0}')
 
     # Get all powerplants for the given year.
     # If com_month exist the power plants will be considered month-wise.
     # Otherwise the commission/decommission within the given year is not
     # considered.
+    print(pp.columns)
     for fcol in filter_columns:
         filter_column = fcol.format(year)
         orig_column = fcol[:-4]
@@ -252,19 +277,76 @@ def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
     return pp
 
 
+def calculate_chp_share_and_efficiency(eb):
+    """Efficiciency and fuel share of combined heat and power plants (chp) and
+    heat plants (hp) from conversion balance."""
+    row_chp = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
+    row_hp = 'Heizwerke'
+    row_total = 'Umwandlungsausstoß insgesamt'
+
+    regions = list(eb.index.get_level_values(0).unique())
+    eta = {}
+    rows = ['Heizkraftwerke der allgemeinen Versorgung (nur KWK)',
+            'Heizwerke']
+
+    for region in regions:
+        eta[region] = {}
+        in_chp = eb.loc[region, 'input', row_chp]
+        in_hp = eb.loc[region, 'input', row_hp]
+        elec_chp = eb.loc[(region, 'output', row_chp), 'electricity']
+        heat_chp = eb.loc[(region, 'output', row_chp),
+                          'district heating']
+        heat_hp = eb.loc[(region, 'output', row_hp),
+                         'district heating']
+        heat_total = eb.loc[(region, 'output', row_total),
+                            'district heating']
+        end_total_heat = eb.loc[(region, 'usage', 'Endenergieverbrauch'),
+                                'district heating']
+        eta[region]['sys_heat'] = end_total_heat / heat_total
+
+        eta[region]['hp'] = float(heat_hp / in_hp.total)
+        eta[region]['heat_chp'] = heat_chp / in_chp.total
+        eta[region]['elec_chp'] = elec_chp / in_chp.total
+
+        eta[region]['fuel_share'] = eb.loc[region, 'input', rows].div(
+            eb.loc[region, 'input', rows].total.sum(), axis=0)
+
+    return eta
+
+
+def get_chp_share_and_efficiency_states(year):
+    conversion_blnc = energy_balance.get_conversion_balance(year)
+    return calculate_chp_share_and_efficiency(conversion_blnc)
+
+
 if __name__ == "__main__":
     oemof.tools.logger.define_logging()
-    print(get_pp_by_year(2014))
+    state = 'BE'
+
+    pwp = get_pp_by_year(2014, overwrite_capacity=True)
+    e_sources = (pwp.loc[
+        (pwp.federal_states == state), 'energy_source_level_2']).unique()
+
+    print(e_sources)
+
+    for e_source in e_sources:
+        cap = pwp.loc[
+            (pwp.federal_states == state) &
+            (pwp.energy_source_level_2 == e_source)].sum()['capacity']
+        print(e_source, ':', round(cap))
     exit(0)
-    filename_in = os.path.join(cfg.get('paths', 'opsd'),
-                               cfg.get('opsd', 'opsd_prepared'))
-    pp = pd.read_hdf(filename_in, 'conventional')
-    print(pp.loc[pp.federal_states == 'BE'].to_excel('/home/uwe/berlin_pp_temp.xlsx'))
+    gpp = geo.Geometry(name="Power plants Berlin", df=pwp)
+    gpp.create_geo_df()
+    gpp.gdf.to_file('/home/uwe/berlin_pp_temp.shp')
+    exit(0)
+    print(pwp.loc[pwp.federal_states == 'BE'].to_excel(
+        '/home/uwe/berlin_pp_temp.xlsx'))
 
     # file_name = pp_opsd2reegis()
     file_name = '/home/uwe/express/reegis/data/powerplants/reegis_pp.h5'
-    pp = pd.read_hdf(file_name, 'pp')
-    print(pp.loc[pp.federal_states == 'BE'].groupby('energy_source_level_2').sum())
+    pwp = pd.read_hdf(file_name, 'pp')
+    print(pwp.loc[pwp.federal_states == 'BE'].groupby(
+        'energy_source_level_2').sum())
     exit(0)
     file_name = os.path.join(cfg.get('paths', 'powerplants'),
                              cfg.get('powerplants', 'reegis_pp'))
