@@ -22,6 +22,7 @@ from matplotlib import pyplot as plt
 
 # oemof libraries
 import oemof.tools.logger as logger
+import oemof.tools.helpers as helpers
 import oemof.solph as solph
 import oemof.outputlib as outputlib
 import oemof.graph as graph
@@ -50,17 +51,26 @@ class Scenario:
         self.ignore_errors = kwargs.get('ignore_errors', False)
         self.round_values = kwargs.get('round_values', 0)
         self.model = kwargs.get('model', None)
-        self.es = kwargs.get('es', self.initialise_energy_system())
+        self.es = kwargs.get('es', None)
         self.results = None
+        self.debug = kwargs.get('debug', None)
 
     def initialise_energy_system(self):
-        if calendar.isleap(self.year):
-            number_of_time_steps = 8784
+        if self.debug is True:
+            number_of_time_steps = 3
         else:
-            number_of_time_steps = 8760
+            try:
+                if calendar.isleap(self.year):
+                    number_of_time_steps = 8784
+                else:
+                    number_of_time_steps = 8760
+            except TypeError:
+                msg = "You cannot create an EnergySystem with self.year = {0}"
+                raise TypeError(msg.format(self.year))
 
         date_time_index = pd.date_range('1/1/{0}'.format(self.year),
-                                        periods=number_of_time_steps, freq='H')
+                                        periods=number_of_time_steps,
+                                        freq='H')
         return solph.EnergySystem(timeindex=date_time_index)
 
     def load_excel(self, filename):
@@ -133,6 +143,8 @@ class Scenario:
         logging.info("Results dumped to {0}.".format(filename))
 
     def restore_es(self, filename):
+        if self.es is None:
+            self.es = solph.EnergySystem()
         d_path = os.path.dirname(filename)
         d_fn = filename.split(os.path.sep)[-1]
         self.es.restore(dpath=d_path, filename=d_fn)
@@ -147,9 +159,17 @@ class Scenario:
         if with_duals:
             self.model.receive_duals()
 
+        if self.debug:
+            filename = os.path.join(
+                helpers.extend_basic_path('lp_files'), 'berlin.lp')
+            logging.info('Store lp-file in {0}.'.format(filename))
+            self.model.write(filename,
+                             io_options={'symbolic_solver_labels': True})
+
         self.model.solve(solver=solver_name, solve_kwargs={'tee': True})
         self.es.results['main'] = outputlib.processing.results(self.model)
         self.es.results['meta'] = outputlib.processing.meta_results(self.model)
+        self.es.results['param'] = outputlib.processing.param_results(self.es)
         self.results = self.es.results['main']
 
     def plot_nodes(self, show=None, filename=None, **kwargs):
