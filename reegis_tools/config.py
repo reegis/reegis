@@ -114,6 +114,17 @@ def get_dict(section):
     return dc
 
 
+def get_dict_list(section, string=False):
+    """Returns the values of a section as dictionary
+    """
+    if not _loaded:
+        init(FILE)
+    dc = {}
+    for key, value in cfg.items(section):
+        dc[key] = get_list(section, key, string=string)
+    return dc
+
+
 # def set(section, key, value):
 #     if not _loaded:
 #         init(FILE)
