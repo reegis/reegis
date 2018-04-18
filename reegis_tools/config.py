@@ -87,7 +87,7 @@ def get(section, key):
                     return cfg.get(section, key)
 
 
-def get_list(section, parameter, sep=','):
+def get_list(section, parameter, sep=',', string=False):
     """Returns the values (separated by sep) of a given key in a given
     section as a list.
     """
@@ -96,7 +96,10 @@ def get_list(section, parameter, sep=','):
         my_list = [x.strip() for x in my_list]
 
     except AttributeError:
-        my_list = list((get(section, parameter),))
+        if string is True:
+            my_list = list((cfg.get(section, parameter),))
+        else:
+            my_list = list((get(section, parameter),))
     return my_list
 
 
