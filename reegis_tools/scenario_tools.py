@@ -14,6 +14,7 @@ __license__ = "GPLv3"
 import os
 import logging
 import calendar
+import datetime
 
 # External libraries
 import pandas as pd
@@ -151,6 +152,14 @@ class Scenario:
         self.results = self.es.results['main']
         logging.info("Results restored from {0}.".format(filename))
 
+    def scenario_info(self):
+        sc_info = {
+            'name': self.name,
+            'datetime': datetime.datetime.now(),
+            'year': self.year,
+        }
+        return sc_info
+
     def solve(self, with_duals=False):
         solver_name = cfg.get('general', 'solver')
 
@@ -170,6 +179,7 @@ class Scenario:
         self.es.results['main'] = outputlib.processing.results(self.model)
         self.es.results['meta'] = outputlib.processing.meta_results(self.model)
         self.es.results['param'] = outputlib.processing.param_results(self.es)
+        self.es.results['scenario'] = self.scenario_info()
         self.results = self.es.results['main']
 
     def plot_nodes(self, show=None, filename=None, **kwargs):
