@@ -483,17 +483,4 @@ def spatial_preparation_power_plants(pp):
 
 if __name__ == "__main__":
     logger.define_logging()
-    hdf = pd.HDFStore('/home/uwe/express/reegis/data/powerplants/reegis_pp.h5', mode='r')
-    print(hdf['pp'].loc[hdf['pp']['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro.csv'))
-    re = pd.read_csv('/home/uwe/express/reegis/data2/powerplants/opsd/renewable_power_plants_DE.csv')
-    print(re.columns)
-    re.loc[re['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro2.csv')
-
-    re = pd.read_csv('/home/uwe/express/reegis/data2/powerplants/opsd/conventional_power_plants_DE.csv')
-    print(re.columns)
-    re.loc[re['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro3.csv')
-
-    re = pd.read_hdf('/home/uwe/express/reegis/data/powerplants/opsd/opsd_power_plants_DE_prepared.h5', 'conventional', mode='r')
-    print(re.columns)
-    re.loc[re['energy_source_level_2'] == 'Hydro'].to_csv('/home/uwe/hydro4.csv')
-    # opsd_power_plants(overwrite=False, csv=False)
+    print(opsd_power_plants(overwrite=True))

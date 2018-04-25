@@ -35,6 +35,7 @@ def patch_offshore_wind(orig_df, columns):
         os.path.join(cfg.get('paths', 'static_sources'),
                      cfg.get('static_sources', 'patch_offshore_wind')),
         header=[0, 1], index_col=[0])
+
     offsh = offsh.loc[offsh['reegis', 'com_year'].notnull(), 'reegis']
     for column in offsh.columns:
         df[column] = offsh[column]
@@ -320,35 +321,8 @@ def get_chp_share_and_efficiency_states(year):
 
 if __name__ == "__main__":
     oemof.tools.logger.define_logging()
-    state = 'BE'
-
-    pwp = get_pp_by_year(2014, overwrite_capacity=True)
-    e_sources = (pwp.loc[
-        (pwp.federal_states == state), 'energy_source_level_2']).unique()
-
-    print(e_sources)
-
-    for e_source in e_sources:
-        cap = pwp.loc[
-            (pwp.federal_states == state) &
-            (pwp.energy_source_level_2 == e_source)].sum()['capacity']
-        print(e_source, ':', round(cap))
-    exit(0)
-    gpp = geo.Geometry(name="Power plants Berlin", df=pwp)
-    gpp.create_geo_df()
-    gpp.gdf.to_file('/home/uwe/berlin_pp_temp.shp')
-    exit(0)
-    print(pwp.loc[pwp.federal_states == 'BE'].to_excel(
-        '/home/uwe/berlin_pp_temp.xlsx'))
-
-    # file_name = pp_opsd2reegis()
-    file_name = '/home/uwe/express/reegis/data/powerplants/reegis_pp.h5'
-    pwp = pd.read_hdf(file_name, 'pp')
-    print(pwp.loc[pwp.federal_states == 'BE'].groupby(
-        'energy_source_level_2').sum())
-    exit(0)
-    file_name = os.path.join(cfg.get('paths', 'powerplants'),
-                             cfg.get('powerplants', 'reegis_pp'))
-    dtf = pd.read_hdf(file_name, 'pp', mode='r')
-    for col in dtf.columns:
-        print(col, dtf[col].unique())
+    fn = pp_opsd2reegis()
+    df = pd.read_hdf(fn, 'pp').groupby(['energy_source_level_2',
+                                        'technology', 'federal_states']).sum()[
+        'capacity']
+    print(df)
