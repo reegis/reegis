@@ -148,5 +148,5 @@ def get_entsoe_load(year):
 
 if __name__ == "__main__":
     logger.define_logging()
-    print(get_entsoe_load(2012).index)
+    print(get_entsoe_load(2014))
     logging.info("Done!")

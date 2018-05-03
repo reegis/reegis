@@ -60,4 +60,6 @@ def get_ego_demand(overwrite=False):
 
 
 if __name__ == "__main__":
-    pass
+    ego = get_ego_demand().groupby('federal_states').sum()[
+        'sector_consumption_sum']
+    print(ego)
