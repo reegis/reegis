@@ -35,6 +35,7 @@ from oemof.tools import logger
 import reegis_tools.tools as tools
 import reegis_tools.feedin as feedin
 import reegis_tools.config as cfg
+import reegis_tools.powerplants as powerplants
 import reegis_tools.geometries as geometries
 import reegis_tools.bmwi
 
@@ -633,8 +634,124 @@ def aggregate_by_region_geothermal(regions, year, outfile_name):
     feed_in.to_csv(outfile_name)
 
 
+def get_grouped_power_plants(year):
+    """Filter the capacity of the powerplants for the given year.
+    """
+    return powerplants.get_pp_by_year(year).groupby(
+        ['energy_source_level_2', 'federal_states', 'coastdat2']).sum()
+
+
+def aggregate_by_region(year, state):
+    # Create the path for the output files.
+    feedin_state_path = cfg.get('paths_pattern', 'state_feedin').format(
+        year=year)
+    os.makedirs(feedin_state_path, exist_ok=True)
+
+    # Create pattern for the name of the resulting files.
+    feedin_berlin_outfile_name = os.path.join(
+        feedin_state_path,
+        cfg.get('feedin', 'feedin_state_pattern').format(
+            year=year, type='{type}', state=state))
+
+    # Filter the capacity of the powerplants for the given year.
+    pp = get_grouped_power_plants(year)
+
+    # Loop over weather depending feed-in categories.
+    # WIND and PV
+
+    for cat in ['Wind', 'Solar']:
+        outfile_name = feedin_berlin_outfile_name.format(type=cat.lower())
+        if not os.path.isfile(outfile_name):
+            aggregate_by_region_coastdat_feedin(
+                pp, [state], year, cat, outfile_name)
+
+    # HYDRO
+    outfile_name = feedin_berlin_outfile_name.format(type='hydro')
+    if not os.path.isfile(outfile_name):
+        aggregate_by_region_hydro(
+            pp, [state], year, outfile_name)
+
+    # GEOTHERMAL
+    outfile_name = feedin_berlin_outfile_name.format(type='geothermal')
+    if not os.path.isfile(outfile_name):
+        aggregate_by_region_geothermal([state], year, outfile_name)
+
+
+def get_feedin_by_state(year, feedin_type, state):
+    """
+
+    Parameters
+    ----------
+    year
+    feedin_type
+    state : str
+        Official abbreviation of state in Germany e.g. 'BE', 'SH', 'TH'...
+
+    Returns
+    -------
+
+    """
+    feedin_state_file_name = os.path.join(
+        cfg.get('paths_pattern', 'state_feedin'),
+        cfg.get('feedin', 'feedin_state_pattern')).format(
+            year=year, type=feedin_type, state=state)
+
+    # Add any federal state to get its normalised feed-in.
+    if feedin_type in ['solar', 'wind']:
+        if not os.path.isfile(feedin_state_file_name):
+            aggregate_by_region(year, state)
+        return pd.read_csv(feedin_state_file_name, index_col=[0],
+                           header=[0, 1, 2])
+    elif feedin_type in ['hydro', 'geothermal']:
+        if not os.path.isfile(feedin_state_file_name):
+            aggregate_by_region(year, state)
+        return pd.read_csv(feedin_state_file_name, index_col=[0], header=[0])
+    else:
+        return None
+
+
+def scenario_feedin(year, state):
+    feed_in = scenario_feedin_pv(year, state)
+    feed_in = scenario_feedin_wind(year, feed_in, state)
+    feed_in.columns = pd.MultiIndex.from_product([[state], feed_in.columns])
+    return feed_in
+
+
+def scenario_feedin_wind(year, feedin_ts, state):
+    logging.critical("ERROR. Fixed turbine type for all regions.")
+    wind = get_feedin_by_state(year, 'wind', state)
+    for reg in wind.columns.levels[0]:
+        feedin_ts['wind'] = wind[
+            reg, 'coastdat_{0}_wind_ENERCON_127_hub135_pwr_7500'.format(year),
+            'E_126_7500']
+    return feedin_ts.sort_index(1)
+
+
+def scenario_feedin_pv(year, state):
+    pv_types = cfg.get_dict('pv_types')
+    pv_orientation = cfg.get_dict('pv_orientation')
+    pv = get_feedin_by_state(year, 'solar', state)
+
+    # combine different pv-sets to one feedin time series
+    feedin_ts = pd.DataFrame(index=pv.index)
+    orientation_fraction = pd.Series(pv_orientation)
+
+    pv.sort_index(1, inplace=True)
+    orientation_fraction.sort_index(inplace=True)
+    base_set_column = 'coastdat_{0}_solar_{1}'.format(year, '{0}')
+    for reg in pv.columns.levels[0]:
+        feedin_ts['solar'] = 0
+        for mset in pv_types.keys():
+            set_col = base_set_column.format(mset)
+            feedin_ts['solar'] += pv[reg, set_col].multiply(
+                orientation_fraction).sum(1).multiply(
+                pv_types[mset])
+    return feedin_ts.sort_index(1)
+
+
 if __name__ == "__main__":
     logger.define_logging()
+    print(scenario_feedin(2014, 'BE'))
     # for y in [2008]:
     #     normalised_feedin_for_each_data_set(y, wind=True, solar=True)
-    print(federal_state_average_weather(2012, 'temp_air'))
+    # print(federal_state_average_weather(2012, 'temp_air'))
