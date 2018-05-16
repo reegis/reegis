@@ -93,22 +93,22 @@ def split_timeseries_file(overwrite=False, csv=False):
     end_date = berlin.localize(datetime.datetime(2015, 1, 1, 0, 0, 0))
 
     de_ts.loc[de_ts.index < end_date, 'DE_load_'] = (
-        de_ts.loc[de_ts.index < end_date, 'DE_load_old'])
+        de_ts.loc[de_ts.index < end_date, 'DE_load_entsoe_power_statistics'])
     de_ts.loc[de_ts.index >= end_date, 'DE_load_'] = (
-        de_ts.loc[de_ts.index >= end_date, 'DE_load_new'])
+        de_ts.loc[de_ts.index >= end_date, 'DE_load_entsoe_transparency'])
 
     load = pd.DataFrame(de_ts[pd.notnull(de_ts['DE_load_'])]['DE_load_'],
                         columns=['DE_load_'])
 
     re_columns = [
-        'DE_solar_capacity', 'DE_solar_generation', 'DE_solar_profile',
-        'DE_wind_capacity', 'DE_wind_generation', 'DE_wind_profile',
-        'DE_wind_offshore_capacity', 'DE_wind_offshore_generation',
+        'DE_solar_capacity', 'DE_solar_generation_actual', 'DE_solar_profile',
+        'DE_wind_capacity', 'DE_wind_generation_actual', 'DE_wind_profile',
+        'DE_wind_offshore_capacity', 'DE_wind_offshore_generation_actual',
         'DE_wind_offshore_profile', 'DE_wind_onshore_capacity',
-        'DE_wind_onshore_generation', 'DE_wind_onshore_profile']
+        'DE_wind_onshore_generation_actual', 'DE_wind_onshore_profile']
     re_subset = [
-        'DE_solar_capacity', 'DE_solar_generation', 'DE_solar_profile',
-        'DE_wind_capacity', 'DE_wind_generation', 'DE_wind_profile']
+        'DE_solar_capacity', 'DE_solar_generation_actual', 'DE_solar_profile',
+        'DE_wind_capacity', 'DE_wind_generation_actual', 'DE_wind_profile']
 
     renewables = de_ts.dropna(subset=re_subset, how='any')[re_columns]
 
