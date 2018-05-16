@@ -125,10 +125,10 @@ def get_dict_list(section, string=False):
     return dc
 
 
-# def set(section, key, value):
-#     if not _loaded:
-#         init(FILE)
-#     return cfg.set(section, key, value)
+def tmp_set(section, key, value):
+    if not _loaded:
+        init(FILE)
+    return cfg.set(section, key, value)
 
 
 def extend_path(basic_path, new_dir):
