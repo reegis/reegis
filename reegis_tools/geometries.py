@@ -42,13 +42,14 @@ class Geometry:
         self.lon_column = 'lon'
         self.lat_column = 'lat'
 
-    def load(self, path=None, filename=None, fullname=None, hdf_key=None):
+    def load(self, path=None, filename=None, fullname=None, hdf_key=None,
+             index_col=None):
         """Load csv-file into a DataFrame and a GeoDataFrame."""
         if fullname is None:
             fullname = os.path.join(path, filename)
 
         if fullname[-4:] == '.csv':
-            self.load_csv(fullname=fullname)
+            self.load_csv(fullname=fullname, index_col=index_col)
 
         elif fullname[-4:] == '.hdf':
             self.load_hdf(fullname=fullname, key=hdf_key)
@@ -72,16 +73,20 @@ class Geometry:
             fullname = os.path.join(path, filename)
         self.df = pd.read_hdf(fullname, key, mode='r')
 
-    def load_csv(self, path=None, filename=None, fullname=None):
+    def load_csv(self, path=None, filename=None, fullname=None,
+                 index_col=None):
         """Load csv-file into a DataFrame."""
         if fullname is None:
             fullname = os.path.join(path, filename)
         self.df = pd.read_csv(fullname)
 
         # Make the first column the index if all values are unique.
-        first_col = self.df.columns[0]
-        if not any(self.df[first_col].duplicated()):
-            self.df.set_index(first_col, drop=True, inplace=True)
+        if index_col is None:
+            first_col = self.df.columns[0]
+            if not any(self.df[first_col].duplicated()):
+                self.df.set_index(first_col, drop=True, inplace=True)
+        else:
+            self.df.set_index(index_col, drop=True, inplace=True)
 
     def lat_lon2point(self, df):
         """Create shapely point object of latitude and longitude."""
@@ -190,7 +195,8 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
         if 'index_right' in tmp:
             del tmp['index_right']
         tmp = tmp.set_geometry('buffer')
-
+        print(tmp)
+        print(geo2.gdf)
         # Try spatial join with "intersects" with buffered geometries.
         newj = gpd.sjoin(tmp, geo2.gdf, how='left', op='intersects')
 
