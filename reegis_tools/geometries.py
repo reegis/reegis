@@ -195,8 +195,7 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
         if 'index_right' in tmp:
             del tmp['index_right']
         tmp = tmp.set_geometry('buffer')
-        print(tmp)
-        print(geo2.gdf)
+
         # Try spatial join with "intersects" with buffered geometries.
         newj = gpd.sjoin(tmp, geo2.gdf, how='left', op='intersects')
 
