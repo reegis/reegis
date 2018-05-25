@@ -55,6 +55,7 @@ class Scenario:
         self.es = kwargs.get('es', None)
         self.results = None
         self.debug = kwargs.get('debug', None)
+        self.location = None
 
     def initialise_energy_system(self):
         if self.debug is True:
@@ -76,6 +77,7 @@ class Scenario:
 
     def load_excel(self, filename):
         """Load scenario from an excel-file."""
+        self.location = filename
         xls = pd.ExcelFile(filename)
         for sheet in xls.sheet_names:
             self.table_collection[sheet] = xls.parse(
@@ -83,6 +85,7 @@ class Scenario:
 
     def load_csv(self, path):
         """Load scenario from a csv-collection."""
+        self.location = path
         for file in os.listdir(path):
             if file[-4:] == '.csv':
                 filename = os.path.join(path, file)
@@ -180,6 +183,7 @@ class Scenario:
         self.es.results['meta'] = outputlib.processing.meta_results(self.model)
         self.es.results['param'] = outputlib.processing.param_results(self.es)
         self.es.results['scenario'] = self.scenario_info()
+        self.es.results['meta']['in_location'] = self.location
         self.results = self.es.results['main']
 
     def plot_nodes(self, show=None, filename=None, **kwargs):
