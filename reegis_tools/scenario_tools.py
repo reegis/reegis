@@ -184,6 +184,9 @@ class Scenario:
         self.es.results['param'] = outputlib.processing.param_results(self.es)
         self.es.results['scenario'] = self.scenario_info()
         self.es.results['meta']['in_location'] = self.location
+        self.es.results['meta']['file_date'] = datetime.datetime.fromtimestamp(
+            os.path.getmtime(self.location))
+        self.es.results['meta']['oemof_version'] = logger.get_version()
         self.results = self.es.results['main']
 
     def plot_nodes(self, show=None, filename=None, **kwargs):
@@ -261,4 +264,6 @@ def draw_graph(grph, edge_labels=True, node_color='#AFAFAF',
 
 if __name__ == "__main__":
     logger.define_logging()
+    v = logger.get_version()
+    print(v)
     pass
