@@ -139,14 +139,121 @@ class Geometry:
         self.gdf.plot(*args, **kwargs)
 
 
+def load(path=None, filename=None, fullname=None, hdf_key=None,
+         index_col=None):
+    """Load csv-file into a DataFrame and a GeoDataFrame."""
+    if fullname is None:
+        fullname = os.path.join(path, filename)
+
+    if fullname[-4:] == '.csv':
+        df = load_csv(fullname=fullname, index_col=index_col)
+        gdf = create_geo_df(df)
+
+    elif fullname[-4:] == '.hdf':
+        df = load_hdf(fullname=fullname, key=hdf_key)
+        gdf = create_geo_df(df)
+
+    elif fullname[-4:] == '.shp':
+        gdf = load_shp(fullname=fullname)
+
+    else:
+        raise ValueError("Cannot load file with a '{0}' extension.")
+
+    return gdf
+
+
+def load_shp(path=None, filename=None, fullname=None):
+    if fullname is None:
+        fullname = os.path.join(path, filename)
+    return gpd.read_file(fullname)
+
+
+def load_hdf(path=None, filename=None, fullname=None, key=None):
+    if fullname is None:
+        fullname = os.path.join(path, filename)
+    return pd.read_hdf(fullname, key, mode='r')
+
+
+def load_csv(path=None, filename=None, fullname=None,
+             index_col=None):
+    """Load csv-file into a DataFrame."""
+    if fullname is None:
+        fullname = os.path.join(path, filename)
+    df = pd.read_csv(fullname)
+
+    # Make the first column the index if all values are unique.
+    if index_col is None:
+        first_col = df.columns[0]
+        if not any(df[first_col].duplicated()):
+            df.set_index(first_col, drop=True, inplace=True)
+    else:
+        df.set_index(index_col, drop=True, inplace=True)
+    return df
+
+
+def lat_lon2point(df):
+    """Create shapely point object of latitude and longitude."""
+    return Point(df['longitude'], df['latitutde'])
+
+
+def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None):
+    """Convert pandas.DataFrame to geopandas.geoDataFrame"""
+
+    if 'geom' in df:
+        df = df.rename(columns={'geom': 'geometry'})
+
+    if lon_column is not None:
+        if lon_column not in df:
+            logging.error("Cannot find column for longitude: {0}".format(
+                lon_column))
+        else:
+            df.rename({lon_column: 'longitude'}, inplace=True)
+
+    if lat_column is not None:
+        if lat_column not in df:
+            logging.error("Cannot find column for latitude: {0}".format(
+                lat_column))
+        else:
+            df.rename({lat_column: 'latitude'}, inplace=True)
+
+    if wkt_column is not None:
+        df['geometry'] = df[wkt_column].apply(wkt_loads)
+
+    elif 'geometry' not in df and 'longitude' in df and 'latitude' in df:
+            df['geometry'] = df.apply(lat_lon2point, axis=1)
+
+    elif isinstance(df.iloc[0]['geometry'], str):
+        df['geometry'] = df['geometry'].apply(wkt_loads)
+
+    else:
+        msg = "Could not create GeoDataFrame. Missing geometries."
+        logging.error(msg)
+        return None
+
+    gdf = gpd.GeoDataFrame(df, crs={'init': 'epsg:4326'}, geometry='geometry')
+
+    logging.debug("GeoDataFrame created.")
+
+    return gdf
+
+
+def gdf2df(gdf, remove_geo=False):
+    df = pd.DataFrame(gdf)
+    if not remove_geo:
+        df['geometry'] = df['geometry'].astype(str)
+    else:
+        del df['geometry']
+    return df
+
+
 def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
                              step=0.05, limit=1):
     """Add name of containing region to new column for all points.
 
     Parameters
     ----------
-    geo1 : reegis_tools.geometries.Geometry
-    geo2 : reegis_tools.geometries.Geometry
+    geo1 : reegis_tools.geometries.Geometry or geopandas.geoDataFrame
+    geo2 : reegis_tools.geometries.Geometry or geopandas.geoDataFrame
     jcol : str
     name : str
     step : float
@@ -162,21 +269,29 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
 
     logging.info("Doing spatial join...")
 
+    if isinstance(geo1, Geometry):
+        geo1 = geo1.gdf
+
+    if isinstance(geo2, Geometry):
+        geo2 = geo2.gdf
+
     # Spatial (left) join with the "within" operation.
-    jgdf = gpd.sjoin(geo1.gdf, geo2.gdf, how='left', op='within')
+    jgdf = gpd.sjoin(geo1, geo2, how='left', op='within')
     logging.info('Joined!')
 
-    diff_cols = set(jgdf.columns) - set(geo1.gdf) - {jcol}
+    diff_cols = set(jgdf.columns) - set(geo1) - {jcol}
 
     # Buffer all geometries that are not within any polygon
     bf = 0
     len_df = len(jgdf.loc[jgdf[jcol].isnull()])
     if len_df == 0:
         logging.info("Buffering not necessary.")
+    elif limit == 0:
+        logging.info("No buffering. Buffer-limit is 0.")
     else:
         msg = "Buffering {0} non-matching geometries ({1}%)..."
         logging.info(msg.format(len_df, round(len_df / len(jgdf) * 100, 1)))
-    if len_df * 5 > len(jgdf):
+    if len_df * 5 > len(jgdf) and limit > 0:
         msg = "{0} % non-matching geometries seems to be too high."
         logging.warning(msg.format(round(len_df / len(jgdf) * 100)))
 
@@ -197,7 +312,7 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
         tmp = tmp.set_geometry('buffer')
 
         # Try spatial join with "intersects" with buffered geometries.
-        newj = gpd.sjoin(tmp, geo2.gdf, how='left', op='intersects')
+        newj = gpd.sjoin(tmp, geo2, how='left', op='intersects')
 
         # If new matches were found they were written to the original GeoDF.
         if len(newj.loc[newj[jcol].notnull() > 0]):
@@ -228,10 +343,6 @@ def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
     # Remove all columns but the join-id column (jcol) from the GeoDf.
     for col in diff_cols:
         del jgdf[col]
-
-    # Rename the column to a given name or the name of the Geometry object.
-    if name is None:
-        name = "_".join(geo2.name.split())
 
     jgdf = jgdf.rename(columns={jcol: name})
     jgdf[name] = jgdf[name].fillna('unknown')
