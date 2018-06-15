@@ -106,7 +106,7 @@ def get_ew_by_region(year, geo, col=None):
         col = geo.name
     ew = get_ew_geometry(year)
     ew.gdf = reegis_tools.geometries.spatial_join_with_buffer(
-        ew, geo)
+        ew, geo, name=col)
     return ew.gdf.groupby(col).sum()['EWZ']
 
 
