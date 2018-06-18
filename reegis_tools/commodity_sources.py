@@ -41,12 +41,12 @@ def prices_from_bmwi_energiedaten(src):
     filename = reegis_tools.bmwi.get_bmwi_energiedaten_file()
 
     # get prices for commodity source from sheet 26
-    fs = pd.read_excel(filename, '26', skiprows=6, index_col=[0]).ix[4:7]
+    fs = pd.read_excel(filename, '26', skiprows=6, index_col=[0]).iloc[4:7]
     del fs['Einheit']
     fs = fs.transpose().rename(columns=fuels)
 
     # get unit conversion (uc) from sheet 0.2
-    uc = pd.read_excel(filename, '0.2', skiprows=6, index_col=[0]).ix[:6]
+    uc = pd.read_excel(filename, '0.2', skiprows=6, index_col=[0]).iloc[:6]
     del uc['Unnamed: 1']
     del uc.index.name
     uc.set_index(uc.index.str.strip(), inplace=True)

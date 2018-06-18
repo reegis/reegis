@@ -84,7 +84,7 @@ def read_bmwi_sheet_7(sub):
 def bmwi_re_energy_capacity():
     """Prepare the energy production and capacity table from sheet 20."""
     filename = get_bmwi_energiedaten_file()
-    repp = pd.read_excel(filename, '20', skiprows=22).ix[:23]
+    repp = pd.read_excel(filename, '20', skiprows=22).iloc[:24]
     repp = repp.drop(repp.index[[0, 4, 8, 12, 16, 20]])
     repp['type'] = (['water'] * 3 +
                     ['wind'] * 3 +
