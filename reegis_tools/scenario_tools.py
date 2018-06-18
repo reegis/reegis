@@ -125,16 +125,20 @@ class Scenario:
     def create_nodes(self):
         pass
 
-    def add_nodes2solph(self, es=None, nodes=None, year=None):
+    def initialise_es(self, year=None):
         if year is not None:
             self.year = year
-        if es is not None:
-            self.es = es
+        self.es = self.initialise_energy_system()
+
+    def add_nodes(self, nodes):
+        if self.es is None:
+            self.initialise_es()
+        self.es.add(*nodes.values())
+
+    def add_nodes2solph(self):
         if self.es is None:
             self.es = self.initialise_energy_system()
-        if nodes is None:
-            nodes = self.create_nodes()
-
+        nodes = self.create_nodes()
         self.es.add(*nodes.values())
 
     def create_model(self):
