@@ -26,11 +26,13 @@ _loaded = False
 importer = os.path.dirname(sys.modules['__main__'].__file__)
 
 
-def get_ini_filenames():
+def get_ini_filenames(additional_paths=None):
     paths = list()
     files = list()
 
     paths.append(os.path.join(os.path.dirname(__file__)))
+    if additional_paths is not None:
+        paths.extend(additional_paths)
     paths.append(importer)
     paths.append(os.path.join(os.path.expanduser("~"), '.oemof'))
 
@@ -45,20 +47,23 @@ def main():
     pass
 
 
-def init(file):
+def init(files=None, paths=None):
     """Read config file(s).
 
     Parameters
     ----------
-    file : str or list or None
+    files : str or list or None
         Absolute path to config file (incl. filename)
+    paths : list
+        List of paths where it is searched for .ini files.
     """
-    if file is None:
-        file = get_ini_filenames()
-    cfg.read(file)
+    if files is None:
+        files = get_ini_filenames(paths)
+
+    cfg.read(files)
     global _loaded
     _loaded = True
-    set_reegis_paths()
+    set_reegis_paths(paths)
 
 
 def get(section, key):
@@ -138,7 +143,7 @@ def extend_path(basic_path, new_dir):
     return pathname
 
 
-def set_reegis_paths():
+def set_reegis_paths(paths=None):
     # initialise de21 configuration
     logging.info('Loading reegis configuration....')
 
@@ -158,6 +163,11 @@ def set_reegis_paths():
     if importer != os.path.join(os.path.dirname(__file__)):
         importer_name = importer.split(os.sep)[-1]
         cfg.set('paths', '{0}'.format(importer_name), importer)
+
+    if paths is not None:
+        for p in paths:
+            package_name = p.split(os.sep)[-1]
+            cfg.set('paths', '{0}'.format(package_name), p)
 
     # *************************************************************************
     # ********* Set sub-paths according to ini-file ***************************
