@@ -21,8 +21,6 @@ from shapely.wkt import loads as wkt_loads
 # oemof packages
 from oemof.tools import logger
 
-import reegis_tools.geometries as geometries
-
 
 def postgis2shapely(postgis):
     geom = list()
@@ -61,17 +59,5 @@ def download_file(filename, url, overwrite=False):
     return r
 
 
-def convert_shp2csv(infile, outfile):
-    logging.info("Converting {0} to {1}.".format(infile, outfile))
-    geo = geometries.Geometry()
-    df = geo.load(fullname=infile).get_df()
-    df.loc[df.KLASSENNAM == 'FL_Vattenfall', 'KLASSENNAM'] = 'FL_Vattenfall_1'
-    df.loc[df.KLASSENNAM == 'FL_Vattenfall_2', 'STIFT'] = 229
-    df.to_csv(outfile)
-
-
 if __name__ == "__main__":
     logger.define_logging()
-    inf = '/home/uwe/chiba/Promotion/Statstik/Fernwaerme/Fernwaerme_2007/district_heat_blocks_mit_Vattenfall_1_2.shp'
-    outf = '/home/uwe/git_local/reegis/berlin_hp/berlin_hp/data/static/map_district_heating_areas_berlin.csv'
-    convert_shp2csv(inf, outf)
