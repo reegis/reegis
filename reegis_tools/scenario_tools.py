@@ -185,7 +185,8 @@ class Scenario:
         self.model.solve(solver=solver_name, solve_kwargs={'tee': True})
         self.es.results['main'] = outputlib.processing.results(self.model)
         self.es.results['meta'] = outputlib.processing.meta_results(self.model)
-        self.es.results['param'] = outputlib.processing.param_results(self.es)
+        self.es.results['param'] = outputlib.processing.parameter_as_dict(
+            self.es)
         self.es.results['scenario'] = self.scenario_info()
         self.es.results['meta']['in_location'] = self.location
         self.es.results['meta']['file_date'] = datetime.datetime.fromtimestamp(
