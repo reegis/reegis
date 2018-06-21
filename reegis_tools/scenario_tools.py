@@ -75,22 +75,27 @@ class Scenario:
                                         freq='H')
         return solph.EnergySystem(timeindex=date_time_index)
 
-    def load_excel(self, filename):
+    def load_excel(self, filename=None):
         """Load scenario from an excel-file."""
+        if filename is not None:
+            self.location = filename
         self.location = filename
         xls = pd.ExcelFile(filename)
         for sheet in xls.sheet_names:
             self.table_collection[sheet] = xls.parse(
                 sheet, index_col=[0], header=[0, 1])
+        return self
 
-    def load_csv(self, path):
+    def load_csv(self, path=None):
         """Load scenario from a csv-collection."""
-        self.location = path
-        for file in os.listdir(path):
+        if path is not None:
+            self.location = path
+        for file in os.listdir(self.location):
             if file[-4:] == '.csv':
-                filename = os.path.join(path, file)
+                filename = os.path.join(self.location, file)
                 self.table_collection[file[:-4]] = pd.read_csv(
                     filename, index_col=[0], header=[0, 1])
+        return self
 
     def to_excel(self, filename):
         """Dump scenario into an excel-file."""
@@ -121,6 +126,7 @@ class Scenario:
                     c.append(column)
             msg = "Nan Values in the {0} table (columns: {1})."
             raise ValueError(msg.format(table_name, c))
+        return self
 
     def create_nodes(self):
         pass
@@ -129,20 +135,40 @@ class Scenario:
         if year is not None:
             self.year = year
         self.es = self.initialise_energy_system()
+        return self
 
     def add_nodes(self, nodes):
+        """
+
+        Parameters
+        ----------
+        nodes : dict
+            Dictionary with a unique key and values of type oemof.network.Node.
+
+        Returns
+        -------
+        self
+
+        """
         if self.es is None:
             self.initialise_es()
         self.es.add(*nodes.values())
+        return self
 
     def add_nodes2solph(self):
+        logging.ERROR("Deprecated.")
+        self.table2es()
+
+    def table2es(self):
         if self.es is None:
             self.es = self.initialise_energy_system()
         nodes = self.create_nodes()
         self.es.add(*nodes.values())
+        return self
 
     def create_model(self):
         self.model = solph.Model(self.es)
+        return self
 
     def dump_es(self, filename):
         d_path = os.path.dirname(filename)
