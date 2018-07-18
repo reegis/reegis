@@ -228,7 +228,7 @@ def feedin_wind_sets(weather, wind_parameter_set):
     df = pd.DataFrame()
     for turbine in wind_parameter_set.values():
         mc = feedin_windpowerlib(weather, turbine)
-        df[turbine['turbine_name'].replace(' ', '_')] = mc
+        df[turbine['name'].replace(' ', '_')] = mc
     return df
 
 
