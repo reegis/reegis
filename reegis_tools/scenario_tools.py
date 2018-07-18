@@ -108,8 +108,7 @@ class Scenario:
     def to_excel(self, filename):
         """Dump scenario into an excel-file."""
         # create path if it does not exist
-        if not os.path.isdir(os.path.dirname(filename)):
-            os.makedirs(os.path.dirname(filename))
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         writer = pd.ExcelWriter(filename)
         for name, df in sorted(self.table_collection.items()):
             df.to_excel(writer, name)
