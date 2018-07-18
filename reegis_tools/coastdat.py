@@ -381,7 +381,7 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
 
     # Join the tables to create a list of coastdat id's for each region.
     coastdat_geo.gdf = geometries.spatial_join_with_buffer(
-        coastdat_geo, geo, limit=0)
+        coastdat_geo, geo, name='federal_states', limit=0)
 
     # Fix regions with no matches (this my happen if a region ist to small).
     fix = {}
@@ -520,22 +520,28 @@ def coastdat_id2coord_from_db():
     data.to_csv(os.path.join('data', 'basic', 'id2latlon.csv'))
 
 
-def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile):
+def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
+                                        weather_year=None):
     cat = category.lower()
-
     logging.info("Aggregating {0} feed-in for {1}...".format(cat, year))
+    if weather_year is None:
+        weather_year = year
+        weather_year_str = ""
+    else:
+        logging.info("Weather data taken from {0}.".format(weather_year))
+        weather_year_str = " (weather: {0})".format(weather_year)
 
     # Define the path for the input files.
     coastdat_path = os.path.join(cfg.get('paths_pattern', 'coastdat')).format(
-        year=year, type=cat)
+        year=weather_year, type=cat)
     if not os.path.isdir(coastdat_path):
-        normalised_feedin_for_each_data_set(year)
+        normalised_feedin_for_each_data_set(weather_year)
     # Prepare the lists for the loops
     set_names = []
     set_name = None
     pwr = dict()
     columns = dict()
-    replace_str = 'coastdat_{0}_{1}_'.format(year, category)
+    replace_str = 'coastdat_{0}_{1}_'.format(weather_year, category)
     for file in os.listdir(coastdat_path):
         if file[-2:] == 'h5':
             set_name = file[:-3].replace(replace_str, '')
@@ -558,8 +564,8 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile):
         except KeyError:
             coastdat_ids = []
         number_of_coastdat_ids = len(coastdat_ids)
-        logging.info("{0} - {1} ({2})".format(
-            year, region, number_of_coastdat_ids))
+        logging.info("{0}{3} - {1} ({2})".format(
+            year, region, number_of_coastdat_ids, weather_year_str))
         logging.debug("{0}".format(coastdat_ids))
 
         # Loop over all sets that have been found in the coastdat path

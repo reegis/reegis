@@ -213,7 +213,11 @@ def get_heat_profile_from_demandlib(temperature, annual_demand, sector, year,
 
 
 def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
-                               state=None):
+                               state=None, weather_year=None):
+
+    if weather_year is None:
+        weather_year = year
+
     building_class = {}
     for (k, v) in cfg.get_dict('building_class').items():
         for s in v.split(', '):
@@ -237,7 +241,7 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
         demand_state.drop('domestic', level=1, inplace=True)
 
     temperatures = reegis_tools.coastdat.federal_state_average_weather(
-        year, 'temp_air')
+        weather_year, 'temp_air')
 
     temperatures = temperatures.tz_localize('UTC').tz_convert('Europe/Berlin')
 
@@ -264,9 +268,16 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
                         building_class[region]))
     heat_profiles.sort_index(1, inplace=True)
     if to_csv:
-        heat_profiles.to_csv(os.path.join(
-            cfg.get('paths', 'demand'),
-            cfg.get('demand', 'heat_profile_state').format(year=year)))
+        if weather_year is None:
+            fn = os.path.join(
+                cfg.get('paths', 'demand'),
+                cfg.get('demand', 'heat_profile_state').format(year=year))
+        else:
+            fn = os.path.join(
+                cfg.get('paths', 'demand'),
+                cfg.get('demand', 'heat_profile_state_var').format(
+                    year=year, weather_year=weather_year))
+        heat_profiles.to_csv(fn)
     return heat_profiles
 
 
