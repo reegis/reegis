@@ -15,6 +15,7 @@ import os
 import logging
 import calendar
 import datetime
+from collections import namedtuple
 
 # External libraries
 import pandas as pd
@@ -30,6 +31,13 @@ import oemof.graph as graph
 
 # internal modules
 import reegis_tools.config as cfg
+
+
+class Label(namedtuple('solph_label', ['cat', 'tag', 'subtag', 'region'])):
+    __slots__ = ()
+
+    def __str__(self):
+        return '_'.join(map(str, self._asdict().values()))
 
 
 class NodeDict(dict):
