@@ -299,7 +299,7 @@ def get_de_balance(year=None, grouped=False):
     sector = cfg.get_dict('SECTOR')
     for value in deb.index.get_level_values(2):
         new_index_values.append(sector[value])
-    deb.index.set_levels(new_index_values, level=2, inplace=True)
+    deb.index.set_levels(new_index_values[:10], level=2, inplace=True)
 
     if grouped:
         deb = deb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
