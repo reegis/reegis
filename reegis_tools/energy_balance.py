@@ -190,7 +190,7 @@ def edit_balance():
     sector = cfg.get_dict('SECTOR')
     for value in eb.index.get_level_values(2):
         new_index_values.append(sector[value])
-    eb.index.set_levels(new_index_values, level=2, inplace=True)
+    eb.index.set_levels(new_index_values[:10], level=2, inplace=True)
 
     # ************************************************************************
     # Bavaria (Bayern) - Missing coal values
@@ -383,7 +383,9 @@ def get_conversion_balance(year):
 
 if __name__ == "__main__":
     logger.define_logging()
-    print(get_conversion_balance(2014).loc['BE'])
+    print(get_states_balance(2014).loc[
+              (slice(None), 'total'), ('electricity', 'district heating')])
+    print(get_states_balance(2014, overwrite=True).loc['BE'])
     exit(0)
     f = os.path.join(cfg.get('paths', 'static_sources'),
                      cfg.get('energy_balance', 'energiebilanzen_laender'))
