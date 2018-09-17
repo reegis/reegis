@@ -200,7 +200,7 @@ class Scenario:
         }
         return sc_info
 
-    def solve(self, with_duals=False):
+    def solve(self, with_duals=False, tee=True, logfile=None):
         solver_name = cfg.get('general', 'solver')
 
         logging.info("Optimising using {0}.".format(solver_name))
@@ -215,7 +215,8 @@ class Scenario:
             self.model.write(filename,
                              io_options={'symbolic_solver_labels': True})
 
-        self.model.solve(solver=solver_name, solve_kwargs={'tee': True})
+        self.model.solve(solver=solver_name,
+                         solve_kwargs={'tee': tee, 'logfile': logfile})
         self.es.results['main'] = outputlib.processing.results(self.model)
         self.es.results['meta'] = outputlib.processing.meta_results(self.model)
         self.es.results['param'] = outputlib.processing.parameter_as_dict(
