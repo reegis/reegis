@@ -214,6 +214,21 @@ def get_heat_profile_from_demandlib(temperature, annual_demand, sector, year,
 
 def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
                                state=None, weather_year=None):
+    """
+
+    Parameters
+    ----------
+    year : int
+    to_csv : bool
+    divide_domestic : bool
+    state : list
+    weather_year : int or None
+
+    Returns
+    -------
+    pd.DataFrame
+
+    """
 
     if weather_year is None:
         weather_year = year
