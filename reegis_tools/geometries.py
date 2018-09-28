@@ -246,8 +246,8 @@ def gdf2df(gdf, remove_geo=False):
     return df
 
 
-def spatial_join_with_buffer(geo1, geo2, jcol='index', name=None,
-                             step=0.05, limit=1):
+def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,
+                             limit=1):
     """Add name of containing region to new column for all points.
 
     Parameters
