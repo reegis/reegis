@@ -462,7 +462,8 @@ def spatial_preparation_power_plants(pp):
     federal_states = geo.Geometry('federal states')
     federal_states.load(cfg.get('paths', 'geometry'),
                         cfg.get('geometry', 'federalstates_polygon'))
-    pp.gdf = geo.spatial_join_with_buffer(pp, federal_states)
+    pp.gdf = geo.spatial_join_with_buffer(pp, federal_states,
+                                          name='federal states')
 
     # Add country code to federal state if country code is not 'DE'.
     if 'country_code' in pp.gdf.columns:
