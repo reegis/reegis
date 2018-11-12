@@ -383,7 +383,7 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
     coastdat_geo.gdf = geometries.spatial_join_with_buffer(
         coastdat_geo, geo, name='federal_states', limit=0)
 
-    # Fix regions with no matches (this my happen if a region ist to small).
+    # Fix regions with no matches (no matches if a region ist too small).
     fix = {}
     for reg in set(geo.gdf.index) - set(coastdat_geo.gdf[col_name].unique()):
         reg_point = geo.gdf.representative_point().loc[reg]

@@ -180,6 +180,7 @@ class Scenario:
     def dump_es(self, filename):
         d_path = os.path.dirname(filename)
         d_fn = filename.split(os.path.sep)[-1]
+        os.makedirs(d_path, exist_ok=True)
         self.es.dump(dpath=d_path, filename=d_fn)
         logging.info("Results dumped to {0}.".format(filename))
 
