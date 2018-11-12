@@ -74,7 +74,7 @@ def prepare_ego_demand(egofile):
 
     # Add column with federal_states
     ego_demand.gdf = geometries.spatial_join_with_buffer(
-        ego_demand, federal_states)
+        ego_demand, federal_states, 'federal_states')
 
     # Overwrite Geometry object with its DataFrame, because it is not
     # needed anymore.

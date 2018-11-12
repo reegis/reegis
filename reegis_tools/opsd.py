@@ -463,7 +463,7 @@ def spatial_preparation_power_plants(pp):
     federal_states.load(cfg.get('paths', 'geometry'),
                         cfg.get('geometry', 'federalstates_polygon'))
     pp.gdf = geo.spatial_join_with_buffer(pp, federal_states,
-                                          name='federal states')
+                                          name='federal_states')
 
     # Add country code to federal state if country code is not 'DE'.
     if 'country_code' in pp.gdf.columns:
@@ -477,7 +477,7 @@ def spatial_preparation_power_plants(pp):
     coastdat = geo.Geometry('coastdat2')
     coastdat.load(cfg.get('paths', 'geometry'),
                   cfg.get('coastdat', 'coastdatgrid_polygon'))
-    pp.gdf = geo.spatial_join_with_buffer(pp, coastdat)
+    pp.gdf = geo.spatial_join_with_buffer(pp, coastdat, name='coastdat2')
 
     return pp
 

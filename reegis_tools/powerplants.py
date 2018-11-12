@@ -54,7 +54,8 @@ def patch_offshore_wind(orig_df, columns):
     federal_states = geo.Geometry(new_col)
     federal_states.load(cfg.get('paths', 'geometry'),
                         cfg.get('geometry', 'federalstates_polygon'))
-    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, federal_states)
+    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, federal_states,
+                                              name=new_col)
 
     # Add column with coastdat id
     new_col = 'coastdat2'
@@ -63,7 +64,7 @@ def patch_offshore_wind(orig_df, columns):
     coastdat = geo.Geometry(new_col)
     coastdat.load(cfg.get('paths', 'geometry'),
                   cfg.get('coastdat', 'coastdatgrid_polygon'))
-    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, coastdat)
+    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, coastdat, name=new_col)
     offsh_df = goffsh.get_df()
 
     new_cap = offsh_df['capacity'].sum()
