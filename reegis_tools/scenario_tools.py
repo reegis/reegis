@@ -87,8 +87,7 @@ class Scenario:
         """Load scenario from an excel-file."""
         if filename is not None:
             self.location = filename
-        self.location = filename
-        xls = pd.ExcelFile(filename)
+        xls = pd.ExcelFile(self.location)
         for sheet in xls.sheet_names:
             self.table_collection[sheet] = xls.parse(
                 sheet, index_col=[0], header=[0, 1])
@@ -201,8 +200,11 @@ class Scenario:
         }
         return sc_info
 
-    def solve(self, with_duals=False, tee=True, logfile=None):
-        solver_name = cfg.get('general', 'solver')
+    def solve(self, with_duals=False, tee=True, logfile=None, solver=None):
+        if solver is None:
+            solver_name = cfg.get('general', 'solver')
+        else:
+            solver_name = solver
 
         logging.info("Optimising using {0}.".format(solver_name))
 
