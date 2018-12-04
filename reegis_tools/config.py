@@ -34,7 +34,9 @@ def get_ini_filenames(additional_paths=None):
     if additional_paths is not None:
         paths.extend(additional_paths)
     paths.append(importer)
-    paths.append(os.path.join(os.path.expanduser("~"), '.oemof'))
+    local_reegis = os.path.join(os.path.expanduser("~"), '.reegis')
+    if os.path.isdir(local_reegis):
+        paths.append(local_reegis)
 
     for p in paths:
         for f in os.listdir(p):
