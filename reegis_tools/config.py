@@ -23,7 +23,10 @@ cfg.optionxform = str
 _loaded = False
 
 # Path of the package that imports this package.
-importer = os.path.dirname(sys.modules['__main__'].__file__)
+try:
+    importer = os.path.dirname(sys.modules['__main__'].__file__)
+except AttributeError:
+    importer = None
 
 
 def get_ini_filenames(additional_paths=None):
@@ -33,7 +36,8 @@ def get_ini_filenames(additional_paths=None):
     paths.append(os.path.join(os.path.dirname(__file__)))
     if additional_paths is not None:
         paths.extend(additional_paths)
-    paths.append(importer)
+    if importer is not None:
+        paths.append(importer)
     local_reegis = os.path.join(os.path.expanduser("~"), '.reegis')
     if os.path.isdir(local_reegis):
         paths.append(local_reegis)
