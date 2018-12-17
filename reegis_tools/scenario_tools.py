@@ -15,6 +15,7 @@ import os
 import logging
 import calendar
 import datetime
+import shutil
 from collections import namedtuple
 
 # External libraries
@@ -116,8 +117,10 @@ class Scenario:
 
     def to_csv(self, path):
         """Dump scenario into a csv-collection."""
-        if not os.path.isdir(path):
-            os.makedirs(path)
+        if os.path.isdir(path):
+            shutil.rmtree(os.path.join(path))
+        os.makedirs(path)
+
         for name, df in self.table_collection.items():
             name = name.replace(' ', '_') + '.csv'
             filename = os.path.join(path, name)
