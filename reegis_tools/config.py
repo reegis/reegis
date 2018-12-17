@@ -21,25 +21,26 @@ FILE = None
 cfg = cp.RawConfigParser()
 cfg.optionxform = str
 _loaded = False
+FILES = []
 
 # Path of the package that imports this package.
 try:
-    importer = os.path.dirname(sys.modules['__main__'].__file__)
+    IMPORTER = os.path.dirname(sys.modules['__main__'].__file__)
 except AttributeError:
-    importer = None
+    IMPORTER = None
 
 
-def get_ini_filenames(additional_paths=None):
-    paths = list()
-    files = list()
+def get_ini_filenames(additional_paths=None, use_importer=True, local=True):
+    paths = []
+    files = []
 
     paths.append(os.path.join(os.path.dirname(__file__)))
     if additional_paths is not None:
         paths.extend(additional_paths)
-    if importer is not None:
-        paths.append(importer)
+    if IMPORTER is not None and use_importer is True:
+        paths.append(IMPORTER)
     local_reegis = os.path.join(os.path.expanduser("~"), '.reegis')
-    if os.path.isdir(local_reegis):
+    if os.path.isdir(local_reegis) and local is True:
         paths.append(local_reegis)
 
     for p in paths:
@@ -49,11 +50,35 @@ def get_ini_filenames(additional_paths=None):
     return files
 
 
+def add_config_files(files=None, paths=None):
+    """
+
+    Parameters
+    ----------
+    files : list
+        A list of .ini files.
+    paths : list
+        A list of paths where ini files can be found.
+
+    """
+    if files is None:
+        files = []
+    if paths is not None:
+        for p in paths:
+            for f in os.listdir(p):
+                if f[-4:] == '.ini':
+                    files.append(os.path.join(p, f))
+    global FILES
+    FILES.extend(files)
+    cfg.read(files)
+    set_reegis_paths(paths)
+
+
 def main():
     pass
 
 
-def init(files=None, paths=None):
+def init(files=None, paths=None, **kwargs):
     """Read config file(s).
 
     Parameters
@@ -64,12 +89,21 @@ def init(files=None, paths=None):
         List of paths where it is searched for .ini files.
     """
     if files is None:
-        files = get_ini_filenames(paths)
-
+        files = get_ini_filenames(paths, **kwargs)
+    global FILES
+    FILES = files
     cfg.read(files)
     global _loaded
     _loaded = True
     set_reegis_paths(paths)
+
+
+def has_option(section, option):
+    return cfg.has_option(section, option)
+
+
+def has_section(section):
+    return cfg.has_section(section)
 
 
 def get(section, key):
@@ -166,9 +200,9 @@ def set_reegis_paths(paths=None):
         logging.debug("Set default path for data path: {0}".format(datapath))
     cfg.set('paths', 'local_root', datapath)
 
-    if importer != os.path.join(os.path.dirname(__file__)):
-        importer_name = importer.split(os.sep)[-1]
-        cfg.set('paths', '{0}'.format(importer_name), importer)
+    if IMPORTER != os.path.join(os.path.dirname(__file__)):
+        importer_name = IMPORTER.split(os.sep)[-1]
+        cfg.set('paths', '{0}'.format(importer_name), IMPORTER)
 
     if paths is not None:
         for p in paths:
