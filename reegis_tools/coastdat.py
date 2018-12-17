@@ -27,6 +27,7 @@ import calendar
 import pandas as pd
 import pvlib
 import shapely.wkt as wkt
+from shapely.geometry import Point
 
 # oemof libraries
 from oemof.tools import logger
@@ -506,6 +507,26 @@ def fetch_coastdat2_year_from_db(years=None, overwrite=False):
             logging.info("Weather data for {0} exists. Skipping.".format(year))
 
 
+def fetch_id_by_coordinates(latitude, longitude):
+    coastdat_polygons = geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('coastdat', 'coastdatgrid_polygon'))
+    location = Point(longitude, latitude)
+
+    id = coastdat_polygons[coastdat_polygons.contains(location)].index
+
+    if len(id) == 0:
+        msg = "No id found for latitude {0} and longitude {1}."
+        logging.warning(msg.format(latitude, longitude))
+        return None
+    elif len(id) == 1:
+        return id[0]
+    else:
+        msg = "Something odd happened for latitude {0} and longitude {1}."
+        logging.warning(msg.format(latitude, longitude))
+        return id
+
+
 def coastdat_id2coord_from_db():
     """
     Creating a file with the latitude and longitude for all coastdat2 data
@@ -755,9 +776,62 @@ def scenario_feedin_pv(year, state):
     return feedin_ts.sort_index(1)
 
 
+def get_time_series_for_one_location(latitude, longitude, year, set_name=None):
+    coastdat_id = fetch_id_by_coordinates(latitude, longitude)
+
+    # set_name = 'M_LG290G3__I_ABB_MICRO_025_US208'
+    df = pd.DataFrame()
+    if set_name is not None:
+        hd_file = pd.HDFStore(os.path.join(
+            cfg.get('paths', 'feedin'), 'coastdat', str(year), 'solar',
+            cfg.get('feedin', 'file_pattern').format(year=year, type='solar',
+                                                     set_name=set_name)),
+            mode='r')
+        df = hd_file['/A{0}'.format(coastdat_id)]
+        hd_file.close()
+    else:
+        path = os.path.join(
+            cfg.get('paths', 'feedin'), 'coastdat', str(year), 'solar')
+        for file in os.listdir(path):
+            hd_file = pd.HDFStore(os.path.join(path, file), mode='r')
+            tmp = hd_file['/A{0}'.format(coastdat_id)]
+            hd_file.close()
+            df = pd.concat([df, tmp], axis=1)
+
+    opt = int(round(feedin.get_optimal_pv_angle(latitude)))
+    df.columns = df.columns.str.replace('opt', str(opt))
+    return df
+
+
+def get_all_time_series_for_one_location(latitude, longitude, set_name=None):
+    path = os.path.join(cfg.get('paths', 'feedin'), 'coastdat')
+    years = os.listdir(path)
+    df = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], labels=[[], []]))
+    # years = [2012, 2013, 2014]
+    for year in years:
+        print(year)
+        if os.path.isdir(os.path.join(path, str(year))):
+            tmp = get_time_series_for_one_location(
+                latitude, longitude, year, set_name).reset_index(drop=True)
+            for col in tmp.columns:
+                # print(tmp[col].sum())
+                df[year, col] = tmp[col]
+    return df
+
+
 if __name__ == "__main__":
     logger.define_logging()
-    print(scenario_feedin(2014, 'BE'))
+    # print(fetch_id_by_coordinates(0, 53.655119))
+    # my_df = get_time_series_for_one_location(53.655119, 11.181475, 2012)
+    # print(my_df.sum())
+    my_df = get_all_time_series_for_one_location(
+        53.655119, 11.181475, set_name='M_LG290G3__I_ABB_MICRO_025_US208')
+    my_df.to_csv('/home/uwe/tester.csv')
+    # print(my_df.sum())
+    # print(my_df.swaplevel(axis=1)['LG290G3_ABB_tlt34_az180_alb02'].sum())
+    # my_df.to_csv('/home/uwe/tester.csv')
+    # exit(0)
+    # print(scenario_feedin(2014, 'BE'))
     # for y in [2008]:
     #     normalised_feedin_for_each_data_set(y, wind=True, solar=True)
     # print(federal_state_average_weather(2012, 'temp_air'))
