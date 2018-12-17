@@ -263,10 +263,11 @@ if __name__ == "__main__":
     tools.logger.define_logging()
     import os
     y = 2012
+    set_name = 'M_LG290G3__I_ABB_MICRO_025_US208'
     hd_file = pd.HDFStore(os.path.join(
-        cfg.get('paths', 'feedin'), 'wind', 'coastdat',
-        cfg.get('feedin', 'feedin_file_pattern').format(year=y,
-                                                        type='wind')),
+        cfg.get('paths', 'feedin'), 'coastdat', str(y), 'solar',
+        cfg.get('feedin', 'file_pattern').format(year=y, type='solar',
+                                                 set_name=set_name)),
         mode='r')
     print(hd_file['/A1113109'].sum())
     hd_file.close()
