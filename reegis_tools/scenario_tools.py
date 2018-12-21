@@ -195,11 +195,12 @@ class Scenario:
         self.results = self.es.results['main']
         logging.info("Results restored from {0}.".format(filename))
 
-    def scenario_info(self):
+    def scenario_info(self, solver_name):
         sc_info = {
             'name': self.name,
             'datetime': datetime.datetime.now(),
             'year': self.year,
+            'solver': solver_name
         }
         return sc_info
 
@@ -216,7 +217,7 @@ class Scenario:
 
         if self.debug:
             filename = os.path.join(
-                helpers.extend_basic_path('lp_files'), 'berlin.lp')
+                helpers.extend_basic_path('lp_files'), 'reegis.lp')
             logging.info('Store lp-file in {0}.'.format(filename))
             self.model.write(filename,
                              io_options={'symbolic_solver_labels': True})
@@ -227,7 +228,7 @@ class Scenario:
         self.es.results['meta'] = outputlib.processing.meta_results(self.model)
         self.es.results['param'] = outputlib.processing.parameter_as_dict(
             self.es)
-        self.es.results['scenario'] = self.scenario_info()
+        self.es.results['scenario'] = self.scenario_info(solver_name)
         self.es.results['meta']['in_location'] = self.location
         self.es.results['meta']['file_date'] = datetime.datetime.fromtimestamp(
             os.path.getmtime(self.location))
