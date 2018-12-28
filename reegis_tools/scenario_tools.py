@@ -17,6 +17,7 @@ import calendar
 import datetime
 import shutil
 from collections import namedtuple
+import dill as pickle
 
 # External libraries
 import pandas as pd
@@ -63,8 +64,11 @@ class Scenario:
         self.model = kwargs.get('model', None)
         self.es = kwargs.get('es', None)
         self.results = None
+        self.results_fn = kwargs.get('results_fn', None)
         self.debug = kwargs.get('debug', None)
         self.location = None
+        self.map = None
+        self.meta = kwargs.get('meta', None)
 
     def initialise_energy_system(self):
         if self.debug is True:
@@ -180,18 +184,28 @@ class Scenario:
         return self
 
     def dump_es(self, filename):
-        d_path = os.path.dirname(filename)
-        d_fn = filename.split(os.path.sep)[-1]
-        os.makedirs(d_path, exist_ok=True)
-        self.es.dump(dpath=d_path, filename=d_fn)
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        f = open(filename, "wb")
+        if self.__meta is None:
+            meta = {}
+        else:
+            meta = self.__meta
+        pickle.dump(meta, f)
+        pickle.dump(self.es.__dict__, f)
+        f.close()
         logging.info("Results dumped to {0}.".format(filename))
 
-    def restore_es(self, filename):
+    def restore_es(self, filename=None):
+        if filename is None:
+            filename = self.results_fn
+        else:
+            self.results_fn = filename
         if self.es is None:
             self.es = solph.EnergySystem()
-        d_path = os.path.dirname(filename)
-        d_fn = filename.split(os.path.sep)[-1]
-        self.es.restore(dpath=d_path, filename=d_fn)
+        f = open(filename, "rb")
+        self.__meta = pickle.load(f)
+        self.es.__dict__ = pickle.load(f)
+        f.close()
         self.results = self.es.results['main']
         logging.info("Results restored from {0}.".format(filename))
 
@@ -244,6 +258,19 @@ class Scenario:
         if show is True:
             draw_graph(g, **kwargs)
         return g
+
+    @property
+    def meta(self):
+        if self.__meta is None:
+            if self.results_fn is not None:
+                f = open(self.results_fn, "rb")
+                self.__meta = pickle.load(f)
+                f.close()
+        return self.__meta
+
+    @meta.setter
+    def meta(self, meta):
+        self.__meta = meta
 
 
 def draw_graph(grph, edge_labels=True, node_color='#AFAFAF',

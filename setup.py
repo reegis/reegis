@@ -25,5 +25,5 @@ setup(name='reegis_tools',
                         'owslib',
                         'pyproj',
                         'pytz',
-                        'python-dateutil', 'networkx']
+                        'python-dateutil', 'networkx', 'dill']
       )
