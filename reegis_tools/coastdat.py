@@ -809,7 +809,6 @@ def get_all_time_series_for_one_location(latitude, longitude, set_name=None):
     df = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], labels=[[], []]))
     # years = [2012, 2013, 2014]
     for year in years:
-        print(year)
         if os.path.isdir(os.path.join(path, str(year))):
             tmp = get_time_series_for_one_location(
                 latitude, longitude, year, set_name).reset_index(drop=True)
@@ -821,16 +820,16 @@ def get_all_time_series_for_one_location(latitude, longitude, set_name=None):
 
 if __name__ == "__main__":
     logger.define_logging()
-    # print(fetch_id_by_coordinates(0, 53.655119))
-    # my_df = get_time_series_for_one_location(53.655119, 11.181475, 2012)
-    # print(my_df.sum())
+    print("Coastdat ID:", fetch_id_by_coordinates(53.655119, 11.181475))
+    my_df = get_time_series_for_one_location(53.655119, 11.181475, 2012)
+    print()
+    print("One year:")
+    print(my_df.sum())
     my_df = get_all_time_series_for_one_location(
         53.655119, 11.181475, set_name='M_LG290G3__I_ABB_MICRO_025_US208')
-    my_df.to_csv('/home/uwe/tester.csv')
-    # print(my_df.sum())
-    # print(my_df.swaplevel(axis=1)['LG290G3_ABB_tlt34_az180_alb02'].sum())
-    # my_df.to_csv('/home/uwe/tester.csv')
-    # exit(0)
+    print()
+    print("One set:")
+    print(my_df.swaplevel(axis=1)['LG290G3_ABB_tlt34_az180_alb02'].sum())
     # print(scenario_feedin(2014, 'BE'))
     # for y in [2008]:
     #     normalised_feedin_for_each_data_set(y, wind=True, solar=True)
