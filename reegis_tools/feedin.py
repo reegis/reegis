@@ -183,7 +183,8 @@ def feedin_pvlib(location, system, weather, tilt=None, peak=None,
 
     mc = pvlib.modelchain.ModelChain(
         pvsys, location, orientation_strategy=orientation_strategy)
-    out = mc.run_model(weather.index, weather=weather)
+    pvlib_times = weather.index.shift(-1, freq="30min")
+    out = mc.run_model(pvlib_times, weather=weather)
     return out.ac.fillna(0).clip(0).div(system['p_peak']).multiply(
         installed_capacity)
 
