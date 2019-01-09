@@ -46,7 +46,7 @@ def get_optimal_pv_angle(lat):
     The pvlib uses tilt angles horizontal=90° and up=0°. Therefore 90° minus
     the angle from the horizontal.
     """
-    return lat - 20
+    return lat - 15
 
 
 def create_pvlib_sets():
