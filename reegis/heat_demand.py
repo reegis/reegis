@@ -282,6 +282,7 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
                         temperature, tmp.loc[sector, fuel], sector, year,
                         building_class[region]))
     heat_profiles.sort_index(1, inplace=True)
+
     if to_csv:
         if weather_year is None:
             fn = os.path.join(
@@ -298,3 +299,5 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
 
 if __name__ == "__main__":
     logger.define_logging()
+    heat_demand(2014).loc['BE'].to_excel('/home/uwe/berlin_heat_5.xlsx')
+    get_heat_profiles_by_state(2014, state=['BE'])['BE'].to_excel('/home/uwe/berlin_heat_4.xlsx')

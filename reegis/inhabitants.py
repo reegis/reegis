@@ -123,4 +123,4 @@ if __name__ == "__main__":
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
     spatial_dfs = pd.read_csv(spatial_file_fs, index_col='gen')
-    print(get_ew_by_federal_states(2015))
+    print(get_ew_by_federal_states(2014))

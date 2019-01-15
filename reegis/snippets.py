@@ -232,7 +232,10 @@ if __name__ == "__main__":
     #             coord_file='data_basic/label_federal_state.csv')
     # plot_geocsv('/home/uwe/geo.csv', idx_col='gid')
     logger.define_logging()
-    energy_balance2repo()
+    p = '/home/uwe/chiba/Promotion/reegis_geometries/weather'
+    shp = os.path.join(p, 'coastdat_grid_de_buffer.shp')
+    geo_csv_from_shp(shp, 'brt.csv', 'gid', tmp_file='tmp.csv')
+    # energy_balance2repo()
     # offshore()
     # load_energiebilanzen()
     # create_intersection_table()

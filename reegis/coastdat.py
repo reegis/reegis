@@ -820,17 +820,17 @@ def get_all_time_series_for_one_location(latitude, longitude, set_name=None):
 
 if __name__ == "__main__":
     logger.define_logging()
-    print("Coastdat ID:", fetch_id_by_coordinates(53.655119, 11.181475))
-    my_df = get_time_series_for_one_location(53.655119, 11.181475, 2012)
-    print()
-    print("One year:")
-    print(my_df.sum())
-    my_df = get_all_time_series_for_one_location(
-        53.655119, 11.181475, set_name='M_LG290G3__I_ABB_MICRO_025_US208')
-    print()
-    print("One set:")
-    print(my_df.swaplevel(axis=1)['LG290G3_ABB_tlt34_az180_alb02'].sum())
+    # print("Coastdat ID:", fetch_id_by_coordinates(53.655119, 11.181475))
+    # my_df = get_time_series_for_one_location(53.655119, 11.181475, 2012)
+    # print()
+    # print("One year:")
+    # print(my_df.sum())
+    # my_df = get_all_time_series_for_one_location(
+    #     53.655119, 11.181475, set_name='M_LG290G3__I_ABB_MICRO_025_US208')
+    # print()
+    # print("One set:")
+    # print(my_df.swaplevel(axis=1)['LG290G3_ABB_tlt34_az180_alb02'].sum())
     # print(scenario_feedin(2014, 'BE'))
-    # for y in [2008]:
-    #     normalised_feedin_for_each_data_set(y, wind=True, solar=True)
+    for y in [2014]:
+        normalised_feedin_for_each_data_set(y, wind=True, solar=True)
     # print(federal_state_average_weather(2012, 'temp_air'))
