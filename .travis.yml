@@ -8,6 +8,10 @@ matrix:
       dist: xenial
       sudo: true
 
+# command to install dependencies
+before_install:
+  - sudo apt-get install libhdf5-serial-dev
+
 install:
   - pip install cython
   - pip install .
