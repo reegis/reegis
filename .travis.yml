@@ -9,6 +9,7 @@ matrix:
       sudo: true
 
 install:
+  - pip install cython
   - pip install .
   - pip install coveralls
 
