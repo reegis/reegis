@@ -1,9 +1,10 @@
-# reegis-tools
-
 .. image:: https://travis-ci.org/reegis/reegis.svg?branch=master
     :target: https://travis-ci.org/reegis/reegis
 
-The reegis-tools repository provides tools to fetch, prepare and organise input data for heat and power models. At the moment the focus is on the territory of Germany but some tools can be used for european models as well.
+.. image:: https://coveralls.io/repos/github/reegis/reegis/badge.svg?branch=master
+    :target: https://coveralls.io/github/reegis/reegis?branch=master
+
+The reegis repository provides tools to fetch, prepare and organise input data for heat and power models. At the moment the focus is on the territory of Germany but some tools can be used for european models as well.
 
 Most tools use spatial data and can be used for arbitrary regions.
 
