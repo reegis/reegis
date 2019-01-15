@@ -25,9 +25,9 @@ import geopandas as gpd
 import oemof.tools.logger
 
 # Internal modules
-import reegis_tools.config as cfg
-import reegis_tools.geometries
-import reegis_tools.tools as tools
+import reegis.config as cfg
+import reegis.geometries
+import reegis.tools as tools
 
 
 def get_ew_shp_file(year):
@@ -92,7 +92,7 @@ def get_ew_geometry(year):
     if not os.path.isfile(filename_shp):
         get_ew_shp_file(year)
 
-    vwg = reegis_tools.geometries.Geometry()
+    vwg = reegis.geometries.Geometry()
     vwg.gdf = gpd.read_file(filename_shp)
 
     # replace polygon geometry by its centroid
@@ -105,13 +105,13 @@ def get_ew_by_region(year, geo, col=None):
     if col is None:
         col = geo.name
     ew = get_ew_geometry(year)
-    ew.gdf = reegis_tools.geometries.spatial_join_with_buffer(
+    ew.gdf = reegis.geometries.spatial_join_with_buffer(
         ew, geo, name=col)
     return ew.gdf.groupby(col).sum()['EWZ']
 
 
 def get_ew_by_federal_states(year):
-    geo = reegis_tools.geometries.Geometry(name='federal_state')
+    geo = reegis.geometries.Geometry(name='federal_state')
     geo.load(cfg.get('paths', 'geometry'),
              cfg.get('geometry', 'federalstates_polygon'))
     return get_ew_by_region(year, geo)

@@ -1,1 +1,1 @@
-from reegis_tools.scenario_tools import Scenario
+from reegis.scenario_tools import Scenario

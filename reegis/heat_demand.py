@@ -23,21 +23,21 @@ from oemof.tools import logger
 import demandlib.bdew as bdew
 
 # internal modules
-import reegis_tools.config as cfg
-import reegis_tools.entsoe
-import reegis_tools.bmwi
-import reegis_tools.geometries
-import reegis_tools.energy_balance
-import reegis_tools.coastdat
-import reegis_tools.openego
+import reegis.config as cfg
+import reegis.entsoe
+import reegis.bmwi
+import reegis.geometries
+import reegis.energy_balance
+import reegis.coastdat
+import reegis.openego
 
 
 def heat_demand(year):
-    eb = reegis_tools.energy_balance.get_states_balance(year)
+    eb = reegis.energy_balance.get_states_balance(year)
     eb.sort_index(inplace=True)
 
     # get fraction of domestic and retail from the german energy balance
-    share = reegis_tools.energy_balance.get_domestic_retail_share(year)
+    share = reegis.energy_balance.get_domestic_retail_share(year)
 
     # Use 0.5 for both sectors if no value is given
     share.fillna(0.5, inplace=True)
@@ -99,7 +99,7 @@ def heat_demand(year):
 
 def share_of_mechanical_energy_bmwi(year):
     mech = pd.DataFrame()
-    fs = reegis_tools.bmwi.read_bmwi_sheet_7('a')
+    fs = reegis.bmwi.read_bmwi_sheet_7('a')
     fs.sort_index(inplace=True)
     sector = 'Industrie'
 
@@ -107,7 +107,7 @@ def share_of_mechanical_energy_bmwi(year):
     mech[sector] = fs.loc[(sector, 'mechanische Energie'), year].div(
         total).round(3)
 
-    fs = reegis_tools.bmwi.read_bmwi_sheet_7('b')
+    fs = reegis.bmwi.read_bmwi_sheet_7('b')
     fs.sort_index(inplace=True)
     for sector in fs.index.get_level_values(0).unique():
         total = float(fs.loc[(sector, 'gesamt'), year])
@@ -255,7 +255,7 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
         demand_state.sort_index(inplace=True)
         demand_state.drop('domestic', level=1, inplace=True)
 
-    temperatures = reegis_tools.coastdat.federal_state_average_weather(
+    temperatures = reegis.coastdat.federal_state_average_weather(
         weather_year, 'temp_air')
 
     temperatures = temperatures.tz_localize('UTC').tz_convert('Europe/Berlin')

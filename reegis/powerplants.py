@@ -22,10 +22,10 @@ import numpy as np
 import oemof.tools.logger
 
 # Internal modules
-import reegis_tools.config as cfg
-import reegis_tools.opsd as opsd
-import reegis_tools.energy_balance as energy_balance
-import reegis_tools.geometries as geo
+import reegis.config as cfg
+import reegis.opsd as opsd
+import reegis.energy_balance as energy_balance
+import reegis.geometries as geo
 
 
 def patch_offshore_wind(orig_df, columns):

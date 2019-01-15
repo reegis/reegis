@@ -33,12 +33,12 @@ from shapely.geometry import Point
 from oemof.tools import logger
 
 # Internal modules
-import reegis_tools.tools as tools
-import reegis_tools.feedin as feedin
-import reegis_tools.config as cfg
-import reegis_tools.powerplants as powerplants
-import reegis_tools.geometries as geometries
-import reegis_tools.bmwi
+import reegis.tools as tools
+import reegis.feedin as feedin
+import reegis.config as cfg
+import reegis.powerplants as powerplants
+import reegis.geometries as geometries
+import reegis.bmwi
 
 # Optional: database tool.
 try:
@@ -619,7 +619,7 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
 
 
 def aggregate_by_region_hydro(pp, regions, year, outfile_name):
-    hydro = reegis_tools.bmwi.bmwi_re_energy_capacity()['water']
+    hydro = reegis.bmwi.bmwi_re_energy_capacity()['water']
 
     hydro_capacity = (pp.loc['Hydro', 'capacity'].sum())
 

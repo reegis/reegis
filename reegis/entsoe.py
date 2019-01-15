@@ -27,7 +27,7 @@ import pandas as pd
 from oemof.tools import logger
 
 # internal modules
-import reegis_tools.config as cfg
+import reegis.config as cfg
 
 
 def read_original_timeseries_file(overwrite=False):

@@ -32,7 +32,7 @@ import oemof.outputlib as outputlib
 import oemof.graph as graph
 
 # internal modules
-import reegis_tools.config as cfg
+import reegis.config as cfg
 
 
 class Label(namedtuple('solph_label', ['cat', 'tag', 'subtag', 'region'])):

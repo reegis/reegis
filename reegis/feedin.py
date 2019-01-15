@@ -38,7 +38,7 @@ import pvlib
 from oemof import tools
 
 # Internal modules
-import reegis_tools.config as cfg
+import reegis.config as cfg
 
 
 def get_optimal_pv_angle(lat):

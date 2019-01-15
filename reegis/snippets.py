@@ -24,7 +24,7 @@ from shapely.geometry import Point
 from oemof.tools import logger
 
 # internal modules
-import reegis_tools.config as cfg
+import reegis.config as cfg
 
 
 def lat_lon2point(df):

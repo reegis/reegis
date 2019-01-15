@@ -18,8 +18,8 @@ import logging
 import pandas as pd
 
 # Internal modules
-import reegis_tools.config as cfg
-import reegis_tools.tools as tools
+import reegis.config as cfg
+import reegis.tools as tools
 
 
 def get_bmwi_energiedaten_file():

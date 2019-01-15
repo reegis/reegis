@@ -252,8 +252,8 @@ def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,
 
     Parameters
     ----------
-    geo1 : reegis_tools.geometries.Geometry or geopandas.geoDataFrame
-    geo2 : reegis_tools.geometries.Geometry or geopandas.geoDataFrame
+    geo1 : reegis.geometries.Geometry or geopandas.geoDataFrame
+    geo2 : reegis.geometries.Geometry or geopandas.geoDataFrame
     jcol : str
     name : str
         Name of the new column with the region names/identifiers.

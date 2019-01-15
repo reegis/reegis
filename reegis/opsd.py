@@ -26,8 +26,8 @@ from shapely.wkt import loads as wkt_loads
 from oemof.tools import logger
 
 # Internal modules
-import reegis_tools.config as cfg
-import reegis_tools.geometries as geo
+import reegis.config as cfg
+import reegis.geometries as geo
 
 
 def convert_utm_code_opsd(df):
@@ -442,12 +442,12 @@ def spatial_preparation_power_plants(pp):
 
     Parameters
     ----------
-    pp : reegis_tools.Geometry
+    pp : reegis.Geometry
         An object containing Germany's power plants.
 
     Returns
     -------
-    reegis_tools.Geometry
+    reegis.Geometry
 
     """
 

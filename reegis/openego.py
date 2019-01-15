@@ -21,9 +21,9 @@ import pandas as pd
 import geopandas as gpd
 
 # Internal modules
-import reegis_tools.config as cfg
-import reegis_tools.geometries as geometries
-from reegis_tools import oedb
+import reegis.config as cfg
+import reegis.geometries as geometries
+from reegis import oedb
 
 import oemof.tools.logger as logger
 
