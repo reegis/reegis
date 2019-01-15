@@ -26,5 +26,5 @@ setup(name='reegis',
                         'pytz',
                         'python-dateutil',
 		        'networkx',
-			'dill']
+			'dill', 'PyQt5']
       )
