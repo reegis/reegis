@@ -134,10 +134,6 @@ def fetch_id_by_coordinates(latitude, longitude):
         return None
     elif len(cid) == 1:
         return cid[0]
-    else:
-        msg = "Something odd happened for latitude {0} and longitude {1}."
-        logging.warning(msg.format(latitude, longitude))
-        return cid
 
 
 def fetch_data_coordinates_by_id(coastdat_id):

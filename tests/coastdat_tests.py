@@ -14,7 +14,7 @@ __copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
 __license__ = "GPLv3"
 
 
-from nose.tools import eq_
+from nose.tools import eq_, raises, assert_raises_regexp
 from reegis import coastdat
 import unittest
 
@@ -28,3 +28,15 @@ def test_coastdat_file_url():
         if f1 != f2:
             check = year
     eq_(check, True)
+
+
+def test_wrong_url():
+    assert_raises_regexp(ValueError, "No URL found",
+                         coastdat.download_coastdat_data, year=2018)
+    assert_raises_regexp(ValueError, "URL not valid",
+                         coastdat.download_coastdat_data,
+                         url='https://osf.io/url_id/download')
+
+
+def test_coordinates_out_of_bound():
+    eq_(coastdat.fetch_id_by_coordinates(0, 0), None)
