@@ -16,8 +16,10 @@ __license__ = "GPLv3"
 
 from nose.tools import eq_
 from reegis import coastdat
+import unittest
 
 
+@unittest.skip("URL test is very slow. Use it from time to time.")
 def test_coastdat_file_url():
     check = True
     for year in range(1998, 2015):
