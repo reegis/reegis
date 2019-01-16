@@ -19,14 +19,12 @@ import os
 import datetime
 import logging
 import requests
-import shutil
-import configparser
 import calendar
+from collections import namedtuple
 
 # External libraries
 import pandas as pd
 import pvlib
-import shapely.wkt as wkt
 from shapely.geometry import Point
 
 # oemof libraries
@@ -40,38 +38,170 @@ import reegis.powerplants as powerplants
 import reegis.geometries as geometries
 import reegis.bmwi
 
-# Optional: database tool.
-try:
-    import oemof.db.coastdat as coastdat
-    import oemof.db as db
-    from sqlalchemy import exc
-except ImportError:
-    coastdat = None
-    db = None
-    exc = None
 
+def download_coastdat_data(filename=None, year=None, url=None,
+                           test_only=False, overwrite=True):
+    """
+    Download coastdat data set from internet source.
 
-def get_coastdat_data(year, filename):
-    try:
-        ini_key = 'coastdat{0}'.format(year)
-        url = cfg.get('coastdat', ini_key)
-        tools.download_file(filename, url, overwrite=False)
-    except configparser.NoOptionError:
-        logging.error("No url found to download coastdat2 data for {0}".format(
-            year))
-        url = None
+    Parameters
+    ----------
+    filename : str
+        Full path with the filename, where the downloaded file will be stored.
+    year : int or None
+        Year of the weather data set. If a url is passed this value will be
+        ignored because it is used to create the default url.
+    url : str or None
+        Own url can be used if the default url does not work an one found an
+        alternative valid url.
+    test_only : bool
+        If True the the url is tested but the file will not be downloaded
+        (default: False).
+    overwrite : bool
+        If True the file will be downloaded even if it already exist.
+        (default: True)
 
-    if url is not None:
+    Returns
+    -------
+    str or None : If the url is valid the filename is returned otherwise None.
+
+    Examples
+    --------
+    >>> download_coastdat_data(year=2014, test_only=True)
+    'coastDat2_de_2014.h5'
+    >>> download_coastdat_data(filename='w14.hd5', year=2014)  # doctest: +SKIP
+
+    """
+    if url is None:
+        url_ids = cfg.get_dict('coastdat_url_id')
+        url_id = url_ids.get(str(year), None)
+        if url_id is not None:
+            url = cfg.get('coastdat', 'basic_url').format(url_id=url_id)
+
+    if url is not None and not test_only:
         response = requests.get(url, stream=True)
         if response.status_code == 200:
-            logging.info("Downloading the coastdat2 file of {0}...".format(
-                year))
-            with open(filename, 'wb') as f:
-                shutil.copyfileobj(response.raw, f)
+            msg = "Downloading the coastdat2 file of {0} from {1} ..."
+            logging.info(msg.format(year, url))
+            if filename is None:
+                headers = response.headers['Content-Disposition']
+                filename = headers.split('; ')[1].split('=')[1].replace(
+                    '"', '')
+            tools.download_file(filename, url, overwrite=overwrite)
+            return filename
+        else:
+            raise ValueError("URL not valid: {0}".format(url))
+    elif url is not None and test_only:
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            headers = response.headers['Content-Disposition']
+            filename = headers.split('; ')[1].split('=')[1].replace('"', '')
+        else:
+            filename = None
+        return filename
+    else:
+        raise ValueError("No URL found for {0}".format(year))
+
+
+def fetch_id_by_coordinates(latitude, longitude):
+    """
+    Get nearest weather data set to a given location.
+
+    Parameters
+    ----------
+    latitude : float
+    longitude : float
+
+    Returns
+    -------
+    int : coastdat id
+
+    Examples
+    --------
+    >>> fetch_id_by_coordinates(53.655119, 11.181475)
+    1132101
+    """
+    coastdat_polygons = geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('coastdat', 'coastdatgrid_polygon'))
+    location = Point(longitude, latitude)
+
+    cid = coastdat_polygons[coastdat_polygons.contains(location)].index
+
+    if len(cid) == 0:
+        msg = "No id found for latitude {0} and longitude {1}."
+        logging.warning(msg.format(latitude, longitude))
+        return None
+    elif len(cid) == 1:
+        return cid[0]
+    else:
+        msg = "Something odd happened for latitude {0} and longitude {1}."
+        logging.warning(msg.format(latitude, longitude))
+        return cid
+
+
+def fetch_data_coordinates_by_id(coastdat_id):
+    """
+    Returns the coordinates of the weather data set.
+
+    Parameters
+    ----------
+    coastdat_id : int or str
+        ID of the coastdat weather data set
+
+    Returns
+    -------
+    namedtuple : Fields are latitude and longitude
+
+    Examples
+    --------
+    >>> location = fetch_data_coordinates_by_id(1132101)
+    >>> round(location.latitude, 3)
+    53.692
+    >>> round(location.longitude, 3)
+    11.351
+    """
+    coord = namedtuple('weather_location', 'latitude, longitude')
+    coastdat_polygons = geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('coastdat', 'coastdatgrid_polygon'))
+    c = coastdat_polygons.loc[int(coastdat_id)].geometry.centroid
+    return coord(latitude=c.y, longitude=c.x)
+
+
+def fetch_coastdat_weather(year, coastdat_id):
+    """
+    Fetch weather one coastdat weather data set.
+
+    Parameters
+    ----------
+    year : int
+        Year of the weather data set
+    coastdat_id : numeric
+        ID of the coastdat data set.
+
+    Returns
+    -------
+    pd.DataFrame : Weather data set.
+
+    Examples
+    --------
+    >>> coastdat_id = fetch_id_by_coordinates(53.655119, 11.181475)
+    >>> fetch_coastdat_weather(2014, coastdat_id)['v_wind'].mean().round(2)
+    4.39
+    """
+    weather_file_name = os.path.join(
+        cfg.get('paths', 'coastdat'),
+        cfg.get('coastdat', 'file_pattern').format(year=year))
+    if not os.path.isfile(weather_file_name):
+        download_coastdat_data(filename=weather_file_name, year=year)
+    key = '/A{0}'.format(int(coastdat_id))
+    return pd.DataFrame(pd.read_hdf(weather_file_name, key))
 
 
 def adapt_coastdat_weather_to_pvlib(weather, loc):
     """
+    Adapt the coastdat weather data sets to the needs of the pvlib.
 
     Parameters
     ----------
@@ -83,6 +213,18 @@ def adapt_coastdat_weather_to_pvlib(weather, loc):
     Returns
     -------
     pandas.DataFrame : Adapted weather data set.
+
+    Examples
+    --------
+    >>> cd_id = 1132101
+    >>> cd_weather = fetch_coastdat_weather(2014, cd_id)
+    >>> c = fetch_data_coordinates_by_id(cd_id)
+    >>> location = pvlib.location.Location(**getattr(c, '_asdict')())
+    >>> pv_weather = adapt_coastdat_weather_to_pvlib(cd_weather, location)
+    >>> 'ghi' in cd_weather.columns
+    False
+    >>> 'ghi' in pv_weather.columns
+    True
     """
     w = pd.DataFrame(weather.copy())
     w['temp_air'] = w.temp_air - 273.15
@@ -95,14 +237,41 @@ def adapt_coastdat_weather_to_pvlib(weather, loc):
     return w
 
 
-def adapt_coastdat_weather_to_windpowerlib(w, data_height):
+def adapt_coastdat_weather_to_windpowerlib(weather, data_height):
+    """
+    Adapt the coastdat weather data sets to the needs of the pvlib.
+
+    Parameters
+    ----------
+    weather : pandas.DataFrame
+        Coastdat2 weather data set.
+    data_height : dict
+        The data height for each weather data column.
+
+    Returns
+    -------
+    pandas.DataFrame : Adapted weather data set.
+
+    Examples
+    --------
+    >>> cd_id = 1132101
+    >>> cd_weather = fetch_coastdat_weather(2014, cd_id)
+    >>> data_height = cfg.get_dict('coastdat_data_height')
+    >>> wind_weather = adapt_coastdat_weather_to_windpowerlib(
+    ...     cd_weather, data_height)
+    >>> cd_weather.columns.nlevels
+    1
+    >>> wind_weather.columns.nlevels
+    2
+    """
+    weather = pd.DataFrame(weather.copy())
     cols = {'v_wind': 'wind_speed',
             'z0': 'roughness_length',
             'temp_air': 'temperature'}
-    w.rename(columns=cols, inplace=True)
-    dh = [(key, data_height[key]) for key in w.columns]
-    w.columns = pd.MultiIndex.from_tuples(dh)
-    return w
+    weather.rename(columns=cols, inplace=True)
+    dh = [(key, data_height[key]) for key in weather.columns]
+    weather.columns = pd.MultiIndex.from_tuples(dh)
+    return weather
 
 
 def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
@@ -137,7 +306,7 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
         cfg.get('paths', 'coastdat'),
         cfg.get('coastdat', 'file_pattern').format(year=year))
     if not os.path.isfile(weather_file_name):
-        get_coastdat_data(year, weather_file_name)
+        download_coastdat_data(year=year, filename=weather_file_name)
 
     weather = pd.HDFStore(weather_file_name, mode='r')
 
@@ -399,7 +568,7 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
         cfg.get('paths', 'coastdat'),
         cfg.get('coastdat', 'file_pattern').format(year=year))
     if not os.path.isfile(weatherfile):
-        get_coastdat_data(year, weatherfile)
+        download_coastdat_data(year=year, filename=weatherfile)
     weather = pd.HDFStore(weatherfile, mode='r')
 
     # Calculate the average temperature for each region with more than one id.
@@ -451,94 +620,6 @@ def federal_state_average_weather(year, parameter):
         spatial_average_weather(year, federal_states, parameter,
                                 outfile=filename)
     return pd.read_csv(filename, index_col=[0], parse_dates=True)
-
-
-def fetch_coastdat2_year_from_db(years=None, overwrite=False):
-    """Fetch coastDat2 weather data sets from db and store it to hdf5 files.
-    This files relies on the RLI-database structure and a valid access to the
-    internal database of the Reiner Lemoine Institut. Contact the author for
-    more information or use the hdf5 files of the reegis weather repository:
-    https://github.com/...
-
-    uwe.krien@rl-institut.de
-
-    Parameters
-    ----------
-    overwrite : boolean
-        Skip existing files if set to False.
-    years : list of integer
-        Years to fetch.
-    """
-    weather = os.path.join(cfg.get('paths', 'weather'),
-                           cfg.get('weather', 'file_pattern'))
-    geometry = os.path.join(cfg.get('paths', 'geometry'),
-                            cfg.get('geometry', 'germany_polygon'))
-
-    polygon = wkt.loads(
-        pd.read_csv(geometry, index_col='gid', squeeze=True)[0])
-
-    if years is None:
-        years = range(1980, 2020)
-
-    try:
-        conn = db.connection()
-    except exc.OperationalError:
-        conn = None
-    for year in years:
-        if not os.path.isfile(weather.format(year=str(year))) or overwrite:
-            logging.info("Fetching weather data for {0}.".format(year))
-
-            try:
-                weather_sets = coastdat.get_weather(conn, polygon, year)
-            except AttributeError:
-                logging.warning("No database connection found.")
-                weather_sets = list()
-            if len(weather_sets) > 0:
-                logging.info("Success. Store weather data to {0}.".format(
-                    weather.format(year=str(year))))
-                store = pd.HDFStore(weather.format(year=str(year)), mode='w')
-                for weather_set in weather_sets:
-                    logging.debug(weather_set.name)
-                    store['A' + str(weather_set.name)] = weather_set.data
-                store.close()
-            else:
-                logging.warning("No weather data found for {0}.".format(year))
-        else:
-            logging.info("Weather data for {0} exists. Skipping.".format(year))
-
-
-def fetch_id_by_coordinates(latitude, longitude):
-    coastdat_polygons = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('coastdat', 'coastdatgrid_polygon'))
-    location = Point(longitude, latitude)
-
-    id = coastdat_polygons[coastdat_polygons.contains(location)].index
-
-    if len(id) == 0:
-        msg = "No id found for latitude {0} and longitude {1}."
-        logging.warning(msg.format(latitude, longitude))
-        return None
-    elif len(id) == 1:
-        return id[0]
-    else:
-        msg = "Something odd happened for latitude {0} and longitude {1}."
-        logging.warning(msg.format(latitude, longitude))
-        return id
-
-
-def coastdat_id2coord_from_db():
-    """
-    Creating a file with the latitude and longitude for all coastdat2 data
-    sets.
-    """
-    conn = db.connection()
-    sql = "select gid, st_x(geom), st_y(geom) from coastdat.spatial;"
-    results = (conn.execute(sql))
-    columns = results.keys()
-    data = pd.DataFrame(results.fetchall(), columns=columns)
-    data.set_index('gid', inplace=True)
-    data.to_csv(os.path.join('data', 'basic', 'id2latlon.csv'))
 
 
 def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
@@ -820,8 +901,30 @@ def get_all_time_series_for_one_location(latitude, longitude, set_name=None):
 
 if __name__ == "__main__":
     logger.define_logging()
-    # print("Coastdat ID:", fetch_id_by_coordinates(53.655119, 11.181475))
+    # import pprint
+    # pprint.pprint(feedin.create_windpowerlib_sets())
+    # exit(0)
+    # my_coastdat_id = fetch_id_by_coordinates(53.655119, 11.181475)
+    # print(my_coastdat_id)
+    # print(fetch_coastdat_weather(2014, my_coastdat_id)['v_wind'].mean())
+    weather_file_name_out = os.path.join(
+        cfg.get('paths', 'coastdat'),
+        cfg.get('coastdat', 'file_pattern').format(year=2000))
+    weather_file_name_in = os.path.join(
+        cfg.get('paths', 'coastdat'),
+        cfg.get('coastdat', 'file_pattern').format(year='2000_new_'))
+
+    weather_out = pd.HDFStore(weather_file_name_out, mode='r')
+    weather_in = pd.HDFStore(weather_file_name_in, mode='w')
+    for k in weather_out.keys():
+        print(k)
+        weather_in[k] = weather_out[k][:-1]
+    weather_out.close()
+    weather_in.close()
+    exit(0)
+
     # my_df = get_time_series_for_one_location(53.655119, 11.181475, 2012)
+    # print(my_df)
     # print()
     # print("One year:")
     # print(my_df.sum())
