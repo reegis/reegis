@@ -69,6 +69,8 @@ def download_coastdat_data(filename=None, year=None, url=None,
     --------
     >>> download_coastdat_data(year=2014, test_only=True)
     'coastDat2_de_2014.h5'
+    >>> print(download_coastdat_data(url='https://osf.io/url', test_only=True))
+    None
     >>> download_coastdat_data(filename='w14.hd5', year=2014)  # doctest: +SKIP
 
     """
