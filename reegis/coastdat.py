@@ -18,14 +18,16 @@ __license__ = "GPLv3"
 import os
 import datetime
 import logging
-import requests
+
 import calendar
 from collections import namedtuple
 
 # External libraries
-import pandas as pd
-import pvlib
-from shapely.geometry import Point
+if not os.environ.get('READTHEDOCS') == 'True':
+    import requests
+    import pandas as pd
+    import pvlib
+    from shapely.geometry import Point
 
 # oemof libraries
 from oemof.tools import logger

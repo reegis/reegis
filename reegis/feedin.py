@@ -26,19 +26,22 @@ __license__ = "GPLv3"
 
 
 # Python libraries
+import os
 import logging
-
-# External libraries
-import pandas as pd
-from windpowerlib.modelchain import ModelChain
-from windpowerlib.wind_turbine import WindTurbine
-import pvlib
+from collections import namedtuple
 
 # oemof libraries
 from oemof import tools
 
 # Internal modules
 import reegis.config as cfg
+
+# External libraries
+if not os.environ.get('READTHEDOCS') == 'True':
+    import pandas as pd
+    from windpowerlib.modelchain import ModelChain
+    from windpowerlib.wind_turbine import WindTurbine
+    import pvlib
 
 
 def get_optimal_pv_angle(lat):
