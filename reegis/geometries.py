@@ -140,18 +140,18 @@ class Geometry:
 
 
 def load(path=None, filename=None, fullname=None, hdf_key=None,
-         index_col=None):
+         index_col=None, crs=None):
     """Load csv-file into a DataFrame and a GeoDataFrame."""
     if fullname is None:
         fullname = os.path.join(path, filename)
 
     if fullname[-4:] == '.csv':
         df = load_csv(fullname=fullname, index_col=index_col)
-        gdf = create_geo_df(df)
+        gdf = create_geo_df(df, crs=crs)
 
     elif fullname[-4:] == '.hdf':
-        df = load_hdf(fullname=fullname, key=hdf_key)
-        gdf = create_geo_df(df)
+        df = pd.DataFrame(load_hdf(fullname=fullname, key=hdf_key))
+        gdf = create_geo_df(df, crs=crs)
 
     elif fullname[-4:] == '.shp':
         gdf = load_shp(fullname=fullname)
@@ -196,7 +196,8 @@ def lat_lon2point(df):
     return Point(df['longitude'], df['latitutde'])
 
 
-def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None):
+def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
+                  crs=None):
     """Convert pandas.DataFrame to geopandas.geoDataFrame"""
 
     if 'geom' in df:
@@ -230,7 +231,10 @@ def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None):
         logging.error(msg)
         return None
 
-    gdf = gpd.GeoDataFrame(df, crs={'init': 'epsg:4326'}, geometry='geometry')
+    if crs is None:
+        crs = {'init': 'epsg:4326'}
+
+    gdf = gpd.GeoDataFrame(df, crs=crs, geometry='geometry')
 
     logging.debug("GeoDataFrame created.")
 
