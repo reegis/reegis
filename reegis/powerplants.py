@@ -14,18 +14,19 @@ __license__ = "GPLv3"
 import os
 import logging
 
-# External libraries
-import pandas as pd
-import numpy as np
+if not os.environ.get('READTHEDOCS') == 'True':
+    # External libraries
+    import pandas as pd
+    import numpy as np
 
-# oemof libraries
-import oemof.tools.logger
+    # oemof libraries
+    import oemof.tools.logger
 
-# Internal modules
-import reegis.config as cfg
-import reegis.opsd as opsd
-import reegis.energy_balance as energy_balance
-import reegis.geometries as geo
+    # Internal modules
+    import reegis.config as cfg
+    import reegis.opsd as opsd
+    import reegis.energy_balance as energy_balance
+    import reegis.geometries as geo
 
 
 def patch_offshore_wind(orig_df, columns):
@@ -91,11 +92,18 @@ def pp_opsd2reegis(offshore_patch=True):
     ----------
     offshore_patch : bool
         Will overwrite the offshore wind power plants with own data set if set
-        to True.
+        to True (default=True).
 
     Returns
     -------
     str : Filename of the stored file.
+
+    Examples
+    --------
+    >>> filename_out = os.path.join(cfg.get('paths', 'powerplants'),
+    ...                             cfg.get('powerplants', 'reegis_pp'))
+    >>> if not os.path.isfile(filename_out):
+    ...     filename = pp_opsd2reegis()
     """
     filename_in = os.path.join(cfg.get('paths', 'opsd'),
                                cfg.get('opsd', 'opsd_prepared'))
@@ -222,21 +230,40 @@ def add_capacity_in(pp):
     return pp
 
 
-def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
+def add_model_region_pp(pp, region_polygons, col_name):
     """
+    """
+    # Create a geoDataFrame from power plant DataFrame.
+    pp = geo.create_geo_df(pp)
+
+    # Add region names to power plant table
+    pp = geo.spatial_join_with_buffer(pp, region_polygons, name=col_name)
+    pp = pp.drop('geometry', axis=1)
+
+    logging.info(
+        "Region column {0} added to power plant table.".format(col_name))
+    return pp
+
+
+def get_reegis_powerplants(year, capacity_in=False, overwrite_capacity=False):
+    """
+    Get all reegis power plants for the given year. The function uses the
+    opsd power plant file. If this file does not exist it created. In that
+    case the function will take more time.
 
     Parameters
     ----------
     capacity_in : bool
-        Set to True if a capactiy_in column is present.
+        Set to True if a capacity_in column is present.
     year : int
+        Get all power plants, that a online in this year.
     overwrite_capacity : bool
         By default (False) a new column "capacity_<year>" is created. If set to
         True the old capacity column will be overwritten.
 
     Returns
     -------
-
+    pd.DataFrame
     """
     filename = os.path.join(cfg.get('paths', 'powerplants'),
                             cfg.get('powerplants', 'reegis_pp'))
@@ -246,6 +273,14 @@ def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
         logging.debug(msg.format(filename))
         filename = pp_opsd2reegis()
     pp = pd.read_hdf(filename, 'pp', mode='r')
+
+    region_polygons = geo.load(path=cfg.get('paths', 'geometry'),
+                               filename='region_polygons_de21_wiese.csv')
+
+    add_model_region_pp(pp, region_polygons, 'my_region').to_csv(
+        '/home/uwe/temp_pp.csv')
+
+    exit(0)
 
     filter_columns = ['capacity_{0}']
 
@@ -276,6 +311,18 @@ def get_pp_by_year(year, capacity_in=False, overwrite_capacity=False):
             del pp[filter_column]
 
     return pp
+
+
+def get_powerplants_by_region(year, region_polygons, filename, path=None,
+                               overwrite_capacity=False):
+    pp = get_reegis_powerplants(year, capacity_in=True,
+                                overwrite_capacity=overwrite_capacity)
+    pp = add_model_region_pp(pp, region_polygons, 'my_region')
+
+    if path is None:
+        path = cfg.get('paths', 'powerplants')
+
+
 
 
 def calculate_chp_share_and_efficiency(eb):
@@ -322,6 +369,8 @@ def get_chp_share_and_efficiency_states(year):
 
 if __name__ == "__main__":
     oemof.tools.logger.define_logging()
+    get_reegis_powerplants(2014)
+    exit(0)
     fn = pp_opsd2reegis()
     df = pd.read_hdf(fn, 'pp').groupby(['energy_source_level_2',
                                         'technology', 'federal_states']).sum()[

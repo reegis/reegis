@@ -4,6 +4,7 @@
 of the Helmholtz-Zentrum Geesthacht.
 
 A description of the coastdat2 data set can be found here:
+
 https://www.earth-syst-sci-data.net/6/147/2014/
 
 Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
@@ -427,8 +428,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
         year, coastdat_path.format(year=year, type='')))
 
 
-def get_average_wind_speed(weather_path, grid_geometry_file, geometry_path,
-                           in_file_pattern, out_file, overwrite=False):
+def store_average_weather(data_type, weather_path=None, years=None, keys=None,
+                          out_file_pattern='average_data_{data_type}.csv'):
     """
     Get average wind speed over all years for each weather region. This can be
     used to select the appropriate wind turbine for each region
@@ -436,83 +437,102 @@ def get_average_wind_speed(weather_path, grid_geometry_file, geometry_path,
     
     Parameters
     ----------
-    overwrite : boolean
-        Will overwrite existing files if set to 'True'.
+    data_type : str
+        The data_type of the coastdat weather data: 'dhi', 'dirhi', 'pressure',
+         'temp_air', 'v_wind', 'z0'.
+    keys : list or None
+        List of coastdat keys. If None all available keys will be used.
+    years : list or None
+        List of one or more years to calculate the average data from. You
+        have to make sure that the weather data files for the given years
+        exist in the weather path.
     weather_path : str
-        Path to folder that contains all needed files.
-    geometry_path : str
-        Path to folder that contains geometry files.   
-    grid_geometry_file : str
-        Name of the geometry file of the weather data grid.
-    in_file_pattern : str
-        Name of the hdf5 weather files with one wildcard for the year e.g.
-        weather_data_{0}.h5
-    out_file : str
-        Name of the results file (csv)
+        Path to folder that contains all needed files. If None the default
+        path defined in the config file will be used.
+    out_file_pattern : str or None
+        Name of the results file with a placeholder for the data type e.g.
+        ``average_data_{data_type}.csv``). If None no file will be written.
 
+    Examples
+    --------
+    >>> store_average_weather('temp_air', years=[2014, 2013])  # doctest: +SKIP
+    >>> v = store_average_weather('v_wind', years=[2014],
+    ...                           out_file_pattern=None, keys=[1132101])
+    >>> float(v.loc[1132101].round(2))
+    4.39
     """
-    if not os.path.isfile(os.path.join(weather_path, out_file)) or overwrite:
-        logging.info("Calculating the average wind speed...")
+    logging.info("Calculating the average wind speed...")
 
-        # Finding existing weather files.
-        filelist = (os.listdir(weather_path))
-        years = list()
-        for year in range(1970, 2020):
-                if in_file_pattern.format(year=year) in filelist:
-                    years.append(year)
+    weather_pattern = cfg.get('coastdat', 'file_pattern')
 
-        # Loading coastdat-grid as shapely geometries.
-        polygons_wkt = pd.read_csv(os.path.join(geometry_path,
-                                                grid_geometry_file))
-        polygons = pd.DataFrame(tools.postgis2shapely(polygons_wkt.geom),
-                                index=polygons_wkt.gid, columns=['geom'])
+    if weather_path is None:
+        weather_path = cfg.get('paths', 'coastdat')
 
-        # Opening all weather files
-        store = dict()
+    # Finding existing weather files.
+    data_files = os.listdir(weather_path)
 
-        # open hdf files
-        for year in years:
-            store[year] = pd.HDFStore(os.path.join(
-                weather_path, in_file_pattern.format(year=year)), mode='r')
-        logging.info("Files loaded.")
+    # Possible time range for coastdat data set (reegis: 1998-2014).
+    check = True
+    if years is None:
+        years = range(1948, 2017)
+        check = False
 
-        keys = store[years[0]].keys()
-        logging.info("Keys loaded.")
+    used_years = []
+    for year in years:
+        if weather_pattern.format(year=year) in data_files:
+            used_years.append(year)
+        elif check is True:
+            msg = "File not found".format(weather_pattern.format(year=year))
+            raise FileNotFoundError(msg)
 
-        n = len(list(keys))
-        logging.info("Remaining: {0}".format(n))
-        for key in keys:
-            wind_speed_avg = pd.Series()
-            n -= 1
-            if n % 100 == 0:
-                logging.info("Remaining: {0}".format(n))
-            weather_id = int(key[2:])
-            for year in years:
-                # Remove entries if year has to many entries.
-                if calendar.isleap(year):
-                    h_max = 8784
-                else:
-                    h_max = 8760
-                ws = store[year][key]['v_wind']
-                surplus = h_max - len(ws)
-                if surplus < 0:
-                    ws = ws.ix[:surplus]
+    # Loading coastdat-grid as shapely geometries.
+    coastdat_polygons = pd.DataFrame(geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('coastdat', 'coastdatgrid_polygon')))
+    coastdat_polygons.drop('geometry', axis=1, inplace=True)
 
-                # add wind speed time series
-                wind_speed_avg = wind_speed_avg.append(
-                    ws, verify_integrity=True)
+    # Opening all weather files
+    weather = dict()
 
-            # calculate the average wind speed for one grid item
-            polygons.loc[weather_id, 'v_wind_avg'] = wind_speed_avg.mean()
+    # open hdf files
+    for year in used_years:
+        weather[year] = pd.HDFStore(os.path.join(
+            weather_path, weather_pattern.format(year=year)), mode='r')
 
-        # Close hdf files
-        for year in years:
-            store[year].close()
+    if keys is None:
+        keys = coastdat_polygons.index
 
-        # write results to csv file
-        polygons.to_csv(os.path.join(weather_path, out_file))
-    else:
-        logging.info("Skipped: Calculating the average wind speed.")
+    n = len(list(keys))
+    logging.info("Remaining: {0}".format(n))
+    for key in keys:
+        data_type_avg = pd.Series()
+        n -= 1
+        if n % 100 == 0:
+            logging.info("Remaining: {0}".format(n))
+        hdf_id = '/A{0}'.format(key)
+        for year in used_years:
+            ws = weather[year][hdf_id][data_type]
+            data_type_avg = data_type_avg.append(
+                ws, verify_integrity=True)
+
+        # calculate the average wind speed for one grid item
+        coastdat_polygons.loc[key, 'v_wind_avg'] = (
+            data_type_avg.mean())
+
+    # Close hdf files
+    for year in years:
+        weather[year].close()
+
+    if keys is not None:
+        coastdat_polygons.dropna(inplace=True)
+
+    # write results to csv file
+    if out_file_pattern is not None:
+        filename = out_file_pattern.format(data_type=data_type)
+        fn = os.path.join(weather_path, filename)
+        logging.info("Average temperature saved to {0}".format(fn))
+        coastdat_polygons.to_csv(fn)
+    return coastdat_polygons
 
 
 def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
@@ -744,7 +764,7 @@ def aggregate_by_region_geothermal(regions, year, outfile_name):
 def get_grouped_power_plants(year):
     """Filter the capacity of the powerplants for the given year.
     """
-    return powerplants.get_pp_by_year(year).groupby(
+    return powerplants.get_reegis_powerplants(year).groupby(
         ['energy_source_level_2', 'federal_states', 'coastdat2']).sum()
 
 
@@ -900,6 +920,9 @@ def get_all_time_series_for_one_location(latitude, longitude, set_name=None):
 
 if __name__ == "__main__":
     logger.define_logging()
+
+    aggregate_by_region(2014, 'all')
+    exit(0)
     # import pprint
     # pprint.pprint(feedin.create_windpowerlib_sets())
     # exit(0)
