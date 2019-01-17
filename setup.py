@@ -28,6 +28,7 @@ requirements = [
 
 if os.environ.get('READTHEDOCS') == 'True':
     requirements.remove('geopandas')
+    requirements.remove('pyproj')
 
 setup(name='reegis',
       version='0.0.1',
