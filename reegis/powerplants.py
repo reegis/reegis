@@ -19,9 +19,6 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import pandas as pd
     import numpy as np
 
-    # oemof libraries
-    import oemof.tools.logger
-
     # Internal modules
     import reegis.config as cfg
     import reegis.opsd as opsd
@@ -86,7 +83,8 @@ def patch_offshore_wind(orig_df, columns):
 def pp_opsd2reegis(offshore_patch=True):
     """
     Adapt opsd power plants to a more generalised reegis API with a reduced
-    number of columns
+    number of columns. In most case you should use the higher functions,
+    which include this function.
 
     Parameters
     ----------
@@ -103,7 +101,7 @@ def pp_opsd2reegis(offshore_patch=True):
     >>> filename_out = os.path.join(cfg.get('paths', 'powerplants'),
     ...                             cfg.get('powerplants', 'reegis_pp'))
     >>> if not os.path.isfile(filename_out):
-    ...     filename = pp_opsd2reegis()
+    ...     filename = pp_opsd2reegis()  # doctest: +SKIP
     """
     filename_in = os.path.join(cfg.get('paths', 'opsd'),
                                cfg.get('opsd', 'opsd_prepared'))
@@ -137,11 +135,11 @@ def pp_opsd2reegis(offshore_patch=True):
         if not complete:
             logging.debug("Will re-create file with all keys.")
             filename_in = opsd.opsd_power_plants(overwrite=True)
-    #
+
     pp = {}
     for cat in ['renewable', 'conventional']:
         # Read opsd power plant tables
-        pp[cat] = pd.read_hdf(filename_in, cat, mode='r')
+        pp[cat] = pd.DataFrame(pd.read_hdf(filename_in, cat, mode='r'))
 
         # Patch offshore wind energy with investigated data.
         if cat == 'renewable' and offshore_patch:
@@ -245,7 +243,8 @@ def add_model_region_pp(pp, region_polygons, col_name):
     return pp
 
 
-def get_reegis_powerplants(year, capacity_in=False, overwrite_capacity=False):
+def get_reegis_powerplants(year, filename=None, path=None,
+                           overwrite_capacity=False):
     """
     Get all reegis power plants for the given year. The function uses the
     opsd power plant file. If this file does not exist it created. In that
@@ -253,8 +252,12 @@ def get_reegis_powerplants(year, capacity_in=False, overwrite_capacity=False):
 
     Parameters
     ----------
-    capacity_in : bool
-        Set to True if a capacity_in column is present.
+    filename : str or None
+        Name of the power plant hdf5 file. If None the default name of the
+        config file is used ('reegis_pp').
+    path : str or None
+        Directory of the power plant file. If None the default path of the
+        config file for power plants is used.
     year : int
         Get all power plants, that a online in this year.
     overwrite_capacity : bool
@@ -264,28 +267,42 @@ def get_reegis_powerplants(year, capacity_in=False, overwrite_capacity=False):
     Returns
     -------
     pd.DataFrame
+
+    Examples
+    --------
+    >>> pp_reegis = get_reegis_powerplants(2012)
+    >>> 'capacity_2012' in pp_reegis.columns
+    True
+    >>> pp_reegis2 = get_reegis_powerplants(2012, overwrite_capacity=True)
+    >>> 'capacity_2012' in pp_reegis2.columns
+    False
+    >>> 'capacity' in pp_reegis2.columns
+    True
     """
-    filename = os.path.join(cfg.get('paths', 'powerplants'),
-                            cfg.get('powerplants', 'reegis_pp'))
+    if path is None and filename is None:
+        default = True
+    else:
+        default = False
+
+    if path is None:
+        path = cfg.get('paths', 'powerplants')
+
+    if filename is None:
+        filename = cfg.get('powerplants', 'reegis_pp')
+
+    fn = os.path.join(path, filename)
+
     logging.info("Get reegis power plants for {0}.".format(year))
-    if not os.path.isfile(filename):
+    if default is True and not os.path.isfile(fn):
         msg = "File '{0}' does not exist. Will create it from reegis file."
-        logging.debug(msg.format(filename))
-        filename = pp_opsd2reegis()
-    pp = pd.read_hdf(filename, 'pp', mode='r')
+        logging.debug(msg.format(fn))
+        fn = pp_opsd2reegis()
 
-    region_polygons = geo.load(path=cfg.get('paths', 'geometry'),
-                               filename='region_polygons_de21_wiese.csv')
-
-    add_model_region_pp(pp, region_polygons, 'my_region').to_csv(
-        '/home/uwe/temp_pp.csv')
-
-    exit(0)
+    pp = pd.DataFrame(pd.read_hdf(fn, 'pp', mode='r'))
 
     filter_columns = ['capacity_{0}']
 
-    if capacity_in:
-        pp = add_capacity_in(pp)
+    if 'capacity_in' in pp.columns:
         filter_columns.append('capacity_in_{0}')
 
     # Get all powerplants for the given year.
@@ -313,20 +330,67 @@ def get_reegis_powerplants(year, capacity_in=False, overwrite_capacity=False):
     return pp
 
 
-def get_powerplants_by_region(year, region_polygons, filename, path=None,
-                               overwrite_capacity=False):
-    pp = get_reegis_powerplants(year, capacity_in=True,
-                                overwrite_capacity=overwrite_capacity)
-    pp = add_model_region_pp(pp, region_polygons, 'my_region')
+def add_regions_to_powerplants(region, column, filename, filename_out=None,
+                               path=None, hdf_key='pp', dump=True):
+    """
+    Add a column to the power plant table with the region id of the given
+    region file.
+
+    Parameters
+    ----------
+    region : geoDataFrame
+        A geoDataFrame with the region polygons.
+    column : str
+        Name of the column with the region ids.
+    filename : str
+        Name of the power plant hdf5 file e.g. 'reegis_pp.h5'.
+    filename_out : str or None
+        Name of the new power plant hdf5 file e.g. 'reegis_pp_region.h5'. If
+        None the original file will be overwritten.
+    path : str or None
+        Path for the files. If None the default power plant path from the
+        config file is used.
+    hdf_key : str
+        The key of the hdf file.
+    dump : bool
+        If True the table is dumped to an hdf5 file.
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> region_polygons = geo.load(path=cfg.get('paths', 'geometry'),
+    ...                            filename='region_polygons_de21_wiese.csv')
+    >>> pp = add_regions_to_powerplants(
+    ...     region_polygons, 'de_21_wiese', 'reegis_pp.h5',
+    ...     filename_out='reegis_pp_regions.h5')  # doctest: +SKIP
+
+    """
 
     if path is None:
         path = cfg.get('paths', 'powerplants')
 
+    if filename_out is None:
+        filename_out = filename
 
+    fn = os.path.join(path, filename)
+
+    pp = pd.DataFrame(pd.read_hdf(fn, hdf_key))
+
+    pp = add_model_region_pp(pp, region, column)
+
+    pp = add_capacity_in(pp)
+
+    if dump:
+        fn = os.path.join(path, filename_out)
+        pp.to_hdf(fn, 'pp', mode='w')
+
+    return pp
 
 
 def calculate_chp_share_and_efficiency(eb):
-    """Efficiciency and fuel share of combined heat and power plants (chp) and
+    """Efficiency and fuel share of combined heat and power plants (chp) and
     heat plants (hp) from conversion balance."""
     row_chp = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
     row_hp = 'Heizwerke'
@@ -368,11 +432,4 @@ def get_chp_share_and_efficiency_states(year):
 
 
 if __name__ == "__main__":
-    oemof.tools.logger.define_logging()
-    get_reegis_powerplants(2014)
-    exit(0)
-    fn = pp_opsd2reegis()
-    df = pd.read_hdf(fn, 'pp').groupby(['energy_source_level_2',
-                                        'technology', 'federal_states']).sum()[
-        'capacity']
-    print(df)
+    pass
