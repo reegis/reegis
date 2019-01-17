@@ -270,13 +270,14 @@ def get_reegis_powerplants(year, filename=None, path=None,
 
     Examples
     --------
-    >>> pp_reegis = get_reegis_powerplants(2012)
-    >>> 'capacity_2012' in pp_reegis.columns
+    >>> pp_reegis = get_reegis_powerplants(2012)  # doctest: +SKIP
+    >>> 'capacity_2012' in pp_reegis.columns  # doctest: +SKIP
     True
-    >>> pp_reegis2 = get_reegis_powerplants(2012, overwrite_capacity=True)
-    >>> 'capacity_2012' in pp_reegis2.columns
+    >>> pp_reegis2 = get_reegis_powerplants(
+    ...     2012, overwrite_capacity=True)  # doctest: +SKIP
+    >>> 'capacity_2012' in pp_reegis2.columns  # doctest: +SKIP
     False
-    >>> 'capacity' in pp_reegis2.columns
+    >>> 'capacity' in pp_reegis2.columns  # doctest: +SKIP
     True
     """
     if path is None and filename is None:
