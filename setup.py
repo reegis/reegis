@@ -26,7 +26,8 @@ if not os.environ.get('READTHEDOCS') == 'True':
         'PyQt5',
         'cython']
 else:
-    requirements = ['oemof', 'pandas < 0.24', 'pvlib', 'requests']
+    requirements = ['pandas < 0.24', 'pvlib', 'requests', 'oemof',
+                    'numpy < 1.16']
 
 
 setup(name='reegis',
