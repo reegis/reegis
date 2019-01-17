@@ -26,11 +26,19 @@ requirements = [
     'cython']
 
 if os.environ.get('READTHEDOCS') == 'True':
-    requirements.remove('pyproj')
-    requirements.remove('matplotlib')
-    requirements.remove('PyQt5')
-    requirements.remove('shapely')
-    requirements.remove('geopandas')
+    requirements = [
+        'oemof >= 0.1.0',
+        'pandas >= 0.17.0',
+        'demandlib',
+        'windpowerlib',
+        'pvlib==v0.6.1-beta',
+        'requests',
+        'numpy >= 0.16',
+        'workalendar',
+        'python-dateutil',
+        'networkx',
+        'dill'
+    ]
 
 setup(name='reegis',
       version='0.0.1',
