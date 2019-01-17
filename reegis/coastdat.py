@@ -29,16 +29,16 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import pvlib
     from shapely.geometry import Point
 
-# oemof libraries
-from oemof.tools import logger
+    # oemof libraries
+    from oemof.tools import logger
 
-# Internal modules
-import reegis.tools as tools
-import reegis.feedin as feedin
-import reegis.config as cfg
-import reegis.powerplants as powerplants
-import reegis.geometries as geometries
-import reegis.bmwi
+    # Internal modules
+    import reegis.tools as tools
+    import reegis.feedin as feedin
+    import reegis.config as cfg
+    import reegis.powerplants as powerplants
+    import reegis.geometries as geometries
+    import reegis.bmwi
 
 
 def download_coastdat_data(filename=None, year=None, url=None,

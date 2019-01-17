@@ -13,22 +13,6 @@ reegis.coastdat module
     :undoc-members:
     :show-inheritance:
 
-reegis.config module
---------------------
-
-.. automodule:: reegis.config
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-reegis.feedin module
---------------------
-
-.. automodule:: reegis.feedin
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
