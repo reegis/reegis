@@ -25,6 +25,8 @@ setup(name='reegis',
                         'pyproj',
                         'pytz',
                         'python-dateutil',
-		        'networkx',
-			'dill', 'PyQt5']
-      )
+                        'cython',
+                        'networkx',
+                        'dill',
+                        'PyQt5'])
+
