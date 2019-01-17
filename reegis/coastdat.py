@@ -19,7 +19,6 @@ __license__ = "GPLv3"
 import os
 import datetime
 import logging
-import calendar
 from collections import namedtuple
 
 # External libraries
