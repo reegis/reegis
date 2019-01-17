@@ -33,7 +33,7 @@ if os.environ.get('READTHEDOCS') == 'True':
         'windpowerlib',
         'pvlib==v0.6.1-beta',
         'requests',
-        'numpy <= 0.16',
+        'numpy <= 1.15.3',
         'workalendar',
         'python-dateutil',
         'networkx',
