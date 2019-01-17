@@ -26,7 +26,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
         'PyQt5',
         'cython']
 else:
-    requirements = []
+    requirements = ['oemof']
 
 
 setup(name='reegis',

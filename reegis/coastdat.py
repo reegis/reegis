@@ -22,7 +22,7 @@ import calendar
 from collections import namedtuple
 
 # External libraries
-try:
+if not os.environ.get('READTHEDOCS') == 'True':
     import requests
     import pandas as pd
     import pvlib
@@ -38,8 +38,6 @@ try:
     import reegis.powerplants as powerplants
     import reegis.geometries as geometries
     import reegis.bmwi
-except ImportError:
-    pass
 
 
 def download_coastdat_data(filename=None, year=None, url=None,
