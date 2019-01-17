@@ -28,5 +28,6 @@ setup(name='reegis',
                         'python-dateutil',
                         'networkx',
                         'dill',
-                        'PyQt5'])
+                        'PyQt5',
+                        'cython'])
 
