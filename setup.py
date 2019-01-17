@@ -29,6 +29,8 @@ if os.environ.get('READTHEDOCS') == 'True':
     requirements.remove('pyproj')
     requirements.remove('matplotlib')
     requirements.remove('PyQt5')
+    requirements.remove('shapely')
+    requirements.remove('geopandas')
 
 setup(name='reegis',
       version='0.0.1',
