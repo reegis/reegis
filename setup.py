@@ -15,7 +15,6 @@ requirements = [
     'geopandas',
     'requests',
     'numpy >= 0.16',
-    'geoplot',
     'workalendar',
     'owslib',
     'pyproj',
@@ -27,8 +26,9 @@ requirements = [
     'cython']
 
 if os.environ.get('READTHEDOCS') == 'True':
-    requirements.remove('geopandas')
     requirements.remove('pyproj')
+    requirements.remove('matplotlib')
+    requirements.remove('PyQt5')
 
 setup(name='reegis',
       version='0.0.1',
