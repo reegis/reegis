@@ -27,17 +27,7 @@ requirements = [
 
 if os.environ.get('READTHEDOCS') == 'True':
     requirements = [
-        'oemof >= 0.1.0',
-        'pandas <= 0.23.4',
-        'demandlib',
-        'windpowerlib',
-        'pvlib==v0.6.1-beta',
-        'requests',
-        'numpy <= 1.15.3',
-        'workalendar',
-        'python-dateutil',
-        'networkx',
-        'dill']
+        'oemof >= 0.1.0']
 
 setup(name='reegis',
       version='0.0.1',
