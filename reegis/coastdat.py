@@ -18,12 +18,11 @@ __license__ = "GPLv3"
 import os
 import datetime
 import logging
-
 import calendar
 from collections import namedtuple
 
 # External libraries
-if not os.environ.get('READTHEDOCS') == 'True':
+try:
     import requests
     import pandas as pd
     import pvlib
@@ -39,6 +38,8 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import reegis.powerplants as powerplants
     import reegis.geometries as geometries
     import reegis.bmwi
+except ImportError:
+    pass
 
 
 def download_coastdat_data(filename=None, year=None, url=None,
