@@ -73,14 +73,14 @@ def patch_offshore_wind(orig_df, columns):
     orig_df = orig_df.loc[orig_df['technology'] != 'Offshore']
 
     patched_df = pd.DataFrame(pd.concat([orig_df, offsh_df],
-                                        ignore_index=True))
+                                        ignore_index=True, sort=True))
     logging.warning(
         "Offshore wind is patched. {0} MW were replaced by {1} MW".format(
             old_cap, new_cap))
     return patched_df
 
 
-def pp_opsd2reegis(offshore_patch=True):
+def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
     """
     Adapt opsd power plants to a more generalised reegis API with a reduced
     number of columns. In most case you should use the higher functions,
@@ -91,6 +91,12 @@ def pp_opsd2reegis(offshore_patch=True):
     offshore_patch : bool
         Will overwrite the offshore wind power plants with own data set if set
         to True (default=True).
+    filename_in : str or None
+        Alternative filename for the input file. In most case the default case
+        is the best choice.
+    filename_out : str or None
+        Alternative filename for the output file. In most case the default case
+        is the best choice.
 
     Returns
     -------
@@ -103,10 +109,12 @@ def pp_opsd2reegis(offshore_patch=True):
     >>> if not os.path.isfile(filename_out):
     ...     filename = pp_opsd2reegis()  # doctest: +SKIP
     """
-    filename_in = os.path.join(cfg.get('paths', 'opsd'),
-                               cfg.get('opsd', 'opsd_prepared'))
-    filename_out = os.path.join(cfg.get('paths', 'powerplants'),
-                                cfg.get('powerplants', 'reegis_pp'))
+    if filename_in is None:
+        filename_in = os.path.join(cfg.get('paths', 'opsd'),
+                                   cfg.get('opsd', 'opsd_prepared'))
+    if filename_out is None:
+        filename_out = os.path.join(cfg.get('paths', 'powerplants'),
+                                    cfg.get('powerplants', 'reegis_pp'))
 
     keep_cols = {'decom_year', 'comment', 'chp', 'energy_source_level_1',
                  'thermal_capacity', 'com_year', 'com_month',
@@ -166,7 +174,7 @@ def pp_opsd2reegis(offshore_patch=True):
                 pp[cat]['energy_source_level_1']))
 
     pp = pd.DataFrame(pd.concat([pp['renewable'], pp['conventional']],
-                                ignore_index=True))
+                                ignore_index=True, sort=True))
 
     # Merge 'chp_capacity_uba' into 'thermal_capacity' column.
     pp['thermal_capacity'] = pp['thermal_capacity'].fillna(
@@ -337,9 +345,9 @@ def get_reegis_powerplants(year, filename=None, path=None,
     return pp
 
 
-def add_regions_to_powerplants(region, column, filename, filename_out=None,
-                               path=None, hdf_key='pp', subregion=False,
-                               dump=True):
+def add_regions_to_powerplants(region, column, filename=None,
+                               filename_out=None, path=None, hdf_key='pp',
+                               subregion=False, dump=True):
     """
     Add a column to the power plant table with the region id of the given
     region file.
@@ -350,7 +358,7 @@ def add_regions_to_powerplants(region, column, filename, filename_out=None,
         A geoDataFrame with the region polygons.
     column : str
         Name of the column with the region ids.
-    filename : str
+    filename : str or None
         Name of the power plant hdf5 file e.g. 'reegis_pp.h5'.
     filename_out : str or None
         Name of the new power plant hdf5 file e.g. 'reegis_pp_region.h5'. If
@@ -378,14 +386,26 @@ def add_regions_to_powerplants(region, column, filename, filename_out=None,
     ...     filename_out='reegis_pp_regions.h5')  # doctest: +SKIP
 
     """
+    if path is None and filename is None:
+        default = True
+    else:
+        default = False
 
     if path is None:
         path = cfg.get('paths', 'powerplants')
+
+    if filename is None:
+        filename = cfg.get('powerplants', 'reegis_pp')
 
     if filename_out is None:
         filename_out = filename
 
     fn = os.path.join(path, filename)
+
+    if default and not os.path.isfile(fn):
+        msg = "File '{0}' does not exist. Will create it from reegis file."
+        logging.debug(msg.format(fn))
+        fn = pp_opsd2reegis()
 
     pp = pd.DataFrame(pd.read_hdf(fn, hdf_key))
 
