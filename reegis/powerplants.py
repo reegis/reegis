@@ -228,14 +228,20 @@ def add_capacity_in(pp):
     return pp
 
 
-def add_model_region_pp(pp, region_polygons, col_name):
+def add_model_region_pp(pp, region_polygons, col_name, subregion=False):
     """
     """
     # Create a geoDataFrame from power plant DataFrame.
     pp = geo.create_geo_df(pp)
 
+    if subregion is True:
+        limit = 0
+    else:
+        limit = 1
+
     # Add region names to power plant table
-    pp = geo.spatial_join_with_buffer(pp, region_polygons, name=col_name)
+    pp = geo.spatial_join_with_buffer(pp, region_polygons, name=col_name,
+                                      limit=limit)
     pp = pp.drop('geometry', axis=1)
 
     logging.info(
@@ -332,7 +338,8 @@ def get_reegis_powerplants(year, filename=None, path=None,
 
 
 def add_regions_to_powerplants(region, column, filename, filename_out=None,
-                               path=None, hdf_key='pp', dump=True):
+                               path=None, hdf_key='pp', subregion=False,
+                               dump=True):
     """
     Add a column to the power plant table with the region id of the given
     region file.
@@ -348,6 +355,9 @@ def add_regions_to_powerplants(region, column, filename, filename_out=None,
     filename_out : str or None
         Name of the new power plant hdf5 file e.g. 'reegis_pp_region.h5'. If
         None the original file will be overwritten.
+    subregion : bool
+        Set to True if all region polygons together are a subregion of
+        Germany. This will switch off the buffer in the spatial_join function.
     path : str or None
         Path for the files. If None the default power plant path from the
         config file is used.
@@ -379,7 +389,7 @@ def add_regions_to_powerplants(region, column, filename, filename_out=None,
 
     pp = pd.DataFrame(pd.read_hdf(fn, hdf_key))
 
-    pp = add_model_region_pp(pp, region, column)
+    pp = add_model_region_pp(pp, region, column, subregion=subregion)
 
     pp = add_capacity_in(pp)
 
