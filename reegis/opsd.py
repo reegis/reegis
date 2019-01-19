@@ -433,12 +433,9 @@ def opsd_power_plants(overwrite=False, csv=False):
 
 
 def spatial_preparation_power_plants(pp):
-    """Add spatial names to DataFrame. Three columns will be added to the
-    power plant table:
+    """Add spatial names to DataFrame.
 
     federal_states: The federal state of Germany
-    model_region: The name of the model region defined by the user.
-    coastdat: The id of the nearest coastdat weather data set.
 
     Parameters
     ----------
@@ -472,12 +469,6 @@ def spatial_preparation_power_plants(pp):
         for c_code in country_codes:
             pp.gdf.loc[pp.gdf.country_code == c_code, 'federal_states'] = (
                 c_code)
-
-    # Add column with coastdat id
-    coastdat = geo.Geometry('coastdat2')
-    coastdat.load(cfg.get('paths', 'geometry'),
-                  cfg.get('coastdat', 'coastdatgrid_polygon'))
-    pp.gdf = geo.spatial_join_with_buffer(pp, coastdat, name='coastdat2')
 
     return pp
 

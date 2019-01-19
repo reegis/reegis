@@ -55,14 +55,6 @@ def patch_offshore_wind(orig_df, columns):
     goffsh.gdf = geo.spatial_join_with_buffer(goffsh, federal_states,
                                               name=new_col)
 
-    # Add column with coastdat id
-    new_col = 'coastdat2'
-    if new_col in goffsh.gdf:
-        del goffsh.gdf[new_col]
-    coastdat = geo.Geometry(new_col)
-    coastdat.load(cfg.get('paths', 'geometry'),
-                  cfg.get('coastdat', 'coastdatgrid_polygon'))
-    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, coastdat, name=new_col)
     offsh_df = goffsh.get_df()
 
     new_cap = offsh_df['capacity'].sum()
@@ -120,7 +112,7 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
                  'thermal_capacity', 'com_year', 'com_month',
                  'chp_capacity_uba', 'energy_source_level_3', 'decom_month',
                  'geometry', 'energy_source_level_2', 'capacity', 'technology',
-                 'federal_states', 'com_year', 'coastdat2', 'efficiency'}
+                 'federal_states', 'com_year', 'efficiency'}
 
     string_cols = ['chp', 'comment', 'energy_source_level_1',
                    'energy_source_level_2', 'energy_source_level_3',
@@ -248,16 +240,16 @@ def add_model_region_pp(pp, region_polygons, col_name, subregion=False):
         limit = 1
 
     # Add region names to power plant table
-    pp = geo.spatial_join_with_buffer(pp, region_polygons, name=col_name,
-                                      limit=limit)
-    pp = pp.drop('geometry', axis=1)
+    pp = pd.DataFrame(geo.spatial_join_with_buffer(pp, region_polygons,
+                                                   name=col_name, limit=limit))
+    pp['geometry'] = pp['geometry'].astype(str)
 
     logging.info(
         "Region column {0} added to power plant table.".format(col_name))
     return pp
 
 
-def get_reegis_powerplants(year, filename=None, path=None,
+def get_reegis_powerplants(year, path=None, filename=None, pp=None,
                            overwrite_capacity=False):
     """
     Get all reegis power plants for the given year. The function uses the
@@ -268,10 +260,12 @@ def get_reegis_powerplants(year, filename=None, path=None,
     ----------
     filename : str or None
         Name of the power plant hdf5 file. If None the default name of the
-        config file is used ('reegis_pp').
+        config file is used (section: 'powerplants', value: 'reegis_pp').
     path : str or None
         Directory of the power plant file. If None the default path of the
         config file for power plants is used.
+    pp : pd.DataFrame
+        A power plant table with the reegis power plant structure.
     year : int
         Get all power plants, that a online in this year.
     overwrite_capacity : bool
@@ -308,12 +302,12 @@ def get_reegis_powerplants(year, filename=None, path=None,
     fn = os.path.join(path, filename)
 
     logging.info("Get reegis power plants for {0}.".format(year))
-    if default is True and not os.path.isfile(fn):
+    if default is True and not os.path.isfile(fn) and pp is None:
         msg = "File '{0}' does not exist. Will create it from reegis file."
         logging.debug(msg.format(fn))
         fn = pp_opsd2reegis()
-
-    pp = pd.DataFrame(pd.read_hdf(fn, 'pp', mode='r'))
+    if pp is None:
+        pp = pd.DataFrame(pd.read_hdf(fn, 'pp', mode='r'))
 
     filter_columns = ['capacity_{0}']
 
@@ -411,7 +405,8 @@ def add_regions_to_powerplants(region, column, filename=None,
 
     pp = add_model_region_pp(pp, region, column, subregion=subregion)
 
-    pp = add_capacity_in(pp)
+    if 'capacity_in' not in pp:
+        pp = add_capacity_in(pp)
 
     if dump:
         fn = os.path.join(path, filename_out)

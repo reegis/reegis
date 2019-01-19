@@ -14,9 +14,10 @@ __copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
 __license__ = "GPLv3"
 
 
-from nose.tools import eq_, raises, assert_raises_regexp
+from nose.tools import eq_
 import os
 from reegis import powerplants
+from reegis import opsd
 from reegis import config as cfg
 from reegis import geometries as geo
 # import unittest
@@ -24,13 +25,25 @@ from reegis import geometries as geo
 
 def test_opsd2reegis():
     path = os.path.join(os.path.dirname(__file__), 'data')
-    fn_in = os.path.join(path, 'opsd_test.h5')
-    fn_out = os.path.join(path, 'reegis_pp_test.h5')
-    powerplants.pp_opsd2reegis(filename_in=fn_in, filename_out=fn_out)
+    cfg.tmp_set('paths', 'opsd', path)
+    cfg.tmp_set('paths', 'powerplants', path)
+    fn_opsd = opsd.opsd_power_plants()
+    fn_reegis = powerplants.pp_opsd2reegis()
+    os.remove(fn_opsd)
+    filename = str(fn_reegis.split(os.sep)[-1])
+
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('geometry', 'federalstates_polygon')
     gdf = geo.load(path=geo_path, filename=geo_file)
-    fn = str(fn_out.split(os.sep)[-1])
+    powerplants.add_regions_to_powerplants(
+        gdf, 'fed_states', filename=filename, path=path, dump=True)
+
+    geo_path = cfg.get('paths', 'geometry')
+    geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
+    gdf = geo.load(path=geo_path, filename=geo_file)
     pp = powerplants.add_regions_to_powerplants(
-        gdf, 'fed_states', filename=fn, path=path, dump=False)
-    eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity']), 2411)
+        gdf, 'coastdat2', filename=filename, path=path, dump=False)
+
+    os.remove(fn_reegis)
+    eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity']), 2427)
+    eq_(int(pp.groupby('federal_states').sum().loc['BE', 'capacity']), 2427)
