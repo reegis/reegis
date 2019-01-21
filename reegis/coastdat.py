@@ -844,12 +844,13 @@ def load_feedin_by_region(year, feedin_type, name, region=None,
     return fd_in
 
 
-def windzone_region_fraction(pp, year=None, name=None, dump=False):
+def windzone_region_fraction(pp, name, year=None, dump=False):
     """
 
     Parameters
     ----------
     pp : pd.DataFrame
+    year : int
     name : str
     dump : bool
 
@@ -861,7 +862,7 @@ def windzone_region_fraction(pp, year=None, name=None, dump=False):
     >>> my_fn = os.path.join(cfg.get('paths', 'powerplants'),
     ...                      cfg.get('powerplants', 'reegis_pp'))
     >>> my_pp = pd.DataFrame(pd.read_hdf(my_fn, 'pp'))  # doctest: +SKIP
-    >>> wz = windzone_region_fraction(my_pp, 'federal_states',
+    >>> wz = windzone_region_fraction(my_pp, 'federal_states', 2014
     ...                               dump=False)  # doctest: +SKIP
     >>> round(float(wz.loc['NI', 1]), 2)  # doctest: +SKIP
     0.31
@@ -888,14 +889,11 @@ def windzone_region_fraction(pp, year=None, name=None, dump=False):
     wz = pd.DataFrame(points['windzone'])
     pp = pd.merge(pp, wz, how='inner', left_on='coastdat2', right_index=True)
     pp['windzone'].fillna(0, inplace=True)
-    pp = pp.groupby(['federal_states', 'windzone']).sum()[capacity_col]
+    pp = pp.groupby([name, 'windzone']).sum()[capacity_col]
     wz_regions = pp.groupby(level=0).apply(lambda x: x / float(x.sum()))
 
     if dump is True:
-        if name is None:
-            filename = 'windzone_region.csv'
-        else:
-            filename = 'windzone_{0}.csv'.format(name)
+        filename = 'windzone_{0}.csv'.format(name)
         fn = os.path.join(cfg.get('paths', 'powerplants'), filename)
         wz_regions.to_csv(fn)
     return wz_regions
@@ -1064,7 +1062,7 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
 
     if windzones:
-        windzone_region_fraction(pp, year=year)
+        windzone_region_fraction(pp, name, year=year, dump=True)
 
     # Aggregate feedin time series for each region
     aggregate_feedin_by_region(year, pp, name, weather_year=weather_year)

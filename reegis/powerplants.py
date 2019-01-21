@@ -102,11 +102,11 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
                  'thermal_capacity', 'com_year', 'com_month',
                  'chp_capacity_uba', 'energy_source_level_3', 'decom_month',
                  'geometry', 'energy_source_level_2', 'capacity', 'technology',
-                 'federal_states', 'com_year', 'efficiency'}
+                 'com_year', 'efficiency'}
 
     string_cols = ['chp', 'comment', 'energy_source_level_1',
                    'energy_source_level_2', 'energy_source_level_3',
-                   'federal_states', 'geometry', 'technology']
+                   'geometry', 'technology']
 
     # Create opsd power plant tables if they do not exist.
     if not os.path.isfile(filename_in):

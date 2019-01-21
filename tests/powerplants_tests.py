@@ -47,12 +47,11 @@ def test_opsd2reegis():
 
     os.remove(fn_reegis)
     eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity']), 2427)
-    eq_(int(pp.groupby('federal_states').sum().loc['BE', 'capacity']), 2427)
 
     year = 2000
 
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
     eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity_2000']), 2391)
 
-    eq_(coastdat.windzone_region_fraction(pp, year=year).round(2).loc['NI', 2],
-        0.24)
+    eq_(coastdat.windzone_region_fraction(
+        pp, name='fed_states', year=year).round(2).loc['NI', 2], 0.24)

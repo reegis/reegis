@@ -193,7 +193,7 @@ def load_csv(path=None, filename=None, fullname=None,
 
 def lat_lon2point(df):
     """Create shapely point object of latitude and longitude."""
-    return Point(df['longitude'], df['latitutde'])
+    return Point(df['longitude'], df['latitude'])
 
 
 def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
@@ -207,20 +207,21 @@ def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
             logging.error("Cannot find column for longitude: {0}".format(
                 lon_column))
         else:
-            df.rename({lon_column: 'longitude'}, inplace=True)
+            df.rename(columns={lon_column: 'longitude'}, inplace=True)
 
     if lat_column is not None:
         if lat_column not in df:
             logging.error("Cannot find column for latitude: {0}".format(
                 lat_column))
         else:
-            df.rename({lat_column: 'latitude'}, inplace=True)
+            df.rename(columns={lat_column: 'latitude'}, inplace=True)
 
     if wkt_column is not None:
         df['geometry'] = df[wkt_column].apply(wkt_loads)
 
     elif 'geometry' not in df and 'longitude' in df and 'latitude' in df:
-            df['geometry'] = df.apply(lat_lon2point, axis=1)
+
+        df['geometry'] = df.apply(lat_lon2point, axis=1)
 
     elif isinstance(df.iloc[0]['geometry'], str):
         df['geometry'] = df['geometry'].apply(wkt_loads)
@@ -246,6 +247,15 @@ def gdf2df(gdf, remove_geo=False):
     else:
         del df['geometry']
     return df
+
+
+def remove_invalid_geometries(gdf):
+    logging.warning("Invalid geometries have been removed.")
+    invalid = gdf.loc[~gdf.is_valid].copy()
+    if float(invalid['capacity'].sum()) > 0:
+        logging.warning("Removed capacity due to invalid geometry: {0}".format(
+            invalid['capacity'].sum()))
+    return gdf.loc[gdf.is_valid]
 
 
 def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,

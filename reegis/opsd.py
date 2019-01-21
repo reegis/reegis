@@ -18,6 +18,7 @@ import datetime
 # External libraries
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 import pyproj
 import requests
 from shapely.wkt import loads as wkt_loads
@@ -377,12 +378,12 @@ def opsd_power_plants(overwrite=False, csv=False):
             'eic_code_block', 'efficiency_source', 'energy_source_level_1',
             'energy_source_level_2', 'energy_source_level_3', 'eeg',
             'network_node', 'voltage', 'network_operator', 'merge_comment',
-            'geometry', 'federal_states'],
+            'geometry'],
         'renewable': [
             'commissioning_date', 'decommissioning_date',
             'energy_source_level_1', 'energy_source_level_2',
             'energy_source_level_3', 'technology', 'voltage_level', 'comment',
-            'geometry', 'federal_states']}
+            'geometry']}
 
     if csv:
         opsd_file_name = os.path.join(
@@ -414,12 +415,13 @@ def opsd_power_plants(overwrite=False, csv=False):
         if not exist:
             logging.info("Preparing {0} opsd power plants".format(category))
             df = load_opsd_file(category, overwrite, prepared=True)
-            pp = geo.Geometry('{0} power plants'.format(category), df=df)
-            pp = spatial_preparation_power_plants(pp)
+            pp = geo.create_geo_df(df, lon_column='lon', lat_column='lat')
+            pp = geo.remove_invalid_geometries(pp)
+
             if csv:
-                pp.get_df().to_csv(opsd_file_name)
+                pp.to_csv(opsd_file_name)
             else:
-                df = pp.get_df()
+                df = pd.DataFrame(pp)
                 df[strcols[category]] = df[strcols[category]].astype(str)
                 hdf[category] = df
             logging.info("Opsd power plants stored to {0}".format(
@@ -430,47 +432,6 @@ def opsd_power_plants(overwrite=False, csv=False):
     if hdf is not None:
         hdf.close()
     return opsd_file_name
-
-
-def spatial_preparation_power_plants(pp):
-    """Add spatial names to DataFrame.
-
-    federal_states: The federal state of Germany
-
-    Parameters
-    ----------
-    pp : reegis.Geometry
-        An object containing Germany's power plants.
-
-    Returns
-    -------
-    reegis.Geometry
-
-    """
-
-    if pp.gdf is None:
-        logging.info("Create GeoDataFrame from lat/lon.")
-        pp.create_geo_df()
-
-    logging.info("Remove invalid geometries")
-    pp.remove_invalid_geometries()
-
-    # Add column with name of the federal state (Bayern, Berlin,...)
-    federal_states = geo.Geometry('federal states')
-    federal_states.load(cfg.get('paths', 'geometry'),
-                        cfg.get('geometry', 'federalstates_polygon'))
-    pp.gdf = geo.spatial_join_with_buffer(pp, federal_states,
-                                          name='federal_states')
-
-    # Add country code to federal state if country code is not 'DE'.
-    if 'country_code' in pp.gdf.columns:
-        country_codes = list(pp.gdf.country_code.unique())
-        country_codes.remove('DE')
-        for c_code in country_codes:
-            pp.gdf.loc[pp.gdf.country_code == c_code, 'federal_states'] = (
-                c_code)
-
-    return pp
 
 
 if __name__ == "__main__":
