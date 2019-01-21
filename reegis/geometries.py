@@ -199,7 +199,6 @@ def lat_lon2point(df):
 def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
                   crs=None):
     """Convert pandas.DataFrame to geopandas.geoDataFrame"""
-
     if 'geom' in df:
         df = df.rename(columns={'geom': 'geometry'})
 
@@ -225,7 +224,6 @@ def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
 
     elif isinstance(df.iloc[0]['geometry'], str):
         df['geometry'] = df['geometry'].apply(wkt_loads)
-
     else:
         msg = "Could not create GeoDataFrame. Missing geometries."
         logging.error(msg)
@@ -257,7 +255,9 @@ def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,
     Parameters
     ----------
     geo1 : reegis.geometries.Geometry or geopandas.geoDataFrame
+        Point layer.
     geo2 : reegis.geometries.Geometry or geopandas.geoDataFrame
+        Polygon layer.
     jcol : str
     name : str
         Name of the new column with the region names/identifiers.

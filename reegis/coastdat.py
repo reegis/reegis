@@ -844,25 +844,113 @@ def load_feedin_by_region(year, feedin_type, name, region=None,
     return fd_in
 
 
-def scenario_feedin():
+def windzone_region_fraction(pp, name=None, dump=False):
+    pp = pp.loc[pp.energy_source_level_2 == 'Wind']
+
+    from matplotlib import pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
+    path = cfg.get('paths', 'geometry')
+    filename = 'windzones_germany.csv'
+    df = geometries.load(path=path, filename=filename, index_col='gid')
+    df['zone'] = df.index
+
+    geo_path = cfg.get('paths', 'geometry')
+    geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
+    coastdat_geo = geometries.load(path=geo_path, filename=geo_file)
+    coastdat_geo['poly'] = coastdat_geo.geometry
+    coastdat_geo['geometry'] = coastdat_geo.centroid
+
+    points = geometries.spatial_join_with_buffer(coastdat_geo, df, 'windzone')
+
+    wz = pd.DataFrame(points['windzone'])
+    pp = pd.merge(pp, wz, how='inner', left_on='coastdat2', right_index=True)
+    pp['windzone'].fillna(0, inplace=True)
+    pp = pp.groupby(['federal_states', 'windzone']).sum()['capacity']
+    wz_regions = pp.groupby(level=0).apply(lambda x: x / float(x.sum()))
+
+    if dump is True:
+        if name is None:
+            filename = 'windzone_region.csv'
+        else:
+            filename = 'windzone_{0}.csv'.format(name)
+        fn = os.path.join(cfg.get('paths', 'powerplants'), filename)
+        wz_regions.to_csv(fn)
+
+    points = points.set_geometry('poly')
+
+    cmap_bluish = LinearSegmentedColormap.from_list(
+        'bluish', [
+            (0, '#8fbbd2'),
+            (1, '#00317a')])
+
+    ax = points.plot(column='windzone', edgecolor='#888888', linewidth=0.5,
+                     cmap=cmap_bluish)
+    df.plot(edgecolor='black', alpha=1, facecolor='none', ax=ax, linewidth=1.5)
+    plt.show()
+    return wz_regions
+
+
+def scenario_feedin(year, name, regions=None):
     """
     Load solar, wind, hydro, geothermal for all regions in one Mulitindex table
     """
-    pass
+    cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
+    feedin_ts = pd.DataFrame(columns=cols)
+
+    hydro = load_feedin_by_region(year, 'hydro', name)
+    regions_hydro = set(hydro.columns)
+    for region in regions_hydro:
+        feedin_ts[region, 'hydro'] = hydro[region]
+
+    geothermal = load_feedin_by_region(year, 'geothermal', name)
+    regions_geothermal = set(geothermal.columns)
+    for region in regions_geothermal:
+        feedin_ts[region, 'geothermal'] = geothermal[region]
+
+    feedin_ts = scenario_feedin_pv(year, name, feedin_ts=feedin_ts)
+    regions_solar = set(feedin_ts.swaplevel(axis=1)['solar'].columns)
+
+    feedin_ts = scenario_feedin_wind(year, name, feedin_ts=feedin_ts)
+    regions_wind = set(feedin_ts.swaplevel(axis=1)['wind'].columns)
+
+    if regions is None:
+        regions = list(regions_hydro.intersection(regions_geothermal,
+                                                  regions_solar, regions_wind))
+    return feedin_ts[regions].sort_index(1)
 
 
-def scenario_feedin_wind(year, name, region, feedin_ts=None):
-    # ToDo SCHWERER FEHLER!!!!!
-    logging.critical("ERROR. Fixed turbine type for all regions.")
-    wind = load_feedin_by_region(year, 'wind', name, region)
-    for reg in wind.columns.levels[0]:
-        feedin_ts['wind'] = wind[
-            reg, 'coastdat_{0}_wind_ENERCON_127_hub135_pwr_7500'.format(year),
-            'E_126_7500']
+def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
+    # Get fraction of windzone per region
+    wz = pd.read_csv(os.path.join(cfg.get('paths', 'powerplants'),
+                                  'windzone_{0}.csv'.format(name)),
+                     index_col=[0, 1], header=None)
+
+    # Get normalised feedin time series
+    wind = load_feedin_by_region(year, 'wind', name)
+
+    # Rename columns and remove obsolete level
+    wind.columns = wind.columns.droplevel(2)
+    cols = wind.columns.get_level_values(1).unique()
+    rn = {c: c.replace('coastdat_2014_wind_', '') for c in cols}
+    wind.rename(columns=rn, level=1, inplace=True)
+    wind.sort_index(1, inplace=True)
+
+    # Get wind turbines by wind zone
+    wind_types = {float(k): v for (k, v) in cfg.get_dict('windzones').items()}
+    wind_types = pd.Series(wind_types).sort_index()
+
+    if regions is None:
+        regions = wind.columns.get_level_values(0).unique()
+
     if feedin_ts is None:
-        return wind_ts.sort_index(1)
-    else:
-        feedin_ts['wind'] = 4
+        cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
+        feedin_ts = pd.DataFrame(index=wind.index, columns=cols)
+
+    for region in regions:
+        frac = pd.merge(wz.loc[region], pd.DataFrame(wind_types), how='right',
+                        right_index=True, left_index=True).set_index(
+                            0, drop=True).fillna(0).sort_index()
+        feedin_ts[region, 'wind'] = wind[region].multiply(frac[2]).sum(1)
     return feedin_ts.sort_index(1)
 
 
@@ -910,19 +998,19 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
     return feedin_ts.sort_index(1)
 
 
-def get_feedin_per_region(year, region, name, weather_year=None):
+def get_feedin_per_region(year, region, name, weather_year=None,
+                          windzones=True):
     """
     Aggregate feed-in time series for the given geometry set.
 
     Parameters
     ----------
-    year
-    region
-    name
-    weather_year
+    year : int
+    region : geopandas.geoDataFrame
+    name : str
+    weather_year : int
+    windzones : bool
 
-    Returns
-    -------
 
     """
     # create and dump reegis basic powerplants table (created from opsd data)
@@ -945,6 +1033,9 @@ def get_feedin_per_region(year, region, name, weather_year=None):
 
     # Get only the power plants that are online in the given year.
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
+
+    if windzones:
+        windzone_region_fraction(pp)
 
     # Aggregate feedin time series for each region
     aggregate_feedin_by_region(year, pp, name, weather_year=weather_year)
@@ -1047,11 +1138,27 @@ def get_solar_time_series_for_one_location_all_years(latitude, longitude,
             tmp = get_solar_time_series_for_one_location(
                 latitude, longitude, year, set_name).reset_index(drop=True)
             for col in tmp.columns:
-                # print(tmp[col].sum())
                 df[year, col] = tmp[col]
     return df
 
 
+def federal_states_feedin_example():
+    federal_states = geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('geometry', 'federalstates_polygon'))
+    get_feedin_per_region(2014, federal_states, 'federal_states')
+
+    # # Remove comment to create 'windzone_region_fraction' afterwards. By
+    # # default it is created within the 'get_feedin_per_region' function.
+    # my_fn = os.path.join(cfg.get('paths', 'powerplants'),
+    #                      cfg.get('powerplants', 'reegis_pp'))
+    # my_pp = pd.DataFrame(pd.read_hdf(my_fn, 'pp'))
+    # windzone_region_fraction(my_pp, 'federal_states', dump=True)
+
+    print(scenario_feedin(2014, 'federal_states').sum())
+
+
+
 if __name__ == "__main__":
     logger.define_logging()
-    pass
+    federal_states_feedin_example()
