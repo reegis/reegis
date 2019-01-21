@@ -845,10 +845,28 @@ def load_feedin_by_region(year, feedin_type, name, region=None,
 
 
 def windzone_region_fraction(pp, name=None, dump=False):
+    """
+
+    Parameters
+    ----------
+    pp : pd.DataFrame
+    name : str
+    dump : bool
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> my_fn = os.path.join(cfg.get('paths', 'powerplants'),
+    ...                      cfg.get('powerplants', 'reegis_pp'))
+    >>> my_pp = pd.DataFrame(pd.read_hdf(my_fn, 'pp'))
+    >>> wz = windzone_region_fraction(my_pp, 'federal_states', dump=False)
+    >>> round(float(wz.loc['NI', 1]), 2)
+    0.31
+    """
     pp = pp.loc[pp.energy_source_level_2 == 'Wind']
 
-    from matplotlib import pyplot as plt
-    from matplotlib.colors import LinearSegmentedColormap
     path = cfg.get('paths', 'geometry')
     filename = 'windzones_germany.csv'
     df = geometries.load(path=path, filename=filename, index_col='gid')
@@ -857,7 +875,6 @@ def windzone_region_fraction(pp, name=None, dump=False):
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
     coastdat_geo = geometries.load(path=geo_path, filename=geo_file)
-    coastdat_geo['poly'] = coastdat_geo.geometry
     coastdat_geo['geometry'] = coastdat_geo.centroid
 
     points = geometries.spatial_join_with_buffer(coastdat_geo, df, 'windzone')
@@ -875,18 +892,6 @@ def windzone_region_fraction(pp, name=None, dump=False):
             filename = 'windzone_{0}.csv'.format(name)
         fn = os.path.join(cfg.get('paths', 'powerplants'), filename)
         wz_regions.to_csv(fn)
-
-    points = points.set_geometry('poly')
-
-    cmap_bluish = LinearSegmentedColormap.from_list(
-        'bluish', [
-            (0, '#8fbbd2'),
-            (1, '#00317a')])
-
-    ax = points.plot(column='windzone', edgecolor='#888888', linewidth=0.5,
-                     cmap=cmap_bluish)
-    df.plot(edgecolor='black', alpha=1, facecolor='none', ax=ax, linewidth=1.5)
-    plt.show()
     return wz_regions
 
 
@@ -1161,17 +1166,11 @@ def get_solar_time_series_for_one_location_all_years(latitude, longitude,
 
 
 def federal_states_feedin_example():
+    """Get fullload hours for renewable sources for a federal states."""
     federal_states = geometries.load(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
     get_feedin_per_region(2014, federal_states, 'federal_states')
-
-    # # Remove comment to create 'windzone_region_fraction' afterwards. By
-    # # default it is created within the 'get_feedin_per_region' function.
-    # my_fn = os.path.join(cfg.get('paths', 'powerplants'),
-    #                      cfg.get('powerplants', 'reegis_pp'))
-    # my_pp = pd.DataFrame(pd.read_hdf(my_fn, 'pp'))
-    # windzone_region_fraction(my_pp, 'federal_states', dump=True)
 
     print(scenario_feedin(2014, 'federal_states').sum())
 
