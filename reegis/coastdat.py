@@ -893,6 +893,11 @@ def windzone_region_fraction(pp, name=None, dump=False):
 def scenario_feedin(year, name, regions=None):
     """
     Load solar, wind, hydro, geothermal for all regions in one Mulitindex table
+
+    year : int
+    name : str
+    regions : list or None
+
     """
     cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
     feedin_ts = pd.DataFrame(columns=cols)
@@ -920,6 +925,19 @@ def scenario_feedin(year, name, regions=None):
 
 
 def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
+    """
+
+    Parameters
+    ----------
+    year
+    name
+    regions
+    feedin_ts
+
+    Returns
+    -------
+
+    """
     # Get fraction of windzone per region
     wz = pd.read_csv(os.path.join(cfg.get('paths', 'powerplants'),
                                   'windzone_{0}.csv'.format(name)),
@@ -1156,7 +1174,6 @@ def federal_states_feedin_example():
     # windzone_region_fraction(my_pp, 'federal_states', dump=True)
 
     print(scenario_feedin(2014, 'federal_states').sum())
-
 
 
 if __name__ == "__main__":
