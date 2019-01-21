@@ -45,16 +45,6 @@ def patch_offshore_wind(orig_df, columns):
     goffsh = geo.Geometry(name="Offshore wind patch", df=df)
     goffsh.create_geo_df()
 
-    # Add column with region names of the model_region
-    new_col = 'federal_states'
-    if new_col in goffsh.gdf:
-        del goffsh.gdf[new_col]
-    federal_states = geo.Geometry(new_col)
-    federal_states.load(cfg.get('paths', 'geometry'),
-                        cfg.get('geometry', 'federalstates_polygon'))
-    goffsh.gdf = geo.spatial_join_with_buffer(goffsh, federal_states,
-                                              name=new_col)
-
     offsh_df = goffsh.get_df()
 
     new_cap = offsh_df['capacity'].sum()
