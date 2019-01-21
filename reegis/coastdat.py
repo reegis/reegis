@@ -758,7 +758,7 @@ def aggregate_by_region_hydro(pp, regions, year, outfile_name):
 
     hydro = reegis.bmwi.bmwi_re_energy_capacity()['water']
 
-    hydro_capacity = (pp.loc['Hydro', 'capacity'].sum())
+    hydro_capacity = (pp.loc['Hydro', 'capacity_{0}'.format(year)].sum())
 
     full_load_hours = (hydro.loc[year, 'energy'] /
                        hydro_capacity * 1000)
@@ -844,7 +844,7 @@ def load_feedin_by_region(year, feedin_type, name, region=None,
     return fd_in
 
 
-def windzone_region_fraction(pp, name=None, dump=False):
+def windzone_region_fraction(pp, year=None, name=None, dump=False):
     """
 
     Parameters
@@ -860,12 +860,18 @@ def windzone_region_fraction(pp, name=None, dump=False):
     --------
     >>> my_fn = os.path.join(cfg.get('paths', 'powerplants'),
     ...                      cfg.get('powerplants', 'reegis_pp'))
-    >>> my_pp = pd.DataFrame(pd.read_hdf(my_fn, 'pp'))
-    >>> wz = windzone_region_fraction(my_pp, 'federal_states', dump=False)
-    >>> round(float(wz.loc['NI', 1]), 2)
+    >>> my_pp = pd.DataFrame(pd.read_hdf(my_fn, 'pp'))  # doctest: +SKIP
+    >>> wz = windzone_region_fraction(my_pp, 'federal_states',
+    ...                               dump=False)  # doctest: +SKIP
+    >>> round(float(wz.loc['NI', 1]), 2)  # doctest: +SKIP
     0.31
     """
     pp = pp.loc[pp.energy_source_level_2 == 'Wind']
+
+    if year is None:
+        capacity_col = 'capacity'
+    else:
+        capacity_col = 'capacity_{0}'.format(year)
 
     path = cfg.get('paths', 'geometry')
     filename = 'windzones_germany.csv'
@@ -882,7 +888,7 @@ def windzone_region_fraction(pp, name=None, dump=False):
     wz = pd.DataFrame(points['windzone'])
     pp = pd.merge(pp, wz, how='inner', left_on='coastdat2', right_index=True)
     pp['windzone'].fillna(0, inplace=True)
-    pp = pp.groupby(['federal_states', 'windzone']).sum()['capacity']
+    pp = pp.groupby(['federal_states', 'windzone']).sum()[capacity_col]
     wz_regions = pp.groupby(level=0).apply(lambda x: x / float(x.sum()))
 
     if dump is True:
@@ -1058,7 +1064,7 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
 
     if windzones:
-        windzone_region_fraction(pp)
+        windzone_region_fraction(pp, year=year)
 
     # Aggregate feedin time series for each region
     aggregate_feedin_by_region(year, pp, name, weather_year=weather_year)
