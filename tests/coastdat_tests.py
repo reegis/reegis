@@ -30,6 +30,21 @@ def test_coastdat_file_url():
     eq_(check, True)
 
 
+def test_coastdat_file_url_2014():
+    """
+    It takes a long time to test all links, so one link is tested all the
+    time to test the general infrastructure, and all links will be tested
+    from time to time by removing the skip decorator.
+    """
+    check = True
+    for year in [2014]:
+        f1 = 'coastDat2_de_{0}.h5'.format(year)
+        f2 = coastdat.download_coastdat_data(year=year, test_only=True)
+        if f1 != f2:
+            check = year
+    eq_(check, True)
+
+
 def test_wrong_url():
     assert_raises_regexp(ValueError, "No URL found",
                          coastdat.download_coastdat_data, year=2018)
