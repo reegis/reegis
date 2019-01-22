@@ -565,37 +565,36 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
     col_name = geo.name.replace(' ', '_')
 
     # Create a Geometry object for the coastdat centroids.
-    coastdat_geo = geometries.Geometry(name='coastdat')
-    coastdat_geo.load(cfg.get('paths', 'geometry'),
-                      cfg.get('coastdat', 'coastdatgrid_polygon'))
-    coastdat_geo.gdf['geometry'] = coastdat_geo.gdf.centroid
+    coastdat_geo = geometries.load(cfg.get('paths', 'geometry'),
+                                   cfg.get('coastdat', 'coastdatgrid_polygon'))
+    coastdat_geo['geometry'] = coastdat_geo.centroid
 
     # Join the tables to create a list of coastdat id's for each region.
-    coastdat_geo.gdf = geometries.spatial_join_with_buffer(
+    coastdat_geo = geometries.spatial_join_with_buffer(
         coastdat_geo, geo, name='federal_states', limit=0)
 
     # Fix regions with no matches (no matches if a region ist too small).
     fix = {}
-    for reg in set(geo.gdf.index) - set(coastdat_geo.gdf[col_name].unique()):
-        reg_point = geo.gdf.representative_point().loc[reg]
-        coastdat_poly = geometries.Geometry(name='coastdat_poly')
-        coastdat_poly.load(cfg.get('paths', 'geometry'),
-                           cfg.get('coastdat', 'coastdatgrid_polygon'))
-        fix[reg] = coastdat_poly.gdf.loc[coastdat_poly.gdf.intersects(
+    for reg in set(geo.index) - set(coastdat_geo[col_name].unique()):
+        reg_point = geo.representative_point().loc[reg]
+        coastdat_poly = geometries.load(
+            cfg.get('paths', 'geometry'),
+            cfg.get('coastdat', 'coastdatgrid_polygon'))
+        fix[reg] = coastdat_poly.loc[coastdat_poly.intersects(
             reg_point)].index[0]
 
     # Open the weather file
-    weatherfile = os.path.join(
+    weather_file = os.path.join(
         cfg.get('paths', 'coastdat'),
         cfg.get('coastdat', 'file_pattern').format(year=year))
-    if not os.path.isfile(weatherfile):
-        download_coastdat_data(year=year, filename=weatherfile)
-    weather = pd.HDFStore(weatherfile, mode='r')
+    if not os.path.isfile(weather_file):
+        download_coastdat_data(year=year, filename=weather_file)
+    weather = pd.HDFStore(weather_file, mode='r')
 
     # Calculate the average temperature for each region with more than one id.
     avg_value = pd.DataFrame()
-    for region in geo.gdf.index:
-        cd_ids = coastdat_geo.gdf[coastdat_geo.gdf[col_name] == region].index
+    for region in geo.index:
+        cd_ids = coastdat_geo[coastdat_geo[col_name] == region].index
         number_of_sets = len(cd_ids)
         tmp = pd.DataFrame()
         logging.debug((region, len(cd_ids)))
@@ -617,7 +616,7 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
     weather.close()
 
     # Create the name an write to file
-    regions = sorted(geo.gdf.index)
+    regions = sorted(geo.index)
     if outfile is None:
         out_name = '{0}_{1}'.format(regions[0], regions[-1])
         outfile = os.path.join(
@@ -643,9 +642,9 @@ def federal_state_average_weather(year, parameter):
     -------
 
     """
-    federal_states = geometries.Geometry(name='federal_states')
-    federal_states.load(cfg.get('paths', 'geometry'),
-                        cfg.get('geometry', 'federalstates_polygon'))
+    federal_states = geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('geometry', 'federalstates_polygon'))
     filename = os.path.join(
         cfg.get('paths', 'coastdat'),
         'average_{0}_BB_TH_{1}.csv'.format(parameter, year))
