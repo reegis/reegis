@@ -689,8 +689,13 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
     # Define the path for the input files.
     coastdat_path = os.path.join(cfg.get('paths_pattern', 'coastdat')).format(
         year=weather_year, type=cat)
-    if not os.path.isdir(coastdat_path):
+    # Do normalized timeseries exist? If not, create
+    if os.path.isdir(coastdat_path):
+        if len(os.listdir(coastdat_path)) == 0:
+            normalised_feedin_for_each_data_set(weather_year)
+    else:
         normalised_feedin_for_each_data_set(weather_year)
+
     # Prepare the lists for the loops
     set_names = []
     set_name = None
