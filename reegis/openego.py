@@ -13,16 +13,15 @@ __license__ = "GPLv3"
 # Python libraries
 import os
 import logging
-import requests
 from shapely import wkb
 
 # External libraries
 import pandas as pd
-import geopandas as gpd
 
 # Internal modules
 import reegis.config as cfg
 import reegis.geometries as geometries
+from reegis import bmwi
 from reegis import oedb
 
 import oemof.tools.logger as logger
@@ -41,7 +40,6 @@ def download_oedb(oep_url, schema, table, query, fn):
 
 
 def get_ego_data():
-
     oep_url = 'http://oep.iks.cs.ovgu.de/api/v0'
     local_path = cfg.get('paths', 'ego')
 
@@ -68,20 +66,36 @@ def get_ego_data():
 
     load = pd.concat([load_areas[['consumption', 'geom_centre']],
                       large_consumer[['consumption', 'geom_centre']]])
-    return load.rename(columns={'geom_centre': 'geom'})
+    load = load.rename(columns={'geom_centre': 'geom'})
+
+    filename = cfg.get('open_ego', 'ego_file')
+    path = cfg.get('paths', 'demand')
+    fn = os.path.join(path, filename)
+    load.to_hdf(fn, 'demand')
+    return load
 
 
-def prepare_ego_demand(egofile):
-    ego_demand = geometries.create_geo_df(get_ego_data())
+def get_ego_demand(filename=None, fn=None, overwrite=False):
+    if filename is None:
+        filename = cfg.get('open_ego', 'ego_file')
+    if fn is None:
+        path = cfg.get('paths', 'demand')
+        fn = os.path.join(path, filename)
 
-    # Add column with name of the federal state (Bayern, Berlin,...)
-    federal_states = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))
+    if os.path.isfile(fn) and not overwrite:
+        return pd.DataFrame(pd.read_hdf(fn, 'demand'))
+    else:
+        return get_ego_data()
 
-    # Add column with federal_states
+
+def ego_demand_by_region(regions, name, outfile=None, dump=False):
+    ego_data = get_ego_demand()
+
+    ego_demand = geometries.create_geo_df(ego_data)
+
+    # Add column with regions
     ego_demand = geometries.spatial_join_with_buffer(
-        ego_demand, federal_states, 'federal_states')
+        ego_demand, regions, name)
 
     # Overwrite Geometry object with its DataFrame, because it is not
     # needed anymore.
@@ -89,23 +103,41 @@ def prepare_ego_demand(egofile):
 
     ego_demand['geometry'] = ego_demand['geometry'].astype(str)
 
+    if outfile is not None:
+        path = cfg.get('paths', 'demand')
+        outfile = os.path.join(path, 'open_ego_demand_{0}.h5')
+
     # Write out file (hdf-format).
-    ego_demand.to_hdf(egofile, 'demand')
+    if dump is True:
+        ego_demand.to_hdf(outfile, 'demand')
 
     return ego_demand
 
 
-def get_ego_demand(overwrite=False):
-    egofile = os.path.join(cfg.get('paths', 'demand'),
-                           cfg.get('open_ego', 'ego_file'))
-    if os.path.isfile(egofile) and not overwrite:
-        return pd.read_hdf(egofile, 'demand')
+def get_ego_demand_by_federal_states(year=None):
+    federal_states = geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('geometry', 'federalstates_polygon'))
+    if year is None:
+        return ego_demand_by_region(federal_states, 'federal_states')
     else:
-        return prepare_ego_demand(egofile)
+        return get_ego_demand_bmwi_by_region(year, federal_states,
+                                             'federal_states')
+
+
+def get_ego_demand_bmwi_by_region(year, regions, name):
+    demand = ego_demand_by_region(regions, name)
+    summe = demand['consumption'].sum()
+    annual = bmwi.get_annual_electricity_demand_bmwi(year)
+    factor = annual * 1000 / summe
+    demand['consumption'] = demand['consumption'].mul(factor)
+    return demand
 
 
 if __name__ == "__main__":
     logger.define_logging()
-    ego = get_ego_demand().groupby('federal_states').sum()['consumption']
-    print(ego)
-    print(ego.sum())
+    my_demand = get_ego_demand_by_federal_states().groupby(
+        'federal_states').sum()['consumption']
+    print(my_demand.sum())
+    print(bmwi.get_annual_electricity_demand_bmwi(2014) * 1000)
+    print(get_ego_demand_by_federal_states(year=2014).sum()['consumption'])
