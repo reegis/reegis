@@ -87,8 +87,7 @@ def feedin_pvlib_test():
     pv['p_peak'] = pv['module_parameters'].Impo * pv['module_parameters'].Vmpo
 
     eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1025)
-    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1020)
-    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1002)
+    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1025)
 
 
 def feedin_pv_sets_tests():
@@ -101,8 +100,13 @@ def feedin_pv_sets_tests():
     c = coastdat.fetch_data_coordinates_by_id(coastdat_id)
     location = pvlib.location.Location(**getattr(c, '_asdict')())
     pv_weather = coastdat.adapt_coastdat_weather_to_pvlib(weather, location)
-    df = pd.DataFrame()
+    s1 = pd.Series()
     for pv_key, pv_set in pv_sets.items():
-        df[pv_key[:9]] = feedin.feedin_pv_sets(pv_weather, location, pv_set
-                                               ).sum()
-    print(df)
+        s1[pv_key] = int((
+            feedin.feedin_pv_sets(pv_weather, location, pv_set).sum().mean()))
+    s2 = pd.Series({
+        'M_STP280S__I_GEPVb_5000_NA_240': 798,
+        'M_BP2150S__I_P235HV_240': 722,
+        'M_SF160S___I_ABB_MICRO_025_US208': 801,
+        'M_LG290G3__I_ABB_MICRO_025_US208': 817})
+    pd.testing.assert_series_equal(s1.sort_index(), s2.sort_index())
