@@ -92,35 +92,48 @@ def get_ew_geometry(year):
     if not os.path.isfile(filename_shp):
         get_ew_shp_file(year)
 
-    vwg = reegis.geometries.Geometry()
-    vwg.gdf = gpd.read_file(filename_shp)
+    vwg = gpd.read_file(filename_shp)
 
     # replace polygon geometry by its centroid
-    vwg.gdf['geometry'] = vwg.gdf.representative_point()
+    vwg['geometry'] = vwg.representative_point()
 
     return vwg
 
 
-def get_ew_by_region(year, geo, col=None):
-    if col is None:
-        col = geo.name
+def get_ew_by_region(year, geo, name):
+    """
+
+    Parameters
+    ----------
+    year
+    geo
+    name
+
+    Returns
+    -------
+    pd.DataFrame
+
+    Examples
+    --------
+    >>> geo = reegis.geometries.load(
+    ...     cfg.get('paths', 'geometry'),
+    ...     cfg.get('geometry', 'federalstates_polygon'))
+    >>> name = 'federal_states'
+    >>> get_ew_by_region(2014, geo, name=name).sum()  # doctest: +SKIP
+    81197537
+    """
     ew = get_ew_geometry(year)
-    ew.gdf = reegis.geometries.spatial_join_with_buffer(
-        ew, geo, name=col)
-    return ew.gdf.groupby(col).sum()['EWZ']
+    ew = reegis.geometries.spatial_join_with_buffer(
+        ew, geo, name=name, step=0.005)
+    return ew.groupby(name).sum()['EWZ']
 
 
 def get_ew_by_federal_states(year):
-    geo = reegis.geometries.Geometry(name='federal_state')
-    geo.load(cfg.get('paths', 'geometry'),
-             cfg.get('geometry', 'federalstates_polygon'))
-    return get_ew_by_region(year, geo)
+    geo = reegis.geometries.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('geometry', 'federalstates_polygon'))
+    return get_ew_by_region(year, geo, name='federal_states')
 
 
 if __name__ == "__main__":
-    oemof.tools.logger.define_logging()
-    spatial_file_fs = os.path.join(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))
-    spatial_dfs = pd.read_csv(spatial_file_fs, index_col='gen')
-    print(get_ew_by_federal_states(2014))
+    pass
