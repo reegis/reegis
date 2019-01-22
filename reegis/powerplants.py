@@ -42,10 +42,9 @@ def patch_offshore_wind(orig_df, columns):
     df['energy_source_level_1'] = 'Renewable energy'
     df['energy_source_level_2'] = 'Wind'
     df['energy_source_level_3'] = 'Offshore'
-    goffsh = geo.Geometry(name="Offshore wind patch", df=df)
-    goffsh.create_geo_df()
+    goffsh = geo.create_geo_df(df)
 
-    offsh_df = goffsh.get_df()
+    offsh_df = pd.DataFrame(goffsh)
 
     new_cap = offsh_df['capacity'].sum()
     old_cap = orig_df.loc[orig_df['technology'] == 'Offshore',

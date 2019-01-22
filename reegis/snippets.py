@@ -25,6 +25,8 @@ from oemof.tools import logger
 
 # internal modules
 import reegis.config as cfg
+import reegis.geometries as geo
+from reegis import opsd
 
 
 def lat_lon2point(df):
@@ -226,15 +228,46 @@ def load_energiebilanzen():
     # print(eb.columns)
 
 
+def create_small_data_sets():
+    fn = '/home/uwe/express/reegis/data/powerplants/opsd/renewable_power_plants_DE.csv'
+    pp = pd.read_csv(fn)
+
+    etypes = ['Hydro', 'Bioenergy', 'Wind', 'Solar', 'Other fossil fuels',
+          'Geothermal', 'Hard coal', 'Lignite', 'Natural gas', 'Nuclear',
+          'Oil', 'Other fuels', 'Waste', 'unknown from conventional']
+
+    newdf = pd.DataFrame()
+    steps = {
+        'Hydro': 10,
+        'Bioenergy': 100,
+        'Wind': 100,
+        'Solar': 1000}
+
+    for l in etypes:
+        if l in steps:
+            step = steps[l]
+        else:
+            step = 1
+
+        subdf = pp.loc[pp['energy_source_level_2'] == l]
+        subdf = subdf.iloc[::step, :]
+        newdf = newdf.append(subdf.copy(), ignore_index=True)
+    print(len(newdf))
+    newdf.to_csv(os.path.join('/home/uwe/shp/', 'renewable_power_plants_DE_test.csv'))
+    # geo.create_geo_df(newdf).to_file('/home/uwe/shp/pp.shp')
+
+
 if __name__ == "__main__":
     # plot_geocsv(os.path.join('geometries', 'federal_states.csv'),
     #             idx_col='iso',
     #             coord_file='data_basic/label_federal_state.csv')
     # plot_geocsv('/home/uwe/geo.csv', idx_col='gid')
     logger.define_logging()
-    p = '/home/uwe/chiba/Promotion/reegis_geometries/weather'
-    shp = os.path.join(p, 'coastdat_grid_de_buffer.shp')
-    geo_csv_from_shp(shp, 'brt.csv', 'gid', tmp_file='tmp.csv')
+    # create_small_data_sets()
+    # exit(0)
+    p = '/home/uwe/chiba/Promotion/reegis_geometries/windregionen'
+    shp = os.path.join(p, 'windzonen_deutschland_mit_AWZ.shp')
+    geo_csv_from_shp(shp, 'windzones_germany.csv', 'zone', tmp_file='tmp.csv')
     # energy_balance2repo()
     # offshore()
     # load_energiebilanzen()
