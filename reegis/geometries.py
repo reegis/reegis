@@ -37,6 +37,8 @@ class Geometry:
 
     """
     def __init__(self, name='no_name', df=None):
+        msg = "The Geometry class will be removed. Use the geometry functions."
+        warnings.warn(msg, FutureWarning)
         self.name = name
         self.df = df
         self.gdf = None
@@ -123,12 +125,6 @@ class Geometry:
         self.df = None
         return self
 
-    def get_df(self, geo_as_str=True):
-        df = pd.DataFrame(self.gdf)
-        if geo_as_str:
-            df['geometry'] = df['geometry'].astype(str)
-        return df
-
     def remove_invalid_geometries(self):
         if self.gdf is not None:
             logging.warning("Invalid geometries have been removed.")
@@ -136,9 +132,6 @@ class Geometry:
             self.gdf = self.gdf.loc[self.gdf.is_valid]
         else:
             logging.error("No GeoDataFrame to remove invalid geometries from.")
-
-    def plot(self, *args, **kwargs):
-        self.gdf.plot(*args, **kwargs)
 
 
 def load(path=None, filename=None, fullname=None, hdf_key=None,
