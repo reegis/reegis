@@ -11,7 +11,22 @@ def wkb2wkt(x):
 
 
 def oedb(oep_url, schema, table, query, geo_column, epsg):
-    """Create a geoDataFrame from a oedb selection."""
+    """Create a geoDataFrame from a oedb selection.
+
+    Examples
+    --------
+    >>> basic_url = 'http://oep.iks.cs.ovgu.de/api/v0'
+    >>> my_request = {
+    ...     'schema': 'model_draft',
+    ...     'table': 'ego_demand_hv_largescaleconsumer',
+    ...     'geo_column': 'geom_centre',
+    ...     'query': '',  # '?where=version=v0.4.5'
+    ...     'epsg': 3035}
+    >>> consumer = oedb(basic_url, **my_request)
+    >>> int(pd.to_numeric(consumer['consumption']).sum())
+    26181
+
+    """
     full_url = '{url}/schema/{schema}/tables/{table}/rows/{query}'.format(
         url=oep_url, schema=schema, table=table, query=query)
 
