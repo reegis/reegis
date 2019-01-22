@@ -22,15 +22,36 @@ import reegis.config as cfg
 import reegis.tools as tools
 
 
-def get_bmwi_energiedaten_file():
+def get_bmwi_energiedaten_file(overwrite=False):
     filename = os.path.join(cfg.get('paths', 'general'),
                             cfg.get('bmwi', 'energiedaten'))
     logging.debug("Return status from energiedaten file: {0}".format(
-        tools.download_file(filename, cfg.get('bmwi', 'url_energiedaten'))))
+        tools.download_file(filename, cfg.get('bmwi', 'url_energiedaten'),
+                            overwrite=overwrite)))
     return filename
 
 
 def read_bmwi_sheet_7(sub):
+    """
+
+    Parameters
+    ----------
+    sub : str
+        Sub-table 'a' or 'b'.
+
+    Returns
+    -------
+    pd.DataFrame
+
+    Examples
+    --------
+    >>> fs = read_bmwi_sheet_7('a').sort_index()  # doctest: +SKIP
+    >>> int(float(fs.loc[('Industrie', 'gesamt'), 2014]))  # doctest: +SKIP
+    2545
+    >>> fs = read_bmwi_sheet_7('b').sort_index()  # doctest: +SKIP
+    >>> float(fs.loc[('private Haushalte', 'gesamt'), 2014])  # doctest: +SKIP
+    2188.04
+    """
     filename = get_bmwi_energiedaten_file()
 
     sheet = '7' + sub
@@ -82,7 +103,14 @@ def read_bmwi_sheet_7(sub):
 
 
 def bmwi_re_energy_capacity():
-    """Prepare the energy production and capacity table from sheet 20."""
+    """Prepare the energy production and capacity table from sheet 20.
+
+    Examples
+    --------
+    >>> re = bmwi_re_energy_capacity()  # doctest: +SKIP
+    >>> re.loc[2016, ('water', 'capacity')]  # doctest: +SKIP
+    5601
+    """
     filename = get_bmwi_energiedaten_file()
     repp = pd.read_excel(filename, '20', skiprows=22).iloc[:24]
     repp = repp.drop(repp.index[[0, 4, 8, 12, 16, 20]])
@@ -102,6 +130,13 @@ def get_annual_electricity_demand_bmwi(year):
     """Returns the annual demand for the given year from the BMWI Energiedaten
     in TWh (Tera Watt hours). Will return None if data for the given year is
     not available.
+
+    Examples
+    --------
+    >>> get_annual_electricity_demand_bmwi(2014)  # doctest: +SKIP
+    523.988
+    >>> get_annual_electricity_demand_bmwi(1900)  # doctest: +SKIP
+    None
     """
     infile = get_bmwi_energiedaten_file()
 
@@ -113,8 +148,4 @@ def get_annual_electricity_demand_bmwi(year):
 
 
 if __name__ == "__main__":
-    # print(get_annual_electricity_demand_bmwi(2014))
-    # print(read_bmwi_sheet_7('b'))
-    hydro = bmwi_re_energy_capacity()['water']
-    print(hydro)
-    # get_bmwi_energiedaten_file()
+    pass
