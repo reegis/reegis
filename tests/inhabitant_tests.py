@@ -21,10 +21,8 @@ from reegis import config as cfg
 
 
 def inhabitant_tests():
-    test_path = os.path.join(os.path.dirname(__file__), 'data')
+    test_path = os.path.join(os.path.dirname(__file__), 'data', 'temp')
+    os.makedirs(test_path, exist_ok=True)
     cfg.tmp_set('paths', 'inhabitants', test_path)
     ew = inhabitants.get_ew_by_federal_states(2014)
-    for file in os.listdir(test_path):
-        if 'VG250_VWG' in file:
-            os.remove(os.path.join(test_path, file))
     eq_(int(ew.sum()), 81197537)
