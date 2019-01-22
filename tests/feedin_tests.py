@@ -39,6 +39,7 @@ def feedin_wind_sets_tests():
             wind_weather, wind_set).sum().sort_index()
     s1 = df.transpose()['1']
     s2 = pd.Series({
+        'ENERCON_127_hub135_7500': 1256.73218,
         'ENERCON_82_hub138_2300': 1673.216046,
         'ENERCON_82_hub78_3000': 1048.678195,
         'ENERCON_82_hub98_2300': 1487.604336})

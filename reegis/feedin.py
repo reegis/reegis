@@ -222,7 +222,7 @@ def create_windpowerlib_sets():
     >>> wind_set['hub_height']
     98
     >>> sorted(list(create_windpowerlib_sets().keys()))[:2]
-    ['ENERCON_82_hub138_2300', 'ENERCON_82_hub78_3000']
+    ['ENERCON_127_hub135_7500', 'ENERCON_82_hub138_2300']
     >>> for key in sorted(wind_set.keys()):
     ...     print(key)
     fetch_curve
