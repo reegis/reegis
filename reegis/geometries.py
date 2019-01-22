@@ -13,12 +13,14 @@ __license__ = "GPLv3"
 # Python libraries
 import os
 import logging
+import warnings
 
 # External libraries
 import pandas as pd
 import geopandas as gpd
 from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point
+from shapely.geometry.base import BaseGeometry
 
 
 class Geometry:
@@ -225,6 +227,8 @@ def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
 
     elif isinstance(df.iloc[0]['geometry'], str):
         df['geometry'] = df['geometry'].apply(wkt_loads)
+    elif isinstance(df.iloc[0]['geometry'], BaseGeometry):
+        pass
     else:
         msg = "Could not create GeoDataFrame. Missing geometries."
         logging.error(msg)
