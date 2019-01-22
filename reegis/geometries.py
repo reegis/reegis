@@ -125,14 +125,6 @@ class Geometry:
         self.df = None
         return self
 
-    def remove_invalid_geometries(self):
-        if self.gdf is not None:
-            logging.warning("Invalid geometries have been removed.")
-            self.invalid = self.gdf.loc[~self.gdf.is_valid].copy()
-            self.gdf = self.gdf.loc[self.gdf.is_valid]
-        else:
-            logging.error("No GeoDataFrame to remove invalid geometries from.")
-
 
 def load(path=None, filename=None, fullname=None, hdf_key=None,
          index_col=None, crs=None):
