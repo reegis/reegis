@@ -16,6 +16,7 @@ __license__ = "GPLv3"
 
 import os
 import pandas as pd
+import pvlib
 
 from nose.tools import eq_
 
@@ -59,3 +60,49 @@ def feedin_windpowerlib_test():
     wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
          weather, data_height)  # doctest: +SKIP
     eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 1737)
+
+
+def feedin_pvlib_test():
+    fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
+                      'data', 'test_coastdat_weather.csv')
+    coastdat_id = '1126088'
+    weather = pd.read_csv(fn, header=[0, 1], index_col=[0], parse_dates=True
+                          )[coastdat_id]
+    c = coastdat.fetch_data_coordinates_by_id(coastdat_id)
+    location = pvlib.location.Location(**getattr(c, '_asdict')())
+    pv_weather = coastdat.adapt_coastdat_weather_to_pvlib(weather, location)
+
+    sandia_modules = pvlib.pvsystem.retrieve_sam('sandiamod')
+    sapm_inverters = pvlib.pvsystem.retrieve_sam('sandiainverter')
+    pv = {
+        'pv_set_name': 'M_LG290G3__I_ABB_MICRO_025_US208',
+        'module_name': 'LG_LG290N1C_G3__2013_',
+        'module_key': 'LG290G3',
+        'inverter_name': 'ABB__MICRO_0_25_I_OUTD_US_208_208V__CEC_2014_',
+        'surface_azimuth': 180,
+        'surface_tilt': 35,
+        'albedo': 0.2}
+    pv['module_parameters'] = sandia_modules[pv['module_name']]
+    pv['inverter_parameters'] = sapm_inverters[pv['inverter_name']]
+    pv['p_peak'] = pv['module_parameters'].Impo * pv['module_parameters'].Vmpo
+
+    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1025)
+    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1020)
+    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1002)
+
+
+def feedin_pv_sets_tests():
+    fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
+                      'data', 'test_coastdat_weather.csv')
+    pv_sets = feedin.create_pvlib_sets()
+    coastdat_id = '1126088'
+    weather = pd.read_csv(fn, header=[0, 1], index_col=[0], parse_dates=True
+                          )[coastdat_id]
+    c = coastdat.fetch_data_coordinates_by_id(coastdat_id)
+    location = pvlib.location.Location(**getattr(c, '_asdict')())
+    pv_weather = coastdat.adapt_coastdat_weather_to_pvlib(weather, location)
+    df = pd.DataFrame()
+    for pv_key, pv_set in pv_sets.items():
+        df[pv_key[:9]] = feedin.feedin_pv_sets(pv_weather, location, pv_set
+                                               ).sum()
+    print(df)

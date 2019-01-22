@@ -36,7 +36,6 @@ if not os.environ.get('READTHEDOCS') == 'True':
 
     # Internal modules
     import reegis.config as cfg
-    # from reegis import coastdat
 
     # External libraries
     import pandas as pd
@@ -59,6 +58,21 @@ def create_pvlib_sets():
     Returns
     -------
     dict
+
+    Examples
+    --------
+    >>> pv_set = create_pvlib_sets()['M_LG290G3__I_ABB_MICRO_025_US208'][3]
+    >>> int(pv_set['surface_azimuth'])
+    180
+    >>> for key in sorted(pv_set.keys()):
+    ...     print(key)
+    albedo
+    inverter_parameters
+    module_parameters
+    name
+    p_peak
+    surface_azimuth
+    surface_tilt
     """
     # get module and inverter parameter from sandia database
     sandia_modules = pvlib.pvsystem.retrieve_sam('sandiamod')
@@ -133,6 +147,7 @@ def feedin_pv_sets(weather, location, pv_parameter_set):
             tilt = get_optimal_pv_angle(location.latitude)
         else:
             tilt = float(pv_system['surface_tilt'])
+
         mc = feedin_pvlib(location, pv_system, weather, tilt=tilt)
         df[pv_system['name']] = mc
     return df
@@ -187,8 +202,8 @@ def feedin_pvlib(location, system, weather, tilt=None, peak=None,
 
     mc = pvlib.modelchain.ModelChain(
         pvsys, location, orientation_strategy=orientation_strategy)
-    pvlib_times = weather.index.shift(-1, freq="30min")
-    out = mc.run_model(pvlib_times, weather=weather)
+    weather.index = weather.index.shift(-1, freq="30min")
+    out = mc.run_model(weather.index, weather=weather)
     return out.ac.fillna(0).clip(0).div(system['p_peak']).multiply(
         installed_capacity)
 
@@ -202,10 +217,18 @@ def create_windpowerlib_sets():
 
     Examples
     --------
-    >>> create_windpowerlib_sets()['ENERCON_82_hub98_2300'][1]['hub_height']
+    >>> wind_set = create_windpowerlib_sets()['ENERCON_82_hub98_2300'][1]
+    >>> wind_set['hub_height']
     98
     >>> sorted(list(create_windpowerlib_sets().keys()))[:2]
     ['ENERCON_82_hub138_2300', 'ENERCON_82_hub78_3000']
+    >>> for key in sorted(wind_set.keys()):
+    ...     print(key)
+    fetch_curve
+    hub_height
+    name
+    nominal_power
+    rotor_diameter
     """
     windpowerlib_sets = cfg.get_list('wind', 'set_list')
 
@@ -305,15 +328,15 @@ if __name__ == "__main__":
     tools.logger.define_logging()
     import os
     import windpowerlib
-    df = windpowerlib.wind_turbine.get_turbine_types()
-    print(df.to_excel('/home/uwe/shp/windtypes.xls'))
+    my_df = windpowerlib.wind_turbine.get_turbine_types()
+    print(my_df.to_excel('/home/uwe/shp/windtypes.xls'))
     # df = WindTurbine.get_turbine_types(print_out=False)
     y = 2012
-    set_name = 'M_LG290G3__I_ABB_MICRO_025_US208'
+    my_set_name = 'M_LG290G3__I_ABB_MICRO_025_US208'
     hd_file = pd.HDFStore(os.path.join(
         cfg.get('paths', 'feedin'), 'coastdat', str(y), 'solar',
         cfg.get('feedin', 'file_pattern').format(year=y, type='solar',
-                                                 set_name=set_name)),
+                                                 set_name=my_set_name)),
         mode='r')
     print(hd_file['/A1113109'].sum())
     hd_file.close()
