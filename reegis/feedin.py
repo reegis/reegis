@@ -36,6 +36,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
 
     # Internal modules
     import reegis.config as cfg
+    # from reegis import coastdat
 
     # External libraries
     import pandas as pd
@@ -199,6 +200,12 @@ def create_windpowerlib_sets():
     -------
     dict
 
+    Examples
+    --------
+    >>> create_windpowerlib_sets()['ENERCON_82_hub98_2300'][1]['hub_height']
+    98
+    >>> sorted(list(create_windpowerlib_sets().keys()))[:2]
+    ['ENERCON_82_hub138_2300', 'ENERCON_82_hub78_3000']
     """
     windpowerlib_sets = cfg.get_list('wind', 'set_list')
 
@@ -228,11 +235,26 @@ def feedin_wind_sets(weather, wind_parameter_set):
     -------
     pandas.DataFrame
 
+    Examples
+    --------
+    >>> fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
+    ...                   'data', 'test_coastdat_weather.csv')
+    >>> wind_parameter_set = create_windpowerlib_sets()
+    >>> weather = pd.read_csv(fn, header=[0, 1])['1126088']
+    >>> data_height = cfg.get_dict('coastdat_data_height')
+    >>> wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
+    ...     weather, data_height)  # doctest: +SKIP
+    >>> feedin_wind_sets(wind_weather, wind_parameter_set
+    ...     ).sum().sort_index()  # doctest: +SKIP
+    ENERCON_82_hub138_2300    1673.216046
+    ENERCON_82_hub78_3000     1048.678195
+    ENERCON_82_hub98_2300     1487.604336
+    dtype: float64
     """
     df = pd.DataFrame()
-    for turbine in wind_parameter_set.values():
+    for set_name, turbine in wind_parameter_set.items():
         mc = feedin_windpowerlib(weather, turbine)
-        df[turbine['name'].replace(' ', '_')] = mc
+        df[set_name.replace(' ', '_')] = mc
     return df
 
 
@@ -254,6 +276,22 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
     -------
     pandas.DataFrame
 
+    Examples
+    --------
+    >>> fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
+    ...                  'data', 'test_coastdat_weather.csv')
+    >>> weather = pd.read_csv(fn, header=[0, 1])['1126088']
+    >>> turbine = {
+    ...     'hub_height': 135,
+    ...     'rotor_diameter': 127,
+    ...     'name': 'E-141/4200',
+    ...     'nominal_power': 4200000,
+    ...     'fetch_curve': 'power_coefficient_curve'}
+    >>> data_height = cfg.get_dict('coastdat_data_height')
+    >>> wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
+    ...     weather, data_height)  # doctest: +SKIP
+    >>> int(feedin_windpowerlib(wind_weather, turbine).sum())  # doctest: +SKIP
+    1737
     """
     wpp = WindTurbine(**turbine)
     modelchain_data = cfg.get_dict('windpowerlib')
@@ -266,6 +304,10 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
 if __name__ == "__main__":
     tools.logger.define_logging()
     import os
+    import windpowerlib
+    df = windpowerlib.wind_turbine.get_turbine_types()
+    print(df.to_excel('/home/uwe/shp/windtypes.xls'))
+    # df = WindTurbine.get_turbine_types(print_out=False)
     y = 2012
     set_name = 'M_LG290G3__I_ABB_MICRO_025_US208'
     hd_file = pd.HDFStore(os.path.join(

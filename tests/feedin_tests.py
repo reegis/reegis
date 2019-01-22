@@ -17,12 +17,14 @@ __license__ = "GPLv3"
 import os
 import pandas as pd
 
+from nose.tools import eq_
+
 from reegis import coastdat
 from reegis import feedin
 from reegis import config as cfg
 
 
-def feedin_wind_sets():
+def feedin_wind_sets_tests():
     fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
                       'data', 'test_coastdat_weather.csv')
     wind_parameter_set = feedin.create_windpowerlib_sets()
@@ -39,39 +41,17 @@ def feedin_wind_sets():
     pd.testing.assert_series_equal(s1, s2)
 
 
-
-
-# def feedin_windpowerlib(weather, turbine, installed_capacity=1):
-#     """Use the windpowerlib to generate normalised feedin time series.
-#
-#     Parameters
-#     ----------
-#     turbine : dict
-#         Parameters of the wind turbine (hub height, diameter of the rotor,
-#         identifier of the turbine to get cp-series, nominal power).
-#     weather : pandas.DataFrame
-#         Weather data set. See module header.
-#     installed_capacity : float
-#         Overall installed capacity for the given wind turbine. The installed
-#         capacity is set to 1 by default for normalised time series.
-#
-#     Returns
-#     -------
-#     pandas.DataFrame
-#
-#     Examples
-#     --------
-#     >>> fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
-#     ...                  'data', 'test_coastdat_weather.csv')
-#     >>> weather = pd.read_csv(fn, header=[0, 1])['1126088']
-#     >>> turbine = {
-#     ...     'hub_height': 135,
-#     ...     'rotor_diameter': 127,
-#     ...     'name': 'E-141/4200',
-#     ...     'nominal_power': 4200000,
-#     ...     'fetch_curve': 'power_coefficient_curve'}
-#     >>> data_height = cfg.get_dict('coastdat_data_height')
-#     >>> wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
-#     ...     weather, data_height)  # doctest: +SKIP
-#     >>> int(feedin_windpowerlib(wind_weather, turbine).sum())  # doctest: +SKIP
-#     1737
+def feedin_windpowerlib_test():
+    fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
+                      'data', 'test_coastdat_weather.csv')
+    weather = pd.read_csv(fn, header=[0, 1])['1126088']
+    turbine = {
+        'hub_height': 135,
+        'rotor_diameter': 127,
+        'name': 'E-141/4200',
+        'nominal_power': 4200000,
+        'fetch_curve': 'power_coefficient_curve'}
+    data_height = cfg.get_dict('coastdat_data_height')
+    wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
+         weather, data_height)  # doctest: +SKIP
+    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 1737)
