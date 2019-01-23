@@ -534,12 +534,11 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
     return coastdat_polygons
 
 
-def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
+def spatial_average_weather(year, geo, parameter, name,
+                            outpath=None, outfile=None):
     """
-    Calculate the average temperature for all regions (de21, states...).
-
-    ToDo: Remove geometry object and use geoDataFrame instead.
-    ToDo: Test function.
+    Calculate the mean temperature over all temperature data sets within each
+    region for one year.
 
     Parameters
     ----------
@@ -553,6 +552,8 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
         Set your own name for the outputfile.
     parameter : str
         Name of the item (temperature, wind speed,... of the weather data set.
+    name : str
+        Name of the regions table to be used as a column name.
 
     Returns
     -------
@@ -560,9 +561,9 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
 
     """
     logging.info("Getting average {0} for {1} in {2} from coastdat2.".format(
-        parameter, geo.name, year))
+        parameter, name, year))
 
-    col_name = geo.name.replace(' ', '_')
+    name = name.replace(' ', '_')
 
     # Create a Geometry object for the coastdat centroids.
     coastdat_geo = geometries.load(cfg.get('paths', 'geometry'),
@@ -571,11 +572,11 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
 
     # Join the tables to create a list of coastdat id's for each region.
     coastdat_geo = geometries.spatial_join_with_buffer(
-        coastdat_geo, geo, name='federal_states', limit=0)
+        coastdat_geo, geo, name=name, limit=0)
 
     # Fix regions with no matches (no matches if a region ist too small).
     fix = {}
-    for reg in set(geo.index) - set(coastdat_geo[col_name].unique()):
+    for reg in set(geo.index) - set(coastdat_geo[name].unique()):
         reg_point = geo.representative_point().loc[reg]
         coastdat_poly = geometries.load(
             cfg.get('paths', 'geometry'),
@@ -594,7 +595,7 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
     # Calculate the average temperature for each region with more than one id.
     avg_value = pd.DataFrame()
     for region in geo.index:
-        cd_ids = coastdat_geo[coastdat_geo[col_name] == region].index
+        cd_ids = coastdat_geo[coastdat_geo[name] == region].index
         number_of_sets = len(cd_ids)
         tmp = pd.DataFrame()
         logging.debug((region, len(cd_ids)))
@@ -650,7 +651,7 @@ def federal_state_average_weather(year, parameter):
         'average_{0}_BB_TH_{1}.csv'.format(parameter, year))
     if not os.path.isfile(filename):
         spatial_average_weather(year, federal_states, parameter,
-                                outfile=filename)
+                                'federal_states', outfile=filename)
     return pd.read_csv(filename, index_col=[0], parse_dates=True)
 
 
@@ -828,6 +829,7 @@ def load_feedin_by_region(year, feedin_type, name, region=None,
             cfg.get('feedin', 'region_file_pattern').format(
                 year=year, type=feedin_type, name=name))
     else:
+        feedin_path = os.path.join(feedin_path, 'weather_variations')
         feedin_region_outfile_name = os.path.join(
             feedin_path,
             cfg.get('feedin', 'region_file_pattern_var').format(
@@ -937,7 +939,8 @@ def scenario_feedin(year, name, regions=None):
     return feedin_ts[regions].sort_index(1)
 
 
-def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
+def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
+                         weather_year=None):
     """
 
     Parameters
@@ -946,6 +949,7 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
     name
     regions
     feedin_ts
+    weather_year
 
     Returns
     -------
@@ -957,7 +961,8 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
                      index_col=[0, 1], header=None)
 
     # Get normalised feedin time series
-    wind = load_feedin_by_region(year, 'wind', name)
+    wind = load_feedin_by_region(year, 'wind', name,
+                                 weather_year=weather_year)
 
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
@@ -1030,7 +1035,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
 
 
 def get_feedin_per_region(year, region, name, weather_year=None,
-                          windzones=True, subregion=False):
+                          windzones=True, subregion=False, pp=None):
     """
     Aggregate feed-in time series for the given geometry set.
 
@@ -1041,6 +1046,7 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     name : str
     weather_year : int
     windzones : bool
+    pp : pd.DataFrame or None
     subregion : bool
         Set to True if all region polygons together are a subregion of
         Germany. This will switch off the buffer in the spatial_join function.
@@ -1065,13 +1071,15 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
     gdf = geometries.load(path=geo_path, filename=geo_file)
-    powerplants.add_regions_to_powerplants(
-        gdf, 'coastdat2', filename=filename, path=path, dump=True)
+
+    pp = powerplants.add_regions_to_powerplants(
+        gdf, 'coastdat2', filename=filename, path=path, dump=True, pp=pp)
 
     # Add a column named with the name parameter, adding the region id to
     # each power plant
     pp = powerplants.add_regions_to_powerplants(
-        region, name, filename=filename, path=path, dump=False, subregion=subregion)
+        region, name, filename=filename, path=path, dump=False, pp=pp,
+        subregion=subregion)
 
     # Get only the power plants that are online in the given year.
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
@@ -1080,7 +1088,8 @@ def get_feedin_per_region(year, region, name, weather_year=None,
         windzone_region_fraction(pp, name, year=year, dump=True)
 
     # Aggregate feedin time series for each region
-    aggregate_feedin_by_region(year, pp, name, weather_year=weather_year)
+    return aggregate_feedin_by_region(year, pp, name,
+                                      weather_year=weather_year)
 
 
 def aggregate_feedin_by_region(year, pp, name, weather_year=None):
@@ -1132,6 +1141,7 @@ def aggregate_feedin_by_region(year, pp, name, weather_year=None):
     outfile_name = feedin_deflex_outfile_name.format(type='geothermal')
     if not os.path.isfile(outfile_name):
         aggregate_by_region_geothermal(regions, year, outfile_name)
+    return feedin_path
 
 
 def get_solar_time_series_for_one_location(latitude, longitude, year,
@@ -1192,9 +1202,10 @@ def federal_states_feedin_example():
         cfg.get('geometry', 'federalstates_polygon'))
     get_feedin_per_region(2014, federal_states, 'federal_states')
 
-    print(scenario_feedin(2014, 'federal_states').sum())
+    return scenario_feedin(2014, 'federal_states')
 
 
 if __name__ == "__main__":
     logger.define_logging()
-    federal_states_feedin_example()
+    print(federal_states_feedin_example().sum())
+    print(federal_state_average_weather(2014, 'temp_air'))

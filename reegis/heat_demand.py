@@ -299,5 +299,5 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
 
 if __name__ == "__main__":
     logger.define_logging()
-    heat_demand(2014).loc['BE'].to_excel('/home/uwe/berlin_heat_5.xlsx')
-    get_heat_profiles_by_state(2014, state=['BE'])['BE'].to_excel('/home/uwe/berlin_heat_4.xlsx')
+    print(heat_demand(2014).loc['BE'])
+    print(get_heat_profiles_by_state(2014, state=['BE'])['BE'])
