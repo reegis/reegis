@@ -939,7 +939,8 @@ def scenario_feedin(year, name, regions=None):
     return feedin_ts[regions].sort_index(1)
 
 
-def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
+def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
+                         weather_year=None):
     """
 
     Parameters
@@ -948,6 +949,7 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
     name
     regions
     feedin_ts
+    weather_year
 
     Returns
     -------
@@ -959,7 +961,8 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None):
                      index_col=[0, 1], header=None)
 
     # Get normalised feedin time series
-    wind = load_feedin_by_region(year, 'wind', name)
+    wind = load_feedin_by_region(year, 'wind', name,
+                                 weather_year=weather_year)
 
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
@@ -1071,7 +1074,8 @@ def get_feedin_per_region(year, region, name, weather_year=None,
         windzone_region_fraction(pp, name, year=year, dump=True)
 
     # Aggregate feedin time series for each region
-    aggregate_feedin_by_region(year, pp, name, weather_year=weather_year)
+    return aggregate_feedin_by_region(year, pp, name,
+                                      weather_year=weather_year)
 
 
 def aggregate_feedin_by_region(year, pp, name, weather_year=None):
