@@ -1035,7 +1035,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
 
 
 def get_feedin_per_region(year, region, name, weather_year=None,
-                          windzones=True, pp=None):
+                          windzones=True, subregion=False, pp=None):
     """
     Aggregate feed-in time series for the given geometry set.
 
@@ -1047,6 +1047,9 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     weather_year : int
     windzones : bool
     pp : pd.DataFrame or None
+    subregion : bool
+        Set to True if all region polygons together are a subregion of
+        Germany. This will switch off the buffer in the spatial_join function.
 
     Notes
     -----
@@ -1075,7 +1078,8 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     # Add a column named with the name parameter, adding the region id to
     # each power plant
     pp = powerplants.add_regions_to_powerplants(
-        region, name, filename=filename, path=path, dump=False, pp=pp)
+        region, name, filename=filename, path=path, dump=False, pp=pp,
+        subregion=subregion)
 
     # Get only the power plants that are online in the given year.
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
@@ -1117,6 +1121,7 @@ def aggregate_feedin_by_region(year, pp, name, weather_year=None):
     pp = pp.groupby(
         ['energy_source_level_2', name, 'coastdat2']).sum()
 
+    pp.index = pp.index.set_levels(pp.index.levels[1].astype(str), level=1)
     regions = pp.index.get_level_values(1).unique().sort_values()
 
     # Loop over weather depending feed-in categories.
