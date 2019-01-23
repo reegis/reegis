@@ -1109,6 +1109,7 @@ def aggregate_feedin_by_region(year, pp, name, weather_year=None):
     pp = pp.groupby(
         ['energy_source_level_2', name, 'coastdat2']).sum()
 
+    pp.index = pp.index.set_levels(pp.index.levels[1].astype(str), level=1)
     regions = pp.index.get_level_values(1).unique().sort_values()
 
     # Loop over weather depending feed-in categories.
