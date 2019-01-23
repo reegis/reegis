@@ -917,12 +917,13 @@ def scenario_feedin(year, name, regions=None):
     cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
     feedin_ts = pd.DataFrame(columns=cols)
 
-    hydro = load_feedin_by_region(year, 'hydro', name)
+    hydro = load_feedin_by_region(year, 'hydro', name).reset_index(drop=True)
     regions_hydro = set(hydro.columns)
     for region in regions_hydro:
         feedin_ts[region, 'hydro'] = hydro[region]
 
-    geothermal = load_feedin_by_region(year, 'geothermal', name)
+    geothermal = load_feedin_by_region(year, 'geothermal', name).reset_index(
+        drop=True)
     regions_geothermal = set(geothermal.columns)
     for region in regions_geothermal:
         feedin_ts[region, 'geothermal'] = geothermal[region]
@@ -961,8 +962,8 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
                      index_col=[0, 1], header=None)
 
     # Get normalised feedin time series
-    wind = load_feedin_by_region(year, 'wind', name,
-                                 weather_year=weather_year)
+    wind = load_feedin_by_region(
+        year, 'wind', name, weather_year=weather_year).reset_index(drop=True)
 
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
@@ -978,7 +979,7 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     if regions is None:
         regions = wind.columns.get_level_values(0).unique()
 
-    if feedin_ts is None:
+    if feedin_ts is None or len(feedin_ts.index) == 0:
         cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
         feedin_ts = pd.DataFrame(index=wind.index, columns=cols)
 
@@ -990,7 +991,8 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     return feedin_ts.sort_index(1)
 
 
-def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
+def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
+                       weather_year=None):
     """
     Join the different solar types and orientations to one time series defined
     by the fraction of each type and orientation.
@@ -1001,6 +1003,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
     name
     regions
     feedin_ts
+    weather_year
 
     Returns
     -------
@@ -1008,12 +1011,13 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
     """
     pv_types = cfg.get_dict('pv_types')
     pv_orientation = cfg.get_dict('pv_orientation')
-    pv = load_feedin_by_region(year, 'solar', name)
+    pv = load_feedin_by_region(
+        year, 'solar', name, weather_year=weather_year).reset_index(drop=True)
 
     if regions is None:
         regions = pv.columns.get_level_values(0).unique()
 
-    if feedin_ts is None:
+    if feedin_ts is None or len(feedin_ts.index) == 0:
         cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
         feedin_ts = pd.DataFrame(index=pv.index, columns=cols)
 
@@ -1029,8 +1033,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
         for mset in pv_types.keys():
             set_col = base_set_column.format(mset)
             feedin_ts[region, 'solar'] += pv[region, set_col].multiply(
-                orientation_fraction).sum(1).multiply(
-                pv_types[mset])
+                orientation_fraction).sum(1).multiply(pv_types[mset])
     return feedin_ts.sort_index(1)
 
 
