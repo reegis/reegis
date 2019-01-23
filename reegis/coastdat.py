@@ -1189,9 +1189,10 @@ def federal_states_feedin_example():
         cfg.get('geometry', 'federalstates_polygon'))
     get_feedin_per_region(2014, federal_states, 'federal_states')
 
-    print(scenario_feedin(2014, 'federal_states').sum())
+    return scenario_feedin(2014, 'federal_states')
 
 
 if __name__ == "__main__":
     logger.define_logging()
-    federal_states_feedin_example()
+    print(federal_states_feedin_example().sum())
+    print(federal_state_average_weather(2014, 'temp_air'))
