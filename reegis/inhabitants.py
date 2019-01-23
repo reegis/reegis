@@ -17,17 +17,15 @@ import shutil
 import glob
 import logging
 
-# External libraries
-import pandas as pd
-import geopandas as gpd
+if not os.environ.get('READTHEDOCS') == 'True':
+    # External libraries
+    import pandas as pd
+    import geopandas as gpd
 
-# oemof libraries
-import oemof.tools.logger
-
-# Internal modules
-import reegis.config as cfg
-import reegis.geometries
-import reegis.tools as tools
+    # Internal modules
+    import reegis.config as cfg
+    import reegis.geometries
+    import reegis.tools as tools
 
 
 def get_ew_shp_file(year):

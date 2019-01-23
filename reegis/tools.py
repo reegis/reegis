@@ -14,12 +14,14 @@ __license__ = "GPLv3"
 import os
 import logging
 
-# External libraries
-import requests
-from shapely.wkt import loads as wkt_loads
 
-# oemof packages
-from oemof.tools import logger
+if not os.environ.get('READTHEDOCS') == 'True':
+    # External libraries
+    import requests
+    from shapely.wkt import loads as wkt_loads
+
+    # oemof packages
+    from oemof.tools import logger
 
 
 def postgis2shapely(postgis):

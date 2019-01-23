@@ -1,8 +1,22 @@
-import requests
-from shapely import wkb
-import pandas as pd
-import geopandas as gpd
+# -*- coding: utf-8 -*-
+
+"""Aggregate the number of inhabitants for a regions/polygons within Germany.
+
+Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+"""
+__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
+__license__ = "GPLv3"
+
+import os
 import logging
+
+if not os.environ.get('READTHEDOCS') == 'True':
+    import requests
+    from shapely import wkb
+    import pandas as pd
+    import geopandas as gpd
 
 
 def wkb2wkt(x):

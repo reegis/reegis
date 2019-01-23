@@ -4,6 +4,13 @@ reegis package
 Submodules
 ----------
 
+reegis.bmwi module
+------------------
+
+.. automodule:: reegis.bmwi
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 reegis.coastdat module
 ----------------------
@@ -14,17 +21,49 @@ reegis.coastdat module
     :show-inheritance:
 
 reegis.feedin module
-----------------------
+--------------------
 
 .. automodule:: reegis.feedin
     :members:
     :undoc-members:
     :show-inheritance:
 
+reegis.inhabitants module
+-------------------------
+
+.. automodule:: reegis.inhabitants
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+reegis.oedb module
+------------------
+
+.. automodule:: reegis.oedb
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 reegis.powerplants module
-----------------------
+-------------------------
 
 .. automodule:: reegis.powerplants
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+reegis.storages module
+----------------------
+
+.. automodule:: reegis.storages
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+reegis.tools module
+-------------------
+
+.. automodule:: reegis.tools
     :members:
     :undoc-members:
     :show-inheritance:
