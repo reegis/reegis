@@ -534,12 +534,11 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
     return coastdat_polygons
 
 
-def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
+def spatial_average_weather(year, geo, parameter, name,
+                            outpath=None, outfile=None):
     """
-    Calculate the average temperature for all regions (de21, states...).
-
-    ToDo: Remove geometry object and use geoDataFrame instead.
-    ToDo: Test function.
+    Calculate the mean temperature over all temperature data sets within each
+    region for one year.
 
     Parameters
     ----------
@@ -553,6 +552,8 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
         Set your own name for the outputfile.
     parameter : str
         Name of the item (temperature, wind speed,... of the weather data set.
+    name : str
+        Name of the regions table to be used as a column name.
 
     Returns
     -------
@@ -560,9 +561,9 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
 
     """
     logging.info("Getting average {0} for {1} in {2} from coastdat2.".format(
-        parameter, geo.name, year))
+        parameter, name, year))
 
-    col_name = geo.name.replace(' ', '_')
+    name = name.replace(' ', '_')
 
     # Create a Geometry object for the coastdat centroids.
     coastdat_geo = geometries.load(cfg.get('paths', 'geometry'),
@@ -571,11 +572,11 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
 
     # Join the tables to create a list of coastdat id's for each region.
     coastdat_geo = geometries.spatial_join_with_buffer(
-        coastdat_geo, geo, name='federal_states', limit=0)
+        coastdat_geo, geo, name=name, limit=0)
 
     # Fix regions with no matches (no matches if a region ist too small).
     fix = {}
-    for reg in set(geo.index) - set(coastdat_geo[col_name].unique()):
+    for reg in set(geo.index) - set(coastdat_geo[name].unique()):
         reg_point = geo.representative_point().loc[reg]
         coastdat_poly = geometries.load(
             cfg.get('paths', 'geometry'),
@@ -594,7 +595,7 @@ def spatial_average_weather(year, geo, parameter, outpath=None, outfile=None):
     # Calculate the average temperature for each region with more than one id.
     avg_value = pd.DataFrame()
     for region in geo.index:
-        cd_ids = coastdat_geo[coastdat_geo[col_name] == region].index
+        cd_ids = coastdat_geo[coastdat_geo[name] == region].index
         number_of_sets = len(cd_ids)
         tmp = pd.DataFrame()
         logging.debug((region, len(cd_ids)))
@@ -650,7 +651,7 @@ def federal_state_average_weather(year, parameter):
         'average_{0}_BB_TH_{1}.csv'.format(parameter, year))
     if not os.path.isfile(filename):
         spatial_average_weather(year, federal_states, parameter,
-                                outfile=filename)
+                                'federal_states', outfile=filename)
     return pd.read_csv(filename, index_col=[0], parse_dates=True)
 
 
@@ -828,6 +829,7 @@ def load_feedin_by_region(year, feedin_type, name, region=None,
             cfg.get('feedin', 'region_file_pattern').format(
                 year=year, type=feedin_type, name=name))
     else:
+        feedin_path = os.path.join(feedin_path, 'weather_variations')
         feedin_region_outfile_name = os.path.join(
             feedin_path,
             cfg.get('feedin', 'region_file_pattern_var').format(
