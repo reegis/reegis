@@ -1030,7 +1030,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
 
 
 def get_feedin_per_region(year, region, name, weather_year=None,
-                          windzones=True):
+                          windzones=True, subregion=False):
     """
     Aggregate feed-in time series for the given geometry set.
 
@@ -1041,6 +1041,9 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     name : str
     weather_year : int
     windzones : bool
+    subregion : bool
+        Set to True if all region polygons together are a subregion of
+        Germany. This will switch off the buffer in the spatial_join function.
 
     Notes
     -----
@@ -1068,7 +1071,7 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     # Add a column named with the name parameter, adding the region id to
     # each power plant
     pp = powerplants.add_regions_to_powerplants(
-        region, name, filename=filename, path=path, dump=False)
+        region, name, filename=filename, path=path, dump=False, subregion=subregion)
 
     # Get only the power plants that are online in the given year.
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
