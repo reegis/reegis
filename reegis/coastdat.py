@@ -1048,7 +1048,15 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     windzones : bool
     pp : pd.DataFrame or None
 
+    Notes
+    -----
+    The feedin is calculated per region entry (row of the region CSV / GeoDF),
+    the output file will contain columns per region entry and generator set
+    entry. E.g. a file with 10 regions and 2 wind generators will result in 20
+    different feedin timeseries.
+    Example region file: federalstates_polygon.csv
 
+    You may want to use geometries.load() to import a region CSV.
     """
     # create and dump reegis basic powerplants table (created from opsd data)
     fn = powerplants.pp_opsd2reegis()
