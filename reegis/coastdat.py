@@ -1035,7 +1035,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None):
 
 
 def get_feedin_per_region(year, region, name, weather_year=None,
-                          windzones=True):
+                          windzones=True, pp=None):
     """
     Aggregate feed-in time series for the given geometry set.
 
@@ -1046,6 +1046,7 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     name : str
     weather_year : int
     windzones : bool
+    pp : pd.DataFrame or None
 
 
     """
@@ -1059,13 +1060,14 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
     gdf = geometries.load(path=geo_path, filename=geo_file)
-    powerplants.add_regions_to_powerplants(
-        gdf, 'coastdat2', filename=filename, path=path, dump=True)
+
+    pp = powerplants.add_regions_to_powerplants(
+        gdf, 'coastdat2', filename=filename, path=path, dump=True, pp=pp)
 
     # Add a column named with the name parameter, adding the region id to
     # each power plant
     pp = powerplants.add_regions_to_powerplants(
-        region, name, filename=filename, path=path, dump=False)
+        region, name, filename=filename, path=path, dump=False, pp=pp)
 
     # Get only the power plants that are online in the given year.
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
@@ -1126,6 +1128,7 @@ def aggregate_feedin_by_region(year, pp, name, weather_year=None):
     outfile_name = feedin_deflex_outfile_name.format(type='geothermal')
     if not os.path.isfile(outfile_name):
         aggregate_by_region_geothermal(regions, year, outfile_name)
+    return feedin_path
 
 
 def get_solar_time_series_for_one_location(latitude, longitude, year,

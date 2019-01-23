@@ -330,7 +330,7 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
 
 def add_regions_to_powerplants(region, column, filename=None,
                                filename_out=None, path=None, hdf_key='pp',
-                               subregion=False, dump=True):
+                               subregion=False, dump=True, pp=None):
     """
     Add a column to the power plant table with the region id of the given
     region file.
@@ -356,6 +356,9 @@ def add_regions_to_powerplants(region, column, filename=None,
         The key of the hdf file.
     dump : bool
         If True the table is dumped to an hdf5 file.
+    pp : pd.DataFrame or None
+        It is possible to pass a power plant table otherwise a stored table
+        will be used.
 
     Returns
     -------
@@ -390,9 +393,11 @@ def add_regions_to_powerplants(region, column, filename=None,
         logging.debug(msg.format(fn))
         fn = pp_opsd2reegis()
 
-    pp = pd.DataFrame(pd.read_hdf(fn, hdf_key))
+    if pp is None:
+        pp = pd.DataFrame(pd.read_hdf(fn, hdf_key))
 
-    pp = add_model_region_pp(pp, region, column, subregion=subregion)
+    if column not in pp:
+        pp = add_model_region_pp(pp, region, column, subregion=subregion)
 
     if 'capacity_in' not in pp:
         pp = add_capacity_in(pp)
