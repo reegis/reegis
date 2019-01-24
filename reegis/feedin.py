@@ -244,8 +244,8 @@ def create_windpowerlib_sets():
 
 
 def feedin_wind_sets(weather, wind_parameter_set):
-    """Create a pv feed-in time series from a given weather data set and a
-    set of pvlib parameter sets. The result of every parameter set will be a
+    """Create a wind feed-in time series from a given weather data set and a
+    set of wind parameter sets. The result of every parameter set will be a
     column in the resulting DataFrame.
 
     Parameters
