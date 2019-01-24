@@ -910,14 +910,14 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
     return wz_regions
 
 
-def scenario_feedin(year, name, regions=None, weather_year=None,
-                    feedin_ts=None):
+def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
     """
     Load solar, wind, hydro, geothermal for all regions in one Mulitindex table
 
     year : int
     name : str
-    regions : list or None
+    weather_year : pd.DataFrame or None
+    feedin_ts : pd.DataFrame or None
 
     """
     if feedin_ts is None:
@@ -925,14 +925,12 @@ def scenario_feedin(year, name, regions=None, weather_year=None,
         feedin_ts = pd.DataFrame(columns=cols)
 
     hydro = load_feedin_by_region(year, 'hydro', name).reset_index(drop=True)
-    regions_hydro = set(hydro.columns)
-    for region in regions_hydro:
+    for region in hydro.columns:
         feedin_ts[region, 'hydro'] = hydro[region]
 
     geothermal = load_feedin_by_region(
         year, 'geothermal', name).reset_index(drop=True)
-    regions_geothermal = set(geothermal.columns)
-    for region in regions_geothermal:
+    for region in geothermal.columns:
         feedin_ts[region, 'geothermal'] = geothermal[region]
 
     if calendar.isleap(year) and weather_year is not None:
@@ -941,16 +939,11 @@ def scenario_feedin(year, name, regions=None, weather_year=None,
 
     feedin_ts = scenario_feedin_pv(year, name, feedin_ts=feedin_ts,
                                    weather_year=weather_year)
-    regions_solar = set(feedin_ts.swaplevel(axis=1)['solar'].columns)
 
     feedin_ts = scenario_feedin_wind(year, name, feedin_ts=feedin_ts,
                                      weather_year=weather_year)
-    regions_wind = set(feedin_ts.swaplevel(axis=1)['wind'].columns)
 
-    if regions is None:
-        regions = list(regions_hydro.intersection(regions_geothermal,
-                                                  regions_solar, regions_wind))
-    return feedin_ts[regions].sort_index(1)
+    return feedin_ts.sort_index(1)
 
 
 def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
