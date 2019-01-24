@@ -20,6 +20,8 @@ import pvlib
 
 from nose.tools import eq_
 
+from windpowerlib.wind_turbine import WindTurbine
+
 from reegis import coastdat
 from reegis import feedin
 from reegis import config as cfg
@@ -60,6 +62,8 @@ def feedin_windpowerlib_test():
     data_height = cfg.get_dict('coastdat_data_height')
     wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
          weather, data_height)  # doctest: +SKIP
+    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 1737)
+    turbine = WindTurbine(**turbine)
     eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 1737)
 
 

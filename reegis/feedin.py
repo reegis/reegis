@@ -287,7 +287,7 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
 
     Parameters
     ----------
-    turbine : dict
+    turbine : dict or windpowerlib.wind_turbine.WindTurbine
         Parameters of the wind turbine (hub height, diameter of the rotor,
         identifier of the turbine to get cp-series, nominal power).
     weather : pandas.DataFrame
@@ -317,14 +317,12 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
     >>> int(feedin_windpowerlib(wind_weather, turbine).sum())  # doctest: +SKIP
     1737
     """
-    if 'WindTurbine' not in turbine:
-        wpp = WindTurbine(**turbine)
-    else:
-        wpp = turbine['WindTurbine']
+    if not isinstance(turbine, WindTurbine):
+        turbine = WindTurbine(**turbine)
     modelchain_data = cfg.get_dict('windpowerlib')
-    mc = ModelChain(wpp, **modelchain_data)
+    mc = ModelChain(turbine, **modelchain_data)
     mcwpp = mc.run_model(weather)
-    return mcwpp.power_output.div(turbine['nominal_power']).multiply(
+    return mcwpp.power_output.div(turbine.nominal_power).multiply(
         installed_capacity)
 
 
