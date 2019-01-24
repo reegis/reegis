@@ -28,6 +28,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import pandas as pd
     import pvlib
     from shapely.geometry import Point
+    from windpowerlib.wind_turbine import WindTurbine
 
     # oemof libraries
     from oemof.tools import logger
@@ -359,6 +360,9 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
         wind_sets = feedin.create_windpowerlib_sets()
         # Open a file for each main set (subsets are stored in columns)
         for wind_key, wind_set in wind_sets.items():
+            for subset_key, subset in wind_set.items():
+                wind_sets[wind_key][subset_key] = WindTurbine(
+                    **subset)
             filename = feedin_file.format(
                 type='wind', year=year, set_name=wind_key)
             if not os.path.isfile(filename) or overwrite:
