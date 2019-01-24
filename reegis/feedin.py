@@ -317,7 +317,10 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
     >>> int(feedin_windpowerlib(wind_weather, turbine).sum())  # doctest: +SKIP
     1737
     """
-    wpp = WindTurbine(**turbine)
+    if 'WindTurbine' not in turbine:
+        wpp = WindTurbine(**turbine)
+    else:
+        wpp = turbine['WindTurbine']
     modelchain_data = cfg.get_dict('windpowerlib')
     mc = ModelChain(wpp, **modelchain_data)
     mcwpp = mc.run_model(weather)
