@@ -20,6 +20,7 @@ import os
 import datetime
 import logging
 from collections import namedtuple
+import calendar
 
 # External libraries
 if not os.environ.get('READTHEDOCS') == 'True':
@@ -905,7 +906,8 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
     return wz_regions
 
 
-def scenario_feedin(year, name, regions=None):
+def scenario_feedin(year, name, regions=None, weather_year=None,
+                    feedin_ts=None):
     """
     Load solar, wind, hydro, geothermal for all regions in one Mulitindex table
 
@@ -914,24 +916,31 @@ def scenario_feedin(year, name, regions=None):
     regions : list or None
 
     """
-    cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
-    feedin_ts = pd.DataFrame(columns=cols)
+    if feedin_ts is None:
+        cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
+        feedin_ts = pd.DataFrame(columns=cols)
 
     hydro = load_feedin_by_region(year, 'hydro', name).reset_index(drop=True)
     regions_hydro = set(hydro.columns)
     for region in regions_hydro:
         feedin_ts[region, 'hydro'] = hydro[region]
 
-    geothermal = load_feedin_by_region(year, 'geothermal', name).reset_index(
-        drop=True)
+    geothermal = load_feedin_by_region(
+        year, 'geothermal', name).reset_index(drop=True)
     regions_geothermal = set(geothermal.columns)
     for region in regions_geothermal:
         feedin_ts[region, 'geothermal'] = geothermal[region]
 
-    feedin_ts = scenario_feedin_pv(year, name, feedin_ts=feedin_ts)
+    if calendar.isleap(year) and weather_year is not None:
+        if not calendar.isleap(weather_year):
+            feedin_ts = feedin_ts.iloc[:8760]
+
+    feedin_ts = scenario_feedin_pv(year, name, feedin_ts=feedin_ts,
+                                   weather_year=weather_year)
     regions_solar = set(feedin_ts.swaplevel(axis=1)['solar'].columns)
 
-    feedin_ts = scenario_feedin_wind(year, name, feedin_ts=feedin_ts)
+    feedin_ts = scenario_feedin_wind(year, name, feedin_ts=feedin_ts,
+                                     weather_year=weather_year)
     regions_wind = set(feedin_ts.swaplevel(axis=1)['wind'].columns)
 
     if regions is None:
@@ -964,6 +973,10 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     # Get normalised feedin time series
     wind = load_feedin_by_region(
         year, 'wind', name, weather_year=weather_year).reset_index(drop=True)
+
+    if weather_year is not None:
+        if calendar.isleap(weather_year) and not calendar.isleap(year):
+            wind = wind.iloc[:8760]
 
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
@@ -1013,6 +1026,10 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
     pv_orientation = cfg.get_dict('pv_orientation')
     pv = load_feedin_by_region(
         year, 'solar', name, weather_year=weather_year).reset_index(drop=True)
+
+    if weather_year is not None:
+        if calendar.isleap(weather_year) and not calendar.isleap(year):
+            pv = pv.iloc[:8760]
 
     if regions is None:
         regions = pv.columns.get_level_values(0).unique()
