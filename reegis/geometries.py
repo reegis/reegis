@@ -140,7 +140,7 @@ def load(path=None, filename=None, fullname=None, hdf_key=None,
         df = pd.DataFrame(load_hdf(fullname=fullname, key=hdf_key))
         gdf = create_geo_df(df, crs=crs)
 
-    elif fullname[-4:] == '.shp':
+    elif fullname[-4:] == '.shp' or fullname[-8:] == '.geojson':
         gdf = load_shp(fullname=fullname)
 
     else:
