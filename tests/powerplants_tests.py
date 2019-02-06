@@ -54,4 +54,4 @@ def test_opsd2reegis():
     eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity_2000']), 2391)
 
     eq_(coastdat.windzone_region_fraction(
-        pp, name='fed_states', year=year).round(2).loc['NI', 2], 0.24)
+        pp, name='fed_states', year=year).round(2).loc['NI', 3], 0.24)

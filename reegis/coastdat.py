@@ -886,16 +886,16 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
         capacity_col = 'capacity_{0}'.format(year)
 
     path = cfg.get('paths', 'geometry')
-    filename = 'windzones_germany.csv'
-    df = geometries.load(path=path, filename=filename, index_col='gid')
-    df['zone'] = df.index
+    filename = 'windzones_germany.geojson'
+    gdf = geometries.load(path=path, filename=filename)
+    gdf.set_index('zone', inplace=True)
 
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
     coastdat_geo = geometries.load(path=geo_path, filename=geo_file)
     coastdat_geo['geometry'] = coastdat_geo.centroid
 
-    points = geometries.spatial_join_with_buffer(coastdat_geo, df, 'windzone')
+    points = geometries.spatial_join_with_buffer(coastdat_geo, gdf, 'windzone')
 
     wz = pd.DataFrame(points['windzone'])
     pp = pd.merge(pp, wz, how='inner', left_on='coastdat2', right_index=True)
