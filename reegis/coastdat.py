@@ -924,24 +924,25 @@ def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
         cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
         feedin_ts = pd.DataFrame(columns=cols)
 
-    hydro = load_feedin_by_region(year, 'hydro', name).reset_index(drop=True)
+    hydro = load_feedin_by_region(
+        year, 'hydro', name, weather_year=weather_year).reset_index(drop=True)
     for region in hydro.columns:
         feedin_ts[region, 'hydro'] = hydro[region]
 
     geothermal = load_feedin_by_region(
-        year, 'geothermal', name).reset_index(drop=True)
+        year, 'geothermal', name, weather_year=weather_year).reset_index(drop=True)
     for region in geothermal.columns:
         feedin_ts[region, 'geothermal'] = geothermal[region]
-
-    if calendar.isleap(year) and weather_year is not None:
-        if not calendar.isleap(weather_year):
-            feedin_ts = feedin_ts.iloc[:8760]
 
     feedin_ts = scenario_feedin_pv(year, name, feedin_ts=feedin_ts,
                                    weather_year=weather_year)
 
     feedin_ts = scenario_feedin_wind(year, name, feedin_ts=feedin_ts,
                                      weather_year=weather_year)
+
+    if calendar.isleap(year) and weather_year is not None:
+        if not calendar.isleap(weather_year):
+            feedin_ts = feedin_ts.iloc[:8760]
 
     return feedin_ts.sort_index(1)
 
