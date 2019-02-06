@@ -419,7 +419,7 @@ def opsd_power_plants(overwrite=False, csv=False):
             pp = geo.remove_invalid_geometries(pp)
 
             if csv:
-                pp.to_csv(opsd_file_name)
+                pp.to_csv(opsd_file_name.format(cat=category))
             else:
                 df = pd.DataFrame(pp)
                 df[strcols[category]] = df[strcols[category]].astype(str)
