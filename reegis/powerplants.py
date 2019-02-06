@@ -169,7 +169,7 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
     pp[string_cols] = pp[string_cols].astype(str)
 
     # Store power plant table to hdf5 file.
-    pp.to_hdf(filename_out, 'pp', mode='w')
+    pp.to_hdf(filename_out, 'pp', mode='w', format='table')
 
     logging.info("Reegis power plants based on opsd stored in {0}".format(
         filename_out))
@@ -404,7 +404,7 @@ def add_regions_to_powerplants(region, column, filename=None,
 
     if dump:
         fn = os.path.join(path, filename_out)
-        pp.to_hdf(fn, 'pp', mode='w')
+        pp.to_hdf(fn, 'pp', mode='w', format='table')
 
     return pp
 
