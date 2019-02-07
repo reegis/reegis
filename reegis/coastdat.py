@@ -1030,7 +1030,7 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
             wind_sets_names[wind_set] = cfg.get(wind_set, 'set_name')
         wind_sets_weights = {wind_sets_names[k]: float(v) for (k, v) in
                              cfg.get_dict('wind_sets_weights').items()}
-        if sum(wind_sets_weights.values()) != 1:
+        if round(sum(wind_sets_weights.values()), 1) != 1.0:
             logging.warning("The sum of WEC type weights is not 1.")
         wind_sets_weights = pd.DataFrame.from_dict(wind_sets_weights,
                                                    orient='index',
