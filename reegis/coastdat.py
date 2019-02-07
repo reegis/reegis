@@ -978,7 +978,8 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
     cols = wind.columns.get_level_values(1).unique()
-    rn = {c: c.replace('coastdat_2014_wind_', '') for c in cols}
+    rn = {c: c.replace('coastdat_{weather_year}_wind_'
+                       .format(weather_year=weather_year), '') for c in cols}
     wind.rename(columns=rn, level=1, inplace=True)
     wind.sort_index(1, inplace=True)
 
