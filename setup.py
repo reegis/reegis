@@ -15,7 +15,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
         'pvlib < 0.7',
         'geopandas < 0.5',
         'requests',
-        'numpy < 1.17',
+        'numpy < 1.16',
         'workalendar',
         'owslib',
         'pyproj',
