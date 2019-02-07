@@ -396,9 +396,7 @@ def opsd_power_plants(overwrite=False, csv=False):
         if os.path.isfile(opsd_file_name) and not overwrite:
             hdf = None
         else:
-            if os.path.isfile(opsd_file_name):
-                os.remove(opsd_file_name)
-            hdf = pd.HDFStore(opsd_file_name, mode='a')
+            hdf = pd.HDFStore(opsd_file_name, mode='w')
 
     # If the power plant file does not exist, download and prepare it.
     for category in ['conventional', 'renewable']:
@@ -419,13 +417,13 @@ def opsd_power_plants(overwrite=False, csv=False):
             pp = geo.remove_invalid_geometries(pp)
 
             if csv:
-                pp.to_csv(opsd_file_name)
+                pp.to_csv(opsd_file_name.format(cat=category))
             else:
                 df = pd.DataFrame(pp)
                 df[strcols[category]] = df[strcols[category]].astype(str)
-                hdf[category] = df
-            logging.info("Opsd power plants stored to {0}".format(
-                opsd_file_name))
+                hdf.put(category, df)
+            logging.info("Opsd {0} power plants stored to {1}".format(
+                category, opsd_file_name))
 
         if os.path.isfile(cleaned_file_name):
             os.remove(cleaned_file_name)
