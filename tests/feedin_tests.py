@@ -71,7 +71,8 @@ def feedin_pvlib_test():
     fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
                       'data', 'test_coastdat_weather.csv')
     coastdat_id = '1126088'
-    weather = pd.read_csv(fn, header=[0, 1], index_col=[0], parse_dates=True
+    weather = pd.read_csv(fn, header=[0, 1], index_col=[0],
+                          date_parser=lambda idx: pd.to_datetime(idx, utc=True)
                           )[coastdat_id]
     c = coastdat.fetch_data_coordinates_by_id(coastdat_id)
     location = pvlib.location.Location(**getattr(c, '_asdict')())
@@ -100,7 +101,8 @@ def feedin_pv_sets_tests():
                       'data', 'test_coastdat_weather.csv')
     pv_sets = feedin.create_pvlib_sets()
     coastdat_id = '1126088'
-    weather = pd.read_csv(fn, header=[0, 1], index_col=[0], parse_dates=True
+    weather = pd.read_csv(fn, header=[0, 1], index_col=[0],
+                          date_parser=lambda idx: pd.to_datetime(idx, utc=True)
                           )[coastdat_id]
     c = coastdat.fetch_data_coordinates_by_id(coastdat_id)
     location = pvlib.location.Location(**getattr(c, '_asdict')())

@@ -886,16 +886,16 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
         capacity_col = 'capacity_{0}'.format(year)
 
     path = cfg.get('paths', 'geometry')
-    filename = 'windzones_germany.csv'
-    df = geometries.load(path=path, filename=filename, index_col='gid')
-    df['zone'] = df.index
+    filename = 'windzones_germany.geojson'
+    gdf = geometries.load(path=path, filename=filename)
+    gdf.set_index('zone', inplace=True)
 
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
     coastdat_geo = geometries.load(path=geo_path, filename=geo_file)
     coastdat_geo['geometry'] = coastdat_geo.centroid
 
-    points = geometries.spatial_join_with_buffer(coastdat_geo, df, 'windzone')
+    points = geometries.spatial_join_with_buffer(coastdat_geo, gdf, 'windzone')
 
     wz = pd.DataFrame(points['windzone'])
     pp = pd.merge(pp, wz, how='inner', left_on='coastdat2', right_index=True)
@@ -979,7 +979,8 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
     cols = wind.columns.get_level_values(1).unique()
-    rn = {c: c.replace('coastdat_2014_wind_', '') for c in cols}
+    rn = {c: c.replace('coastdat_{weather_year}_wind_'
+                       .format(weather_year=weather_year), '') for c in cols}
     wind.rename(columns=rn, level=1, inplace=True)
     wind.sort_index(1, inplace=True)
 
