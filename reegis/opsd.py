@@ -421,7 +421,7 @@ def opsd_power_plants(overwrite=False, csv=False):
             else:
                 df = pd.DataFrame(pp)
                 df[strcols[category]] = df[strcols[category]].astype(str)
-                hdf.put(category, df, format='table')
+                hdf.put(category, df)
             logging.info("Opsd {0} power plants stored to {1}".format(
                 category, opsd_file_name))
 
