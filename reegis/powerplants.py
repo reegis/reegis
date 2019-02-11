@@ -451,5 +451,56 @@ def get_chp_share_and_efficiency_states(year):
     return calculate_chp_share_and_efficiency(conversion_blnc)
 
 
+def get_powerplants_by_region(region, year, name):
+    """
+    Get all powerplants of a region grouped by fuel for a given year.
+
+    Parameters
+    ----------
+    region : geopandas.geoDataFrame or None
+    year : int
+    name : str
+
+    Notes
+    -----
+    A table with the name pattern reegis_pp_{name}.h5 will be dumped. If you
+    are sure your file exists you can pass region=None.
+    You may want to use geometries.load() to import a region CSV.
+
+    Returns
+    -------
+    pd.DataFrame
+
+    Examples
+    --------
+    >>> geometries = geo.load(
+    ...     cfg.get('paths', 'geometry'),
+    ...     cfg.get('geometry', 'federalstates_polygon'))  # doctest: +SKIP
+    >>> my_name = 'my_states'  # doctest: +SKIP
+    >>> my_year = 2014  # doctest: +SKIP
+    >>> my_pp = get_powerplants_by_region(
+    ...     geometries, my_year, my_name)  # doctest: +SKIP
+
+    """
+    filename = cfg.get('powerplants', 'reegis_pp').split('.')
+    filename = '_'.join(filename[:-1]) + '_{0}.' + filename[-1]
+    filename = filename.format(name)
+
+    path = cfg.get('paths', 'powerplants')
+
+    fn = os.path.join(path, filename)
+
+    if not os.path.isfile(fn) and region is not None:
+        add_regions_to_powerplants(region, name, path=path,
+                                   filename_out=filename)
+
+    pp = get_reegis_powerplants(year, path=path, filename=filename).groupby(
+        [name, 'energy_source_level_2']).sum()
+    pp.drop(
+        ['com_month', 'com_year', 'decom_month', 'decom_year', 'efficiency'],
+        axis=1, inplace=True)
+    return pp
+
+
 if __name__ == "__main__":
     pass
