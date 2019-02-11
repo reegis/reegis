@@ -657,7 +657,8 @@ def federal_state_average_weather(year, parameter):
     if not os.path.isfile(filename):
         spatial_average_weather(year, federal_states, parameter,
                                 'federal_states', outfile=filename)
-    return pd.read_csv(filename, index_col=[0], parse_dates=True)
+    return pd.read_csv(filename, index_col=[0],
+                       date_parser=lambda idx: pd.to_datetime(idx, utc=True))
 
 
 def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
