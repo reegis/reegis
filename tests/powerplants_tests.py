@@ -35,18 +35,32 @@ def test_opsd2reegis():
 
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('geometry', 'federalstates_polygon')
-    gdf = geo.load(path=geo_path, filename=geo_file)
+    gdf1 = geo.load(path=geo_path, filename=geo_file)
     powerplants.add_regions_to_powerplants(
-        gdf, 'fed_states', filename=filename, path=path, dump=True)
+        gdf1, 'fed_states', filename=filename, path=path, dump=True)
 
     geo_path = cfg.get('paths', 'geometry')
     geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
-    gdf = geo.load(path=geo_path, filename=geo_file)
+    gdf2 = geo.load(path=geo_path, filename=geo_file)
     pp = powerplants.add_regions_to_powerplants(
-        gdf, 'coastdat2', filename=filename, path=path, dump=False)
+        gdf2, 'coastdat2', filename=filename, path=path, dump=False)
 
+    year = 2014
+    pp2 = powerplants.get_powerplants_by_region(gdf1, year, 'my_states')
+
+    pp2['efficiency_{0}'.format(year)] = pp2['capacity_{0}'.format(year)].div(
+        pp2['capacity_in_{0}'.format(year)])
+
+    pp2.drop(['capacity', 'capacity_in', 'thermal_capacity'],
+             axis=1, inplace=True)
+
+    fn_reegis2 = fn_reegis.replace('reegis_pp', 'reegis_pp_my_states')
+    os.remove(fn_reegis2)
     os.remove(fn_reegis)
+
     eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity']), 2427)
+
+    eq_(round(pp2.loc[('BE', 'Hard coal'), 'efficiency_2014'], 3), 0.386)
 
     year = 2000
 
