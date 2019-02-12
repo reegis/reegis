@@ -106,6 +106,10 @@ def read_bmwi_sheet_7(sub):
 def bmwi_re_energy_capacity():
     """Prepare the energy production and capacity table from sheet 20.
 
+    capacity: [MW]
+    energy: [GWh]
+    fraction: [-]
+
     Examples
     --------
     >>> re = bmwi_re_energy_capacity()  # doctest: +SKIP
