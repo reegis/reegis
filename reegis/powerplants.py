@@ -91,8 +91,10 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
     ...     filename = pp_opsd2reegis()  # doctest: +SKIP
     """
     if filename_in is None:
-        filename_in = os.path.join(cfg.get('paths', 'opsd'),
-                                   cfg.get('opsd', 'opsd_prepared'))
+        version_name = cfg.get('opsd', 'version_name')
+        opsd_path = cfg.get('paths_pattern', 'opsd').format(
+            version=version_name)
+        filename_in = os.path.join(opsd_path, cfg.get('opsd', 'opsd_prepared'))
     if filename_out is None:
         filename_out = os.path.join(cfg.get('paths', 'powerplants'),
                                     cfg.get('powerplants', 'reegis_pp'))
@@ -504,3 +506,11 @@ def get_powerplants_by_region(region, year, name):
 
 if __name__ == "__main__":
     pass
+    geometries = geo.load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('geometry', 'federalstates_polygon'))  # doctest: +SKIP
+    my_name = 'my_states'  # doctest: +SKIP
+    my_year = 2017  # doctest: +SKIP
+    my_pp = get_powerplants_by_region(
+        geometries, my_year, my_name)  # doctest: +SKIP
+    print(my_pp)

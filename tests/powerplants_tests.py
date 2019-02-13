@@ -26,7 +26,7 @@ from reegis import geometries as geo
 
 def test_opsd2reegis():
     path = os.path.join(os.path.dirname(__file__), 'data')
-    cfg.tmp_set('paths', 'opsd', path)
+    cfg.tmp_set('paths_pattern', 'opsd', path)
     cfg.tmp_set('paths', 'powerplants', path)
     fn_opsd = opsd.opsd_power_plants()
     fn_reegis = powerplants.pp_opsd2reegis()

@@ -18,7 +18,6 @@ import datetime
 # External libraries
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import pyproj
 import requests
 from shapely.wkt import loads as wkt_loads
@@ -34,6 +33,7 @@ import reegis.geometries as geo
 def convert_utm_code_opsd(df):
     # *** Convert utm if present ***
     utm_zones = list()
+    df_utm = None
     # Get all utm zones.
     if 'utm_zone' in df:
         df_utm = df.loc[(df.lon.isnull()) & (df.utm_zone.notnull())]
@@ -60,6 +60,7 @@ def guess_coordinates_by_postcode_opsd(df):
     # *** Use postcode ***
     if 'postcode' in df:
         df_pstc = df.loc[(df.lon.isnull() & df.postcode.notnull())]
+        pstc = None
         if len(df_pstc) > 0:
             pstc = pd.read_csv(
                 os.path.join(cfg.get('paths', 'geometry'),
@@ -142,6 +143,11 @@ def complete_opsd_geometries(df, category, time=None,
     """
     Try different methods to fill missing coordinates.
     """
+    version_name = cfg.get('opsd', 'version_name')
+    opsd_path = cfg.get('paths_pattern', 'opsd').format(version=version_name)
+    message_path = os.path.join(opsd_path, 'messages')
+    os.makedirs(message_path, exist_ok=True)
+
     cap_col = 'capacity'
 
     if 'id' not in df:
@@ -182,18 +188,23 @@ def complete_opsd_geometries(df, category, time=None,
     # Store table of undefined sets to csv-file
     if incomplete.any():
         df.loc[incomplete].to_csv(os.path.join(
-            cfg.get('paths', 'messages'),
+            message_path,
             '{0}_incomplete_geometries_before.csv'.format(category)))
 
     incomplete = df.lon.isnull()
     if incomplete.any():
         df.loc[incomplete].to_csv(os.path.join(
-            cfg.get('paths', 'messages'),
+            message_path,
             '{0}_incomplete_geometries_after.csv'.format(category)))
+        df.loc[incomplete].groupby(
+            ['energy_source_level_2', 'technology']).sum().to_csv(os.path.join(
+                message_path,
+                '{0}_incomplete_geometries_after_grouped.csv'.format(category))
+        )
     logging.debug("Gaps stored to: {0}".format(cfg.get('paths', 'messages')))
 
     statistics['total_capacity'] = total_capacity
-    statistics.to_csv(os.path.join(cfg.get('paths', 'messages'),
+    statistics.to_csv(os.path.join(message_path,
                                    'statistics_{0}_pp.csv'.format(category)))
 
     # Log information
@@ -219,39 +230,52 @@ def remove_cols(df, cols):
     return df
 
 
-def load_original_opsd_file(category, overwrite, latest=False):
+def load_original_opsd_file(category, overwrite):
     """Read file if exists."""
+    version_name = cfg.get('opsd', 'version_name')
+    opsd_path = cfg.get('paths_pattern', 'opsd').format(version=version_name)
+    os.makedirs(opsd_path, exist_ok=True)
+
+    v = {
+        'conventional': cfg.get('opsd', 'version_conventional'),
+        'renewable': cfg.get('opsd', 'version_renewable')}
 
     orig_csv_file = os.path.join(
-        cfg.get('paths', 'opsd'),
+        opsd_path,
         cfg.get('opsd', 'original_file_pattern').format(cat=category))
 
-    if latest:
-        url_section = 'opsd_url_latest'
-    else:
-        url_section = 'opsd_url_2017'
+    url_section = 'opsd_url_pattern'
 
     # Download non existing files. If you think that there are newer files you
     # have to set overwrite=True to overwrite existing with downloaded files.
     if not os.path.isfile(orig_csv_file) or overwrite:
         logging.warning("File not found. Try to download it from server.")
         logging.warning("Check URL if download does not work.")
-        req = requests.get(cfg.get(url_section, '{0}_data'.format(category)))
+
+        # Download Data
+        url_data = cfg.get(url_section, '{0}_data'.format(category))
+        req = requests.get(url_data.format(version=v[category]))
         with open(orig_csv_file, 'wb') as fout:
             fout.write(req.content)
         logging.warning("Downloaded from {0} and copied to '{1}'.".format(
-            cfg.get(url_section, '{0}_data'.format(category)), orig_csv_file))
-        req = requests.get(cfg.get(url_section, '{0}_readme'.format(category)))
+            url_data.format(version=v[category]), orig_csv_file))
+
+        # Download Readme
+        url_readme = cfg.get(url_section, '{0}_readme'.format(category))
+        req = requests.get(url_readme.format(version=v[category]))
+        print(url_readme.format(version=v[category]))
         with open(
                 os.path.join(
-                    cfg.get('paths', 'opsd'),
-                    cfg.get('opsd', 'readme_file_pattern').format(
+                    opsd_path, cfg.get('opsd', 'readme_file_pattern').format(
                         cat=category)), 'wb') as fout:
             fout.write(req.content)
-        req = requests.get(cfg.get(url_section, '{0}_json'.format(category)))
+
+        # Download json
+        url_json = cfg.get(url_section, '{0}_json'.format(category))
+        req = requests.get(url_json.format(version=v[category]))
+        print(url_json.format(version=v[category]))
         with open(os.path.join(
-                cfg.get('paths', 'opsd'),
-                cfg.get('opsd', 'json_file_pattern').format(
+                opsd_path, cfg.get('opsd', 'json_file_pattern').format(
                     cat=category)), 'wb') as fout:
             fout.write(req.content)
 
@@ -291,6 +315,7 @@ def prepare_dates(df, date_cols, month):
 
 
 def prepare_opsd_file(category, prepared_file_name, overwrite):
+
     # Load original opsd file
     df = load_original_opsd_file(category, overwrite)
 
@@ -322,7 +347,7 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
                             'efficiency_estimate': 'efficiency'})
 
     if len(df.loc[df.lon.isnull()]) > 0:
-        df = complete_opsd_geometries(df, category, fs_column='state')
+        df = complete_opsd_geometries(df, category, fs_column='federal_state')
     else:
         logging.info("Skipped 'complete_opsd_geometries' function.")
 
@@ -344,10 +369,13 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
 
 
 def load_opsd_file(category, overwrite, prepared=True):
+    version_name = cfg.get('opsd', 'version_name')
+    opsd_path = cfg.get('paths_pattern', 'opsd').format(version=version_name)
+    os.makedirs(opsd_path, exist_ok=True)
+
     if prepared:
         prepared_file_name = os.path.join(
-            cfg.get('paths', 'opsd'),
-            cfg.get('opsd', 'cleaned_csv_file_pattern').format(
+            opsd_path, cfg.get('opsd', 'cleaned_csv_file_pattern').format(
                 cat=category))
         if not os.path.isfile(prepared_file_name) or overwrite:
             df = prepare_opsd_file(category, prepared_file_name, overwrite)
@@ -385,14 +413,17 @@ def opsd_power_plants(overwrite=False, csv=False):
             'energy_source_level_3', 'technology', 'voltage_level', 'comment',
             'geometry']}
 
+    version_name = cfg.get('opsd', 'version_name')
+    opsd_path = cfg.get('paths_pattern', 'opsd').format(version=version_name)
+    os.makedirs(opsd_path, exist_ok=True)
+
     if csv:
         opsd_file_name = os.path.join(
-            cfg.get('paths', 'opsd'),
-            cfg.get('opsd', 'opsd_prepared_csv_pattern'))
+            opsd_path, cfg.get('opsd', 'opsd_prepared_csv_pattern'))
         hdf = None
     else:
         opsd_file_name = os.path.join(
-            cfg.get('paths', 'opsd'), cfg.get('opsd', 'opsd_prepared'))
+            opsd_path, cfg.get('opsd', 'opsd_prepared'))
         if os.path.isfile(opsd_file_name) and not overwrite:
             hdf = None
         else:
@@ -402,8 +433,7 @@ def opsd_power_plants(overwrite=False, csv=False):
     for category in ['conventional', 'renewable']:
         # Define file and path pattern for power plant file.
         cleaned_file_name = os.path.join(
-            cfg.get('paths', 'opsd'),
-            cfg.get('opsd', 'cleaned_csv_file_pattern').format(
+            opsd_path, cfg.get('opsd', 'cleaned_csv_file_pattern').format(
                 cat=category))
         if csv:
             exist = os.path.isfile(opsd_file_name) and not overwrite
