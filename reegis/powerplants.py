@@ -453,7 +453,7 @@ def get_chp_share_and_efficiency_states(year):
     return calculate_chp_share_and_efficiency(conversion_blnc)
 
 
-def get_powerplants_by_region(region, year, name):
+def get_powerplants_by_region(region, year, name, grouped=True):
     """
     Get all powerplants of a region grouped by fuel for a given year.
 
@@ -462,6 +462,7 @@ def get_powerplants_by_region(region, year, name):
     region : geopandas.geoDataFrame or None
     year : int
     name : str
+    grouped : bool
 
     Notes
     -----
@@ -494,13 +495,16 @@ def get_powerplants_by_region(region, year, name):
 
     if not os.path.isfile(fn) and region is not None:
         add_regions_to_powerplants(region, name, path=path,
-                                   filename_out=filename)
+                                   filename_out=filename, subregion=True)
 
-    pp = get_reegis_powerplants(year, path=path, filename=filename).groupby(
-        [name, 'energy_source_level_2']).sum()
-    pp.drop(
-        ['com_month', 'com_year', 'decom_month', 'decom_year', 'efficiency'],
-        axis=1, inplace=True)
+    pp = get_reegis_powerplants(year, path=path, filename=filename)
+
+    if grouped is True:
+        pp = pp.groupby([name, 'energy_source_level_2']).sum()
+        rm_columns = ['com_month', 'com_year', 'decom_month', 'decom_year',
+                      'efficiency']
+        pp.drop(rm_columns, axis=1, inplace=True)
+
     return pp
 
 
