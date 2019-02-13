@@ -16,6 +16,7 @@ __license__ = "GPLv3"
 
 from nose.tools import eq_
 import os
+from shutil import rmtree
 from reegis import powerplants
 from reegis import coastdat
 from reegis import opsd
@@ -57,6 +58,7 @@ def test_opsd2reegis():
     fn_reegis2 = fn_reegis.replace('reegis_pp', 'reegis_pp_my_states')
     os.remove(fn_reegis2)
     os.remove(fn_reegis)
+    rmtree(os.path.join(path, 'messages'))
 
     eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity']), 2427)
 
