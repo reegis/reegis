@@ -718,7 +718,7 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
 
     # Create DataFrame with MultiColumns to take the results
     my_index = pwr[set_name]['/A1129087'].index
-    my_cols = pd.MultiIndex(levels=[[], [], []], labels=[[], [], []],
+    my_cols = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []],
                             names=[u'region', u'set', u'subset'])
     feed_in = pd.DataFrame(index=my_index, columns=my_cols)
 
@@ -922,7 +922,7 @@ def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
 
     """
     if feedin_ts is None:
-        cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
+        cols = pd.MultiIndex(levels=[[], []], codes=[[], []])
         feedin_ts = pd.DataFrame(columns=cols)
 
     hydro = load_feedin_by_region(year, 'hydro', name).reset_index(drop=True)
@@ -991,7 +991,7 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
         regions = wind.columns.get_level_values(0).unique()
 
     if feedin_ts is None or len(feedin_ts.index) == 0:
-        cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
+        cols = pd.MultiIndex(levels=[[], []], codes=[[], []])
         feedin_ts = pd.DataFrame(index=wind.index, columns=cols)
 
     for region in regions:
@@ -1033,7 +1033,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
         regions = pv.columns.get_level_values(0).unique()
 
     if feedin_ts is None or len(feedin_ts.index) == 0:
-        cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
+        cols = pd.MultiIndex(levels=[[], []], codes=[[], []])
         feedin_ts = pd.DataFrame(index=pv.index, columns=cols)
 
     orientation_fraction = pd.Series(pv_orientation)
@@ -1202,7 +1202,7 @@ def get_solar_time_series_for_one_location_all_years(latitude, longitude,
     """
     path = os.path.join(cfg.get('paths', 'feedin'), 'coastdat')
     years = os.listdir(path)
-    df = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], labels=[[], []]))
+    df = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], codes=[[], []]))
     # years = [2012, 2013, 2014]
     for year in years:
         if os.path.isdir(os.path.join(path, str(year))):
