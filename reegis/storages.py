@@ -46,10 +46,14 @@ def pumped_hydroelectric_storage(regions, name=None):
     >>> federal_states = geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     cfg.get('geometry', 'federalstates_polygon'))
+    >>> federal_states.set_index('iso', drop=True, inplace=True)
     >>> phes = pumped_hydroelectric_storage(federal_states, 'federal_states')
     >>> int(phes.turbine.sum())
     6593
-
+    >>> int(phes.energy.sum())
+    37841
+    >>> round(phes.loc['BW'].pump_eff, 2)
+    0.86
     """
     phes_raw = pd.read_csv(os.path.join(cfg.get('paths', 'static_sources'),
                                         cfg.get('storages', 'hydro_storages')),
@@ -78,7 +82,7 @@ def pumped_hydroelectric_storage(regions, name=None):
         name = '{0}_region'.format(cfg.get('init', 'map'))
 
     gphes = geometries.spatial_join_with_buffer(
-        gphes, regions, name=name)
+        gphes, regions, name=name, limit=0)
 
     # create turbine and pump efficiency from overall efficiency (square root)
     # multiply the efficiency with the capacity to group with "sum()"

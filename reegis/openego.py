@@ -21,10 +21,8 @@ import pandas as pd
 # Internal modules
 import reegis.config as cfg
 import reegis.geometries as geometries
-from reegis import bmwi
+from reegis import bmwi as bmwi_data
 from reegis import oedb
-
-import oemof.tools.logger as logger
 
 
 def wkb2wkt(x):
@@ -71,7 +69,8 @@ def get_ego_data():
     filename = cfg.get('open_ego', 'ego_file')
     path = cfg.get('paths', 'demand')
     fn = os.path.join(path, filename)
-    load.to_hdf(fn, 'demand')
+
+    load.reset_index().to_hdf(fn, 'demand')
     return load
 
 
@@ -88,50 +87,57 @@ def get_ego_demand(filename=None, fn=None, overwrite=False):
         return get_ego_data()
 
 
-def ego_demand_by_region(regions, name, outfile=None, dump=False):
-    ego_data = get_ego_demand()
-
-    ego_demand = geometries.create_geo_df(ego_data)
-
-    # Add column with regions
-    ego_demand = geometries.spatial_join_with_buffer(
-        ego_demand, regions, name)
-
-    # Overwrite Geometry object with its DataFrame, because it is not
-    # needed anymore.
-    ego_demand = pd.DataFrame(ego_demand)
-
-    ego_demand['geometry'] = ego_demand['geometry'].astype(str)
-
-    if outfile is not None:
+def ego_demand_by_region(regions, name, outfile=None, dump=False,
+                         overwrite=False):
+    if outfile is None:
         path = cfg.get('paths', 'demand')
         outfile = os.path.join(path, 'open_ego_demand_{0}.h5')
+        outfile = outfile.format(name)
 
-    # Write out file (hdf-format).
-    if dump is True:
-        ego_demand.to_hdf(outfile, 'demand')
+    if not os.path.isfile(outfile) or overwrite:
+        ego_data = get_ego_demand()
+        ego_demand = geometries.create_geo_df(ego_data)
+
+        # Add column with regions
+        ego_demand = geometries.spatial_join_with_buffer(
+            ego_demand, regions, name)
+
+        # Overwrite Geometry object with its DataFrame, because it is not
+        # needed anymore.
+        ego_demand = pd.DataFrame(ego_demand)
+
+        ego_demand['geometry'] = ego_demand['geometry'].astype(str)
+
+        # Write out file (hdf-format).
+        if dump is True:
+            ego_demand.to_hdf(outfile, 'demand')
+    else:
+        ego_demand = pd.DataFrame(pd.read_hdf(outfile, 'demand'))
 
     return ego_demand
 
 
-def get_ego_demand_by_federal_states(year=None):
-    federal_states = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))
-    if year is None:
-        return ego_demand_by_region(federal_states, 'federal_states')
+def get_ego_demand_by_region(year, regions, name, annual_demand=None,
+                             grouped=True):
+    demand = ego_demand_by_region(regions, name, dump=True)
+    if annual_demand is not None:
+        if year is None:
+            raise ValueError("Cannot get bmwi-Data of {0}.".format(year))
+        summe = demand['consumption'].sum()
+        factor = float(annual_demand) * 1000 / summe
+        demand['consumption'] = demand['consumption'].mul(factor)
+
+    if grouped is True:
+        return demand.groupby(name)['consumption'].sum()
     else:
-        return get_ego_demand_bmwi_by_region(year, federal_states,
-                                             'federal_states')
+        return demand
 
 
-def get_ego_demand_bmwi_by_region(year, regions, name):
-    demand = ego_demand_by_region(regions, name)
-    summe = demand['consumption'].sum()
-    annual = bmwi.get_annual_electricity_demand_bmwi(year)
-    factor = annual * 1000 / summe
-    demand['consumption'] = demand['consumption'].mul(factor)
-    return demand
+def get_ego_demand_by_federal_states(year=None, grouped=True):
+    federal_states = geometries.get_federal_states_polygon()
+    bmwi_annual = bmwi_data.get_annual_electricity_demand_bmwi(year)
+    return get_ego_demand_by_region(year, federal_states, 'federal_states',
+                                    annual_demand=bmwi_annual, grouped=grouped)
 
 
 if __name__ == "__main__":

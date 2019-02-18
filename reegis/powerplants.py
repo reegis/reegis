@@ -26,8 +26,11 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import reegis.geometries as geo
 
 
-def patch_offshore_wind(orig_df, columns):
-    df = pd.DataFrame(columns=columns)
+def patch_offshore_wind(orig_df, columns=None, get_patch=False):
+    if columns is None:
+        df = pd.DataFrame()
+    else:
+        df = pd.DataFrame(columns=columns)
 
     offsh = pd.read_csv(
         os.path.join(cfg.get('paths', 'static_sources'),
@@ -47,21 +50,28 @@ def patch_offshore_wind(orig_df, columns):
     offsh_df = pd.DataFrame(goffsh)
 
     new_cap = offsh_df['capacity'].sum()
-    old_cap = orig_df.loc[orig_df['technology'] == 'Offshore',
-                          'capacity'].sum()
-
-    # Remove Offshore technology from power plant table
-    orig_df = orig_df.loc[orig_df['technology'] != 'Offshore']
+    try:
+        old_cap = orig_df.loc[
+            orig_df['technology'] == 'Offshore', 'capacity'].sum()
+        # Remove Offshore technology from power plant table
+        orig_df = orig_df.loc[orig_df['technology'] != 'Offshore']
+    except KeyError:
+        old_cap = None
 
     patched_df = pd.DataFrame(pd.concat([orig_df, offsh_df],
                                         ignore_index=True, sort=True))
     logging.warning(
         "Offshore wind is patched. {0} MW were replaced by {1} MW".format(
             old_cap, new_cap))
+
+    if get_patch is True:
+        return goffsh
+
     return patched_df
 
 
-def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
+def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
+                   hydro_storage_fix=True):
     """
     Adapt opsd power plants to a more generalised reegis API with a reduced
     number of columns. In most case you should use the higher functions,
@@ -72,6 +82,9 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
     offshore_patch : bool
         Will overwrite the offshore wind power plants with own data set if set
         to True (default=True).
+    hydro_storage_fix : bool
+        Rename "fuel" of Pumped hydro storage from Hydro to Storage if set to
+        True (default: True).
     filename_in : str or None
         Alternative filename for the input file. In most case the default case
         is the best choice.
@@ -90,20 +103,22 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
     >>> if not os.path.isfile(filename_out):
     ...     filename = pp_opsd2reegis()  # doctest: +SKIP
     """
+    version_name = cfg.get('opsd', 'version_name')
+
     if filename_in is None:
-        version_name = cfg.get('opsd', 'version_name')
         opsd_path = cfg.get('paths_pattern', 'opsd').format(
             version=version_name)
         filename_in = os.path.join(opsd_path, cfg.get('opsd', 'opsd_prepared'))
     if filename_out is None:
         filename_out = os.path.join(cfg.get('paths', 'powerplants'),
                                     cfg.get('powerplants', 'reegis_pp'))
+        filename_out = filename_out.format(version=version_name)
 
     keep_cols = {'decom_year', 'comment', 'chp', 'energy_source_level_1',
                  'thermal_capacity', 'com_year', 'com_month',
                  'chp_capacity_uba', 'energy_source_level_3', 'decom_month',
                  'geometry', 'energy_source_level_2', 'capacity', 'technology',
-                 'com_year', 'efficiency', 'state'}
+                 'com_year', 'efficiency'}
 
     string_cols = ['chp', 'comment', 'energy_source_level_1',
                    'energy_source_level_2', 'energy_source_level_3',
@@ -128,13 +143,19 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
             filename_in = opsd.opsd_power_plants(overwrite=True)
 
     pp = {}
-    for cat in ['renewable', 'conventional']:
+    for cat in ['conventional', 'renewable']:
         # Read opsd power plant tables
         pp[cat] = pd.DataFrame(pd.read_hdf(filename_in, cat, mode='r'))
 
         # Patch offshore wind energy with investigated data.
         if cat == 'renewable' and offshore_patch:
             pp[cat] = patch_offshore_wind(pp[cat], keep_cols)
+
+        if cat == 'conventional' and hydro_storage_fix:
+            pp[cat].loc[pp[cat]['technology'] == 'Pumped storage',
+                        'energy_source_level_2'] = 'Storage'
+            pp[cat].loc[pp[cat]['technology'] == 'Pumped storage',
+                        'energy_source_level_3'] = 'Pumped storage'
 
         pp[cat] = pp[cat].drop(columns=set(pp[cat].columns) - keep_cols)
 
@@ -163,9 +184,6 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
     pp['thermal_capacity'] = pp['thermal_capacity'].fillna(
         pp['chp_capacity_uba'])
     del pp['chp_capacity_uba']
-
-    # Remove storages (Speicher) from power plant table
-    pp = pp.loc[pp['energy_source_level_2'] != 'Speicher']
 
     # Convert all values to strings in string-columns
     pp[string_cols] = pp[string_cols].astype(str)
@@ -288,7 +306,8 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
         path = cfg.get('paths', 'powerplants')
 
     if filename is None:
-        filename = cfg.get('powerplants', 'reegis_pp')
+        version = cfg.get('opsd', 'version_name')
+        filename = cfg.get('powerplants', 'reegis_pp').format(version=version)
 
     fn = os.path.join(path, filename)
 
@@ -383,7 +402,8 @@ def add_regions_to_powerplants(region, column, filename=None,
         path = cfg.get('paths', 'powerplants')
 
     if filename is None:
-        filename = cfg.get('powerplants', 'reegis_pp')
+        version = cfg.get('opsd', 'version_name')
+        filename = cfg.get('powerplants', 'reegis_pp').format(version=version)
 
     if filename_out is None:
         filename_out = filename
@@ -485,16 +505,22 @@ def get_powerplants_by_region(region, year, name, grouped=True):
     ...     geometries, my_year, my_name)  # doctest: +SKIP
 
     """
-    filename = cfg.get('powerplants', 'reegis_pp').split('.')
-    filename = '_'.join(filename[:-1]) + '_{0}.' + filename[-1]
-    filename = filename.format(name)
+    version = cfg.get('opsd', 'version_name')
+    filename = cfg.get('powerplants', 'reegis_pp')
+    filename = filename.format(version=version + '_' + name)
 
     path = cfg.get('paths', 'powerplants')
 
     fn = os.path.join(path, filename)
 
+    version = cfg.get('opsd', 'version_name')
+    basefile = cfg.get('powerplants', 'reegis_pp').format(version=version)
+
+    if not os.path.isfile(os.path.join(path, basefile)):
+        pp_opsd2reegis(filename_out=os.path.join(path, basefile))
+
     if not os.path.isfile(fn) and region is not None:
-        add_regions_to_powerplants(region, name, path=path,
+        add_regions_to_powerplants(region, name, path=path, filename=basefile,
                                    filename_out=filename, subregion=True)
 
     pp = get_reegis_powerplants(year, path=path, filename=filename)
@@ -510,11 +536,3 @@ def get_powerplants_by_region(region, year, name, grouped=True):
 
 if __name__ == "__main__":
     pass
-    geometries = geo.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))  # doctest: +SKIP
-    my_name = 'my_states'  # doctest: +SKIP
-    my_year = 2017  # doctest: +SKIP
-    my_pp = get_powerplants_by_region(
-        geometries, my_year, my_name)  # doctest: +SKIP
-    print(my_pp)

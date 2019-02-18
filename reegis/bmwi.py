@@ -140,16 +140,21 @@ def get_annual_electricity_demand_bmwi(year):
     --------
     >>> get_annual_electricity_demand_bmwi(2014)  # doctest: +SKIP
     523.988
-    >>> get_annual_electricity_demand_bmwi(1900)  # doctest: +SKIP
-    None
     """
+    import math
     infile = get_bmwi_energiedaten_file()
 
     table = pd.read_excel(infile, '21', skiprows=7, index_col=[0])
     try:
-        return table.loc['   zusammen', year]
+        value = table.loc['   zusammen', year]
+        if math.isnan(value):
+            value = None
     except KeyError:
-        return None
+        value = None
+    if value is None:
+        msg = "No BMWi electricity demand found for {year}."
+        raise ValueError(msg.format(year=year))
+    return value
 
 
 if __name__ == "__main__":

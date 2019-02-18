@@ -520,11 +520,11 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
                 ws, verify_integrity=True)
 
         # calculate the average wind speed for one grid item
-        coastdat_polygons.loc[key, 'v_wind_avg'] = (
+        coastdat_polygons.loc[key, '{0}_avg'.format(data_type)] = (
             data_type_avg.mean())
 
     # Close hdf files
-    for year in years:
+    for year in used_years:
         weather[year].close()
 
     if keys is not None:

@@ -14,7 +14,7 @@ __copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
 __license__ = "GPLv3"
 
 
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises_regexp
 import os
 from reegis import config as cfg
 from reegis import bmwi
@@ -26,10 +26,11 @@ def read_bmwi_sheet_7_test():
     cfg.tmp_set('paths', 'general', test_path)
     eq_(bmwi.bmwi_re_energy_capacity().loc[2016, ('water', 'capacity')], 5601)
     eq_(bmwi.get_annual_electricity_demand_bmwi(2014), 523.988)
-    eq_(bmwi.get_annual_electricity_demand_bmwi(1900), None)
     fs = bmwi.read_bmwi_sheet_7('a').sort_index()
     total = int(float(fs.loc[('Industrie', 'gesamt'), 2014]))
     eq_(total, 2545)
     fs = bmwi.read_bmwi_sheet_7('b').sort_index()
     total = int(float(fs.loc[('private Haushalte', 'gesamt'), 2014]))
     eq_(total, 2188)
+    assert_raises_regexp(ValueError, "No BMWi electricity demand found",
+                         bmwi.get_annual_electricity_demand_bmwi, year=1900)

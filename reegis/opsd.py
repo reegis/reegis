@@ -263,7 +263,6 @@ def load_original_opsd_file(category, overwrite):
         # Download Readme
         url_readme = cfg.get(url_section, '{0}_readme'.format(category))
         req = requests.get(url_readme.format(version=v[category]))
-        print(url_readme.format(version=v[category]))
         with open(
                 os.path.join(
                     opsd_path, cfg.get('opsd', 'readme_file_pattern').format(
@@ -273,7 +272,6 @@ def load_original_opsd_file(category, overwrite):
         # Download json
         url_json = cfg.get(url_section, '{0}_json'.format(category))
         req = requests.get(url_json.format(version=v[category]))
-        print(url_json.format(version=v[category]))
         with open(os.path.join(
                 opsd_path, cfg.get('opsd', 'json_file_pattern').format(
                     cat=category)), 'wb') as fout:

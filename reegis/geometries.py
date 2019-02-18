@@ -22,6 +22,8 @@ from shapely.wkt import loads as wkt_loads
 from shapely.geometry import Point
 from shapely.geometry.base import BaseGeometry
 
+from reegis import config as cfg
+
 
 class Geometry:
     """Reegis geometry class.
@@ -124,6 +126,19 @@ class Geometry:
             logging.info("GeoDataFrame for {0} created.".format(self.name))
         self.df = None
         return self
+
+
+def get_federal_states_polygon():
+    federal_states = load(
+        cfg.get('paths', 'geometry'),
+        cfg.get('geometry', 'federalstates_polygon'))
+    return federal_states.set_index('iso', drop=True)
+
+
+def get_germany_awz_polygon():
+    return load(
+        cfg.get('paths', 'geometry'),
+        'germany_awz_polygon.geojson')
 
 
 def load(path=None, filename=None, fullname=None, hdf_key=None,

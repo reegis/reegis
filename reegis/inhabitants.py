@@ -83,7 +83,7 @@ def get_ew_shp_file(year):
         os.remove(filename_zip)
 
 
-def get_ew_geometry(year):
+def get_ew_geometry(year, polygon=False):
     filename_shp = os.path.join(cfg.get('paths', 'inhabitants'),
                                 'VG250_VWG_' + str(year) + '.shp')
 
@@ -93,7 +93,8 @@ def get_ew_geometry(year):
     vwg = gpd.read_file(filename_shp)
 
     # replace polygon geometry by its centroid
-    vwg['geometry'] = vwg.representative_point()
+    if polygon is False:
+        vwg['geometry'] = vwg.representative_point()
 
     return vwg
 
@@ -130,6 +131,8 @@ def get_ew_by_federal_states(year):
     geo = reegis.geometries.load(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
+    geo.set_index('iso', drop=True, inplace=True)
+    geo.drop(['N0', 'N1', 'O0', 'P0'], inplace=True)
     return get_ew_by_region(year, geo, name='federal_states')
 
 
