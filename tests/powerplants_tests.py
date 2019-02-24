@@ -34,9 +34,7 @@ def test_opsd2reegis():
     os.remove(fn_opsd)
     filename = str(fn_reegis.split(os.sep)[-1])
 
-    geo_path = cfg.get('paths', 'geometry')
-    geo_file = cfg.get('geometry', 'federalstates_polygon')
-    gdf1 = geo.load(path=geo_path, filename=geo_file)
+    gdf1 = geo.get_federal_states_polygon()
     powerplants.add_regions_to_powerplants(
         gdf1, 'fed_states', filename=filename, path=path, dump=True)
 
@@ -55,7 +53,7 @@ def test_opsd2reegis():
     pp2.drop(['capacity', 'capacity_in', 'thermal_capacity'],
              axis=1, inplace=True)
 
-    fn_reegis2 = fn_reegis.replace('reegis_pp', 'reegis_pp_my_states')
+    fn_reegis2 = fn_reegis.replace('.h5', '_my_states.h5')
     os.remove(fn_reegis2)
     os.remove(fn_reegis)
     rmtree(os.path.join(path, 'messages'))
