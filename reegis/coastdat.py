@@ -1229,6 +1229,7 @@ def federal_states_feedin_example():
 
 if __name__ == "__main__":
     logger.define_logging()
+    powerplants.pp_opsd2reegis()
     for my_year in [2014]:
         my_federal_states = geometries.get_federal_states_polygon()
         get_feedin_per_region(my_year, my_federal_states, 'federal_states',
@@ -1237,4 +1238,3 @@ if __name__ == "__main__":
         os.makedirs(my_path, exist_ok=True)
         my_fn = os.path.join(my_path, 'federal_states_{0}'.format(my_year))
         scenario_feedin(my_year, 'federal_states').to_csv(my_fn)
-
