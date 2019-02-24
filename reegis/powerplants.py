@@ -508,7 +508,6 @@ def get_powerplants_by_region(region, year, name, grouped=True):
     """
     version = cfg.get('opsd', 'version_name')
     filename = cfg.get('powerplants', 'reegis_pp')
-    logging.debug("{0}, {1}, {2}".format(filename, version, name))
     filename = filename.format(version=str(version) + '_' + str(name))
 
     path = cfg.get('paths', 'powerplants')
@@ -537,4 +536,4 @@ def get_powerplants_by_region(region, year, name, grouped=True):
 
 
 if __name__ == "__main__":
-    print(cfg.get('opsd', 'version_name'))
+    pass
