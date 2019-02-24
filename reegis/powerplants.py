@@ -249,6 +249,7 @@ def add_model_region_pp(pp, region_polygons, col_name, subregion=False):
         limit = 1
 
     # Add region names to power plant table
+    logging.debug('Adding column {0} to power plant table...'.format(col_name))
     pp = pd.DataFrame(geo.spatial_join_with_buffer(pp, region_polygons,
                                                    name=col_name, limit=limit))
     pp['geometry'] = pp['geometry'].astype(str)

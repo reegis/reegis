@@ -141,9 +141,4 @@ def get_ego_demand_by_federal_states(year=None, grouped=True):
 
 
 if __name__ == "__main__":
-    logger.define_logging()
-    my_demand = get_ego_demand_by_federal_states().groupby(
-        'federal_states').sum()['consumption']
-    print(my_demand.sum())
-    print(bmwi.get_annual_electricity_demand_bmwi(2014) * 1000)
-    print(get_ego_demand_by_federal_states(year=2014).sum()['consumption'])
+    pass

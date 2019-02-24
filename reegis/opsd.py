@@ -461,5 +461,4 @@ def opsd_power_plants(overwrite=False, csv=False):
 
 
 if __name__ == "__main__":
-    logger.define_logging()
-    print(opsd_power_plants(overwrite=True))
+    pass

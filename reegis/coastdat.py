@@ -1052,7 +1052,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
     return feedin_ts.sort_index(1)
 
 
-def get_feedin_per_region(year, region, name, weather_year=None,
+def get_feedin_per_region(year, region, name, weather_year=None, reset_pp=True,
                           windzones=True, subregion=False, pp=None):
     """
     Aggregate feed-in time series for the given geometry set.
@@ -1063,6 +1063,7 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     region : geopandas.geoDataFrame
     name : str
     weather_year : int
+    reset_pp
     windzones : bool
     pp : pd.DataFrame or None
     subregion : bool
@@ -1080,9 +1081,15 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     You may want to use geometries.load() to import a region CSV.
     """
     # create and dump reegis basic powerplants table (created from opsd data)
-    fn = powerplants.pp_opsd2reegis()
-    filename = fn.split(os.sep)[-1]
-    path = fn.replace(filename, '')
+    if reset_pp:
+        fn = powerplants.pp_opsd2reegis()
+        filename = fn.split(os.sep)[-1]
+        path = fn.replace(filename, '')
+    else:
+        version_name = cfg.get('opsd', 'version_name')
+        path = cfg.get('paths', 'powerplants')
+        filename = cfg.get('powerplants', 'reegis_pp').format(
+            version=version_name)
 
     # Add column name "coastdat2" with the id of the coastdat weather cell for
     # each power plant.
@@ -1096,7 +1103,7 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     # Add a column named with the name parameter, adding the region id to
     # each power plant
     pp = powerplants.add_regions_to_powerplants(
-        region, name, filename=filename, path=path, dump=False, pp=pp,
+        region, name, filename=filename, path=path, dump=True, pp=pp,
         subregion=subregion)
 
     # Get only the power plants that are online in the given year.
@@ -1215,15 +1222,19 @@ def get_solar_time_series_for_one_location_all_years(latitude, longitude,
 
 def federal_states_feedin_example():
     """Get fullload hours for renewable sources for a federal states."""
-    federal_states = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))
+    federal_states = geometries.get_federal_states_polygon()
     get_feedin_per_region(2014, federal_states, 'federal_states')
-
     return scenario_feedin(2014, 'federal_states')
 
 
 if __name__ == "__main__":
     logger.define_logging()
-    print(federal_states_feedin_example().sum())
-    print(federal_state_average_weather(2014, 'temp_air'))
+    for my_year in [2014]:
+        my_federal_states = geometries.get_federal_states_polygon()
+        get_feedin_per_region(my_year, my_federal_states, 'federal_states',
+                              reset_pp=False)
+        my_path = os.path.join(cfg.get('paths', 'feedin'), 'federal_states')
+        os.makedirs(my_path, exist_ok=True)
+        my_fn = os.path.join(my_path, 'federal_states_{0}'.format(my_year))
+        scenario_feedin(my_year, 'federal_states').to_csv(my_fn)
+
