@@ -1230,7 +1230,7 @@ def federal_states_feedin_example():
 if __name__ == "__main__":
     logger.define_logging()
     powerplants.pp_opsd2reegis()
-    for my_year in [2014]:
+    for my_year in [2014, 2013, 2012, 2011, 2010]:
         my_federal_states = geometries.get_federal_states_polygon()
         get_feedin_per_region(my_year, my_federal_states, 'federal_states',
                               reset_pp=False)
