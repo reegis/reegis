@@ -33,16 +33,20 @@ import reegis.config as cfg
 def read_original_timeseries_file(overwrite=False):
     """Read timeseries file if it exists. Otherwise download it from opsd.
     """
-
-    orig_csv_file = os.path.join(cfg.get('paths', 'entsoe'),
-                                 cfg.get('entsoe', 'original_file'))
-    readme = os.path.join(cfg.get('paths', 'entsoe'),
-                          cfg.get('entsoe', 'readme_file'))
-    json = os.path.join(cfg.get('paths', 'entsoe'),
-                        cfg.get('entsoe', 'json_file'))
+    version = cfg.get('entsoe', 'time_series_version')
+    orig_csv_file = os.path.join(
+        cfg.get('paths', 'entsoe'),
+        cfg.get('entsoe', 'original_file')).format(version=version)
+    readme = os.path.join(
+        cfg.get('paths', 'entsoe'),
+        cfg.get('entsoe', 'readme_file')).format(version=version)
+    json = os.path.join(
+        cfg.get('paths', 'entsoe'),
+        cfg.get('entsoe', 'json_file')).format(version=version)
 
     if not os.path.isfile(orig_csv_file) or overwrite:
-        req = requests.get(cfg.get('entsoe', 'timeseries_data'))
+        req = requests.get(
+            cfg.get('entsoe', 'timeseries_data').format(version=version))
         if not overwrite:
             logging.warning("File not found. Try to download it from server.")
         else:
@@ -52,23 +56,28 @@ def read_original_timeseries_file(overwrite=False):
         with open(orig_csv_file, 'wb') as fout:
             fout.write(req.content)
         logging.warning("Downloaded from {0} and copied to '{1}'.".format(
-            cfg.get('entsoe', 'timeseries_data'), orig_csv_file))
-        req = requests.get(cfg.get('entsoe', 'timeseries_readme'))
+            cfg.get('entsoe', 'timeseries_data').format(version=version),
+            orig_csv_file))
+        req = requests.get(
+            cfg.get('entsoe', 'timeseries_readme').format(version=version))
         with open(readme, 'wb') as fout:
             fout.write(req.content)
-        req = requests.get(cfg.get('entsoe', 'timeseries_json'))
+        req = requests.get(
+            cfg.get('entsoe', 'timeseries_json').format(version=version))
         with open(json, 'wb') as fout:
             fout.write(req.content)
 
     orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True)
-    orig = orig.tz_localize('UTC').tz_convert('Europe/Berlin')
+    orig = orig.tz_convert('Europe/Berlin')
     return orig
 
 
 def prepare_de_file(overwrite=False):
     """Convert demand file. CET index and Germany's load only."""
-    de_file = os.path.join(cfg.get('paths', 'entsoe'),
-                           cfg.get('entsoe', 'de_file'))
+    version = cfg.get('entsoe', 'time_series_version')
+    de_file = os.path.join(
+        cfg.get('paths', 'entsoe'),
+        cfg.get('entsoe', 'de_file').format(version=version))
     if not os.path.isfile(de_file) or overwrite:
         ts = read_original_timeseries_file(overwrite)
         for col in ts.columns:
@@ -80,8 +89,10 @@ def prepare_de_file(overwrite=False):
 
 def split_timeseries_file(overwrite=False, csv=False):
     logging.info("Splitting time series.")
+    version = cfg.get('entsoe', 'time_series_version')
     path_pattern = os.path.join(cfg.get('paths', 'entsoe'), '{0}')
-    de_file = path_pattern.format(cfg.get('entsoe', 'de_file'))
+    de_file = path_pattern.format(cfg.get('entsoe', 'de_file').format(
+        version=version))
 
     if not os.path.isfile(de_file) or overwrite:
         prepare_de_file(overwrite)
@@ -113,9 +124,11 @@ def split_timeseries_file(overwrite=False, csv=False):
     renewables = de_ts.dropna(subset=re_subset, how='any')[re_columns]
 
     if csv:
-        load_file = path_pattern.format(cfg.get('entsoe', 'load_file_csv'))
+        load_file = path_pattern.format(
+            cfg.get('entsoe', 'load_file_csv').format(version=version))
     else:
-        load_file = path_pattern.format(cfg.get('entsoe', 'load_file'))
+        load_file = path_pattern.format(
+            cfg.get('entsoe', 'load_file').format(version=version))
 
     if not os.path.isfile(load_file) or overwrite:
         if csv:
@@ -123,9 +136,17 @@ def split_timeseries_file(overwrite=False, csv=False):
         else:
             load.to_hdf(load_file, 'entsoe')
 
-    re_file = path_pattern.format(cfg.get('entsoe', 'renewables_file'))
+    if csv:
+        re_file = path_pattern.format(
+            cfg.get('entsoe', 'renewables_file_csv').format(version=version))
+    else:
+        re_file = path_pattern.format(
+            cfg.get('entsoe', 'renewables_file').format(version=version))
     if not os.path.isfile(re_file) or overwrite:
-        renewables.to_csv(re_file)
+        if csv:
+            renewables.to_csv(re_file)
+        else:
+            renewables.to_hdf(re_file, 're')
 
 
 def prepare_entsoe_timeseries(overwrite=False):
@@ -142,11 +163,30 @@ def get_entsoe_load(year):
     f = pd.datetime(year, 1, 1, 0)
     t = pd.datetime(year, 12, 31, 23)
     logging.info("Read entsoe load series from {0} to {1}".format(f, t))
-    df = pd.read_hdf(filename, 'entsoe')
+    df = pd.DataFrame(pd.read_hdf(filename, 'entsoe'))
     return df.loc[f:t]
+
+
+def get_entsoe_renewable_data(csv=False, overwrite=False):
+    version = cfg.get('entsoe', 'time_series_version')
+    path_pattern = os.path.join(cfg.get('paths', 'entsoe'), '{0}')
+    if csv:
+        fn = path_pattern.format(
+            cfg.get('entsoe', 'renewables_file_csv').format(version=version))
+    else:
+        fn = path_pattern.format(
+            cfg.get('entsoe', 'renewables_file').format(version=version))
+    if not os.path.isfile(fn):
+        split_timeseries_file(csv=csv)
+    if csv:
+        re = pd.read_csv(fn, index_col=[0], parse_dates=True)
+    else:
+        re = pd.DataFrame(pd.read_hdf(fn, 're'))
+    print(re.index[0])
+    return re
 
 
 if __name__ == "__main__":
     logger.define_logging()
-    print(get_entsoe_load(2014))
+    print(get_entsoe_renewable_data())
     logging.info("Done!")
