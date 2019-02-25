@@ -925,12 +925,13 @@ def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
         cols = pd.MultiIndex(levels=[[], []], codes=[[], []])
         feedin_ts = pd.DataFrame(columns=cols)
 
-    hydro = load_feedin_by_region(year, 'hydro', name).reset_index(drop=True)
+    hydro = load_feedin_by_region(
+        year, 'hydro', name, weather_year=weather_year).reset_index(drop=True)
     for region in hydro.columns:
         feedin_ts[region, 'hydro'] = hydro[region]
 
     geothermal = load_feedin_by_region(
-        year, 'geothermal', name).reset_index(drop=True)
+        year, 'geothermal', name, weather_year=weather_year).reset_index(drop=True)
     for region in geothermal.columns:
         feedin_ts[region, 'geothermal'] = geothermal[region]
 
@@ -1081,15 +1082,9 @@ def get_feedin_per_region(year, region, name, weather_year=None, reset_pp=True,
     You may want to use geometries.load() to import a region CSV.
     """
     # create and dump reegis basic powerplants table (created from opsd data)
-    if reset_pp:
-        fn = powerplants.pp_opsd2reegis()
-        filename = fn.split(os.sep)[-1]
-        path = fn.replace(filename, '')
-    else:
-        version_name = cfg.get('opsd', 'version_name')
-        path = cfg.get('paths', 'powerplants')
-        filename = cfg.get('powerplants', 'reegis_pp').format(
-            version=version_name)
+    fn = powerplants.pp_opsd2reegis()
+    filename = fn.split(os.sep)[-1]
+    path = fn.replace(filename, '')
 
     # Add column name "coastdat2" with the id of the coastdat weather cell for
     # each power plant.
