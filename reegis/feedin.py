@@ -308,7 +308,7 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
     >>> turbine = {
     ...     'hub_height': 135,
     ...     'rotor_diameter': 127,
-    ...     'name': 'E-141/4200',
+    ...     'name': 'E-82/2300',
     ...     'nominal_power': 4200000,
     ...     'fetch_curve': 'power_coefficient_curve'}
     >>> data_height = cfg.get_dict('coastdat_data_height')
