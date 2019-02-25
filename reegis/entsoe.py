@@ -182,11 +182,8 @@ def get_entsoe_renewable_data(csv=False, overwrite=False):
         re = pd.read_csv(fn, index_col=[0], parse_dates=True)
     else:
         re = pd.DataFrame(pd.read_hdf(fn, 're'))
-    print(re.index[0])
     return re
 
 
 if __name__ == "__main__":
-    logger.define_logging()
-    print(get_entsoe_renewable_data())
-    logging.info("Done!")
+    pass

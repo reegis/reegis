@@ -497,13 +497,10 @@ def get_powerplants_by_region(region, year, name, grouped=True):
 
     Examples
     --------
-    >>> geometries = geo.load(
-    ...     cfg.get('paths', 'geometry'),
-    ...     cfg.get('geometry', 'federalstates_polygon'))  # doctest: +SKIP
-    >>> my_name = 'my_states'  # doctest: +SKIP
+    >>> geometries = geo.get_federal_states_polygon()  # doctest: +SKIP
     >>> my_year = 2014  # doctest: +SKIP
     >>> my_pp = get_powerplants_by_region(
-    ...     geometries, my_year, my_name)  # doctest: +SKIP
+    ...     geometries, my_year, 'federal_states')  # doctest: +SKIP
 
     """
     version = cfg.get('opsd', 'version_name')
@@ -514,7 +511,6 @@ def get_powerplants_by_region(region, year, name, grouped=True):
 
     fn = os.path.join(path, filename)
 
-    version = cfg.get('opsd', 'version_name')
     basefile = cfg.get('powerplants', 'reegis_pp').format(version=version)
 
     if not os.path.isfile(os.path.join(path, basefile)):

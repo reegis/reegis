@@ -979,7 +979,7 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
     cols = wind.columns.get_level_values(1).unique()
-    rn = {c: c.replace('coastdat_2014_wind_', '') for c in cols}
+    rn = {c: c.replace('coastdat_{0}_wind_'.format(year), '') for c in cols}
     wind.rename(columns=rn, level=1, inplace=True)
     wind.sort_index(1, inplace=True)
 
@@ -1210,7 +1210,7 @@ def get_solar_time_series_for_one_location_all_years(latitude, longitude,
     path = os.path.join(cfg.get('paths', 'feedin'), 'coastdat')
     years = os.listdir(path)
     df = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], codes=[[], []]))
-    # years = [2012, 2013, 2014]
+
     for year in years:
         if os.path.isdir(os.path.join(path, str(year))):
             tmp = get_solar_time_series_for_one_location(
