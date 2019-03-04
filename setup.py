@@ -23,7 +23,6 @@ if not os.environ.get('READTHEDOCS') == 'True':
         'python-dateutil',
         'networkx',
         'dill',
-        'PyQt5',
         'cython',
         'xlrd',
         'Rtree']
