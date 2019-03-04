@@ -1,6 +1,9 @@
 import sys
 import os
-from PyQt5 import QtWidgets as Widgets
+try:
+    from PyQt5 import QtWidgets as Widgets
+except ImportError:
+    Widgets = None
 
 
 FFILTER = {
