@@ -68,7 +68,7 @@ class Scenario:
         self.debug = kwargs.get('debug', None)
         self.location = None
         self.map = None
-        self.meta = kwargs.get('meta', None)
+        self.meta = kwargs.get('meta', dict())
 
     def initialise_energy_system(self):
         if self.debug is True:
