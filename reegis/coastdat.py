@@ -667,7 +667,8 @@ def federal_state_average_weather(year, parameter):
     if not os.path.isfile(filename):
         spatial_average_weather(year, federal_states, parameter,
                                 'federal_states', outfile=filename)
-    return pd.read_csv(filename, index_col=[0], parse_dates=True)
+    return pd.read_csv(filename, index_col=[0], parse_dates=True,
+                       date_parser=lambda col: pd.to_datetime(col, utc=True))
 
 
 def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
@@ -931,7 +932,7 @@ def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
 
     """
     if feedin_ts is None:
-        cols = pd.MultiIndex(levels=[[], []], labels=[[], []])
+        cols = pd.MultiIndex(levels=[[], []], codes=[[], []])
         feedin_ts = pd.DataFrame(columns=cols)
 
     hydro = load_feedin_by_region(
