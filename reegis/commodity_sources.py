@@ -26,7 +26,7 @@ import reegis.bmwi
 
 
 def initialise_commodity_sources():
-    cols = pd.MultiIndex(levels=[[], []], labels=[[], []], names=['', ''])
+    cols = pd.MultiIndex(levels=[[], []], codes=[[], []], names=['', ''])
     src = pd.DataFrame(columns=cols, index=range(1990, 2017))
     return src
 

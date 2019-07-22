@@ -258,7 +258,7 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
     temperatures = reegis.coastdat.federal_state_average_weather(
         weather_year, 'temp_air')
 
-    temperatures = temperatures.tz_localize('UTC').tz_convert('Europe/Berlin')
+    temperatures = temperatures.tz_convert('Europe/Berlin')
 
     my_columns = pd.MultiIndex(levels=[[], [], []], labels=[[], [], []])
     heat_profiles = pd.DataFrame(columns=my_columns)
