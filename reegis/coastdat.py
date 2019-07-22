@@ -570,11 +570,13 @@ def spatial_average_weather(year, geo, parameter, name,
     ...     cfg.get('paths', 'geometry'),
     ...     cfg.get('geometry', 'germany_polygon'))
     >>> fn = spatial_average_weather(2012, germany_geo, 'temp_air', 'deTemp',
-    ...                              outpath=os.path.expanduser('~'))
-    >>> temp = pd.read_csv(fn, index_col=[0], parse_dates=True, squeeze=True)
-    >>> round(temp.mean() - 273.15, 2)
+    ...                              outpath=os.path.expanduser('~')
+    ...                              )# doctest: +SKIP
+    >>> temp = pd.read_csv(fn, index_col=[0], parse_dates=True, squeeze=True
+    ...                    )# doctest: +SKIP
+    >>> round(temp.mean() - 273.15, 2)# doctest: +SKIP
     8.28
-    >>> os.remove(fn)
+    >>> os.remove(fn)# doctest: +SKIP
     """
     logging.info("Getting average {0} for {1} in {2} from coastdat2.".format(
         parameter, name, year))
