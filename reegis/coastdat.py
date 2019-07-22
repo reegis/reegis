@@ -574,6 +574,7 @@ def spatial_average_weather(year, geo, parameter, name,
     >>> temp = pd.read_csv(fn, index_col=[0], parse_dates=True, squeeze=True)
     >>> round(temp.mean() - 273.15, 2)
     8.28
+    >>> os.remove(fn)
     """
     logging.info("Getting average {0} for {1} in {2} from coastdat2.".format(
         parameter, name, year))
