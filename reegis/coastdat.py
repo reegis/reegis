@@ -918,7 +918,7 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
     if dump is True:
         filename = 'windzone_{0}.csv'.format(name)
         fn = os.path.join(cfg.get('paths', 'powerplants'), filename)
-        wz_regions.to_csv(fn)
+        wz_regions.to_csv(fn, header=False)
     return wz_regions
 
 
