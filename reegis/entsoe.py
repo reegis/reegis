@@ -94,9 +94,11 @@ def split_timeseries_file(overwrite=False, csv=False):
     end_date = berlin.localize(datetime.datetime(2015, 1, 1, 0, 0, 0))
 
     de_ts.loc[de_ts.index < end_date, 'DE_load_'] = (
-        de_ts.loc[de_ts.index < end_date, 'DE_load_entsoe_power_statistics'])
+        de_ts.loc[de_ts.index < end_date,
+                  'DE_load_actual_entsoe_power_statistics'])
     de_ts.loc[de_ts.index >= end_date, 'DE_load_'] = (
-        de_ts.loc[de_ts.index >= end_date, 'DE_load_entsoe_transparency'])
+        de_ts.loc[de_ts.index >= end_date,
+                  'DE_load_actual_entsoe_transparency'])
 
     load = pd.DataFrame(de_ts[pd.notnull(de_ts['DE_load_'])]['DE_load_'],
                         columns=['DE_load_'])
