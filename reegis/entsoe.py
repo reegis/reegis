@@ -60,8 +60,9 @@ def read_original_timeseries_file(overwrite=False):
         with open(json, 'wb') as fout:
             fout.write(req.content)
 
-    orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True)
-    orig = orig.tz_localize('UTC').tz_convert('Europe/Berlin')
+    orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True,
+                       date_parser=lambda col: pd.to_datetime(col, utc=True))
+    orig = orig.tz_convert('Europe/Berlin')
     return orig
 
 

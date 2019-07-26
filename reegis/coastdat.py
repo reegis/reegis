@@ -729,7 +729,7 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
 
     # Create DataFrame with MultiColumns to take the results
     my_index = pwr[set_name]['/A1129087'].index
-    my_cols = pd.MultiIndex(levels=[[], [], []], labels=[[], [], []],
+    my_cols = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []],
                             names=[u'region', u'set', u'subset'])
     feed_in = pd.DataFrame(index=my_index, columns=my_cols)
 
