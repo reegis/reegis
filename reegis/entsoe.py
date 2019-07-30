@@ -41,8 +41,11 @@ def read_original_timeseries_file(overwrite=False):
     json = os.path.join(cfg.get('paths', 'entsoe'),
                         cfg.get('entsoe', 'json_file'))
 
+    version = cfg.get('entsoe', 'timeseries_version')
+
     if not os.path.isfile(orig_csv_file) or overwrite:
-        req = requests.get(cfg.get('entsoe', 'timeseries_data'))
+        req = requests.get(cfg.get('entsoe', 'timeseries_data').format(
+            version=version))
         if not overwrite:
             logging.warning("File not found. Try to download it from server.")
         else:
@@ -52,16 +55,21 @@ def read_original_timeseries_file(overwrite=False):
         with open(orig_csv_file, 'wb') as fout:
             fout.write(req.content)
         logging.warning("Downloaded from {0} and copied to '{1}'.".format(
-            cfg.get('entsoe', 'timeseries_data'), orig_csv_file))
-        req = requests.get(cfg.get('entsoe', 'timeseries_readme'))
+            cfg.get('entsoe', 'timeseries_data').format(version=version),
+            orig_csv_file))
+        req = requests.get(cfg.get('entsoe', 'timeseries_readme').format(
+            version=version))
         with open(readme, 'wb') as fout:
             fout.write(req.content)
-        req = requests.get(cfg.get('entsoe', 'timeseries_json'))
+        req = requests.get(cfg.get('entsoe', 'timeseries_json').format(
+            version=version))
         with open(json, 'wb') as fout:
             fout.write(req.content)
 
-    orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True)
-    orig = orig.tz_localize('UTC').tz_convert('Europe/Berlin')
+    logging.debug("Reading file: {0}".format(orig_csv_file))
+    orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True,
+                       date_parser=lambda col: pd.to_datetime(col, utc=True))
+    orig = orig.tz_convert('Europe/Berlin')
     return orig
 
 
@@ -93,9 +101,11 @@ def split_timeseries_file(overwrite=False, csv=False):
     end_date = berlin.localize(datetime.datetime(2015, 1, 1, 0, 0, 0))
 
     de_ts.loc[de_ts.index < end_date, 'DE_load_'] = (
-        de_ts.loc[de_ts.index < end_date, 'DE_load_entsoe_power_statistics'])
+        de_ts.loc[de_ts.index < end_date,
+                  'DE_load_actual_entsoe_power_statistics'])
     de_ts.loc[de_ts.index >= end_date, 'DE_load_'] = (
-        de_ts.loc[de_ts.index >= end_date, 'DE_load_entsoe_transparency'])
+        de_ts.loc[de_ts.index >= end_date,
+                  'DE_load_actual_entsoe_transparency'])
 
     load = pd.DataFrame(de_ts[pd.notnull(de_ts['DE_load_'])]['DE_load_'],
                         columns=['DE_load_'])

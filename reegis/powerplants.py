@@ -107,78 +107,81 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None):
                    'energy_source_level_2', 'energy_source_level_3',
                    'geometry', 'technology']
 
-    # Create opsd power plant tables if they do not exist.
-    if not os.path.isfile(filename_in):
-        msg = "File '{0}' does not exist. Will create it from source files."
-        logging.debug(msg.format(filename_in))
-        filename_in = opsd.opsd_power_plants()
-    else:
-        complete = True
+    if not os.path.isfile(filename_out):
+
+        # Create opsd power plant tables if they do not exist.
+        if not os.path.isfile(filename_in):
+            msg = ("File '{0}' does not exist. Will create it from source"
+                   " files.")
+            logging.debug(msg.format(filename_in))
+            filename_in = opsd.opsd_power_plants()
+        else:
+            complete = True
+            for cat in ['renewable', 'conventional']:
+                try:
+                    pd.read_hdf(filename_in, cat)
+                except KeyError:
+                    msg = "File '{0}' exists but key '{1}' is not present."
+                    logging.debug(msg.format(filename_in, cat))
+                    complete = False
+            if not complete:
+                logging.debug("Will re-create file with all keys.")
+                filename_in = opsd.opsd_power_plants(overwrite=True)
+
+        pp = {}
         for cat in ['renewable', 'conventional']:
-            try:
-                pd.read_hdf(filename_in, cat, mode='r')
-            except KeyError:
-                msg = "File '{0}' exists but key '{1}' is not present."
-                logging.debug(msg.format(filename_in, cat))
-                complete = False
-        if not complete:
-            logging.debug("Will re-create file with all keys.")
-            filename_in = opsd.opsd_power_plants(overwrite=True)
+            # Read opsd power plant tables
+            pp[cat] = pd.DataFrame(pd.read_hdf(filename_in, cat))
 
-    pp = {}
-    for cat in ['renewable', 'conventional']:
-        # Read opsd power plant tables
-        pp[cat] = pd.DataFrame(pd.read_hdf(filename_in, cat, mode='r'))
+            # Patch offshore wind energy with investigated data.
+            if cat == 'renewable' and offshore_patch:
+                pp[cat] = patch_offshore_wind(pp[cat], keep_cols)
 
-        # Patch offshore wind energy with investigated data.
-        if cat == 'renewable' and offshore_patch:
-            pp[cat] = patch_offshore_wind(pp[cat], keep_cols)
+            pp[cat] = pp[cat].drop(columns=set(pp[cat].columns) - keep_cols)
 
-        pp[cat] = pp[cat].drop(columns=set(pp[cat].columns) - keep_cols)
+            # Replace 'nan' strings with nan values.
+            pp[cat] = pp[cat].replace('nan', np.nan)
 
-        # Replace 'nan' strings with nan values.
-        pp[cat] = pp[cat].replace('nan', np.nan)
+            # Remove lines with comments. Comments mark suspicious data.
+            pp[cat] = pp[cat].loc[pp[cat].comment.isnull()]
 
-        # Remove lines with comments. Comments mark suspicious data.
-        pp[cat] = pp[cat].loc[pp[cat].comment.isnull()]
+            # Fill missing 'energy_source_level_1' values with 'unknown' and
+            # the category from opsd.
+            pp[cat]['energy_source_level_1'] = (
+                pp[cat]['energy_source_level_1'].fillna(
+                    'unknown from {0}'.format(cat)))
 
-        # Fill missing 'energy_source_level_1' values with 'unknown' and
-        # the category from opsd.
-        pp[cat]['energy_source_level_1'] = (
-            pp[cat]['energy_source_level_1'].fillna(
-                'unknown from {0}'.format(cat)))
+            # Fill missing 'energy_source_level_2' values with values from
+            # 'energy_source_level_1' column.
+            pp[cat]['energy_source_level_2'] = (
+                pp[cat]['energy_source_level_2'].fillna(
+                    pp[cat]['energy_source_level_1']))
 
-        # Fill missing 'energy_source_level_2' values with values from
-        # 'energy_source_level_1' column.
-        pp[cat]['energy_source_level_2'] = (
-            pp[cat]['energy_source_level_2'].fillna(
-                pp[cat]['energy_source_level_1']))
+        pp = pd.DataFrame(pd.concat([pp['renewable'], pp['conventional']],
+                                    ignore_index=True, sort=True))
 
-    pp = pd.DataFrame(pd.concat([pp['renewable'], pp['conventional']],
-                                ignore_index=True, sort=True))
+        # Merge 'chp_capacity_uba' into 'thermal_capacity' column.
+        pp['thermal_capacity'] = pp['thermal_capacity'].fillna(
+            pp['chp_capacity_uba'])
+        del pp['chp_capacity_uba']
 
-    # Merge 'chp_capacity_uba' into 'thermal_capacity' column.
-    pp['thermal_capacity'] = pp['thermal_capacity'].fillna(
-        pp['chp_capacity_uba'])
-    del pp['chp_capacity_uba']
+        # Remove storages (Speicher) from power plant table
+        pp = pp.loc[pp['energy_source_level_2'] != 'Speicher']
 
-    # Remove storages (Speicher) from power plant table
-    pp = pp.loc[pp['energy_source_level_2'] != 'Speicher']
+        # Convert all values to strings in string-columns
+        pp[string_cols] = pp[string_cols].astype(str)
 
-    # Convert all values to strings in string-columns
-    pp[string_cols] = pp[string_cols].astype(str)
+        # Store power plant table to hdf5 file.
+        pp.to_hdf(filename_out, 'pp', mode='w')
 
-    # Store power plant table to hdf5 file.
-    pp.to_hdf(filename_out, 'pp', mode='w')
-
-    logging.info("Reegis power plants based on opsd stored in {0}".format(
-        filename_out))
+        logging.info("Reegis power plants based on opsd stored in {0}".format(
+            filename_out))
     return filename_out
 
 
 def add_capacity_by_year(year, pp=None, filename=None, key='pp'):
     if pp is None:
-        pp = pd.read_hdf(filename, key, mode='r')
+        pp = pd.read_hdf(filename, key)
     
     filter_cap_col = 'capacity_{0}'.format(year)
 

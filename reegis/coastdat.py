@@ -731,7 +731,7 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
 
     # Create DataFrame with MultiColumns to take the results
     my_index = pwr[set_name]['/A1129087'].index
-    my_cols = pd.MultiIndex(levels=[[], [], []], labels=[[], [], []],
+    my_cols = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []],
                             names=[u'region', u'set', u'subset'])
     feed_in = pd.DataFrame(index=my_index, columns=my_cols)
 
@@ -920,7 +920,7 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
     if dump is True:
         filename = 'windzone_{0}.csv'.format(name)
         fn = os.path.join(cfg.get('paths', 'powerplants'), filename)
-        wz_regions.to_csv(fn)
+        wz_regions.to_csv(fn, header=False)
     return wz_regions
 
 
