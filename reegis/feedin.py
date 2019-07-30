@@ -225,11 +225,8 @@ def create_windpowerlib_sets():
     ['ENERCON_127_hub135_7500', 'ENERCON_82_hub138_2300']
     >>> for key in sorted(wind_set.keys()):
     ...     print(key)
-    fetch_curve
     hub_height
-    name
-    nominal_power
-    rotor_diameter
+    turbine_type
     """
     windpowerlib_sets = cfg.get_list('wind', 'set_list')
 
