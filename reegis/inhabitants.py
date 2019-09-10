@@ -83,7 +83,7 @@ def get_ew_shp_file(year):
         os.remove(filename_zip)
 
 
-def get_ew_geometry(year):
+def get_ew_geometry(year, polygon=False):
     filename_shp = os.path.join(cfg.get('paths', 'inhabitants'),
                                 'VG250_VWG_' + str(year) + '.shp')
 
@@ -93,7 +93,8 @@ def get_ew_geometry(year):
     vwg = gpd.read_file(filename_shp)
 
     # replace polygon geometry by its centroid
-    vwg['geometry'] = vwg.representative_point()
+    if not polygon:
+        vwg['geometry'] = vwg.representative_point()
 
     return vwg
 
