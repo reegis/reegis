@@ -200,7 +200,8 @@ def set_reegis_paths(paths=None):
         logging.debug("Set default path for data path: {0}".format(datapath))
     cfg.set('paths', 'local_root', datapath)
 
-    if IMPORTER != os.path.join(os.path.dirname(__file__)):
+    if (IMPORTER != os.path.join(os.path.dirname(__file__))
+            and IMPORTER is not None):
         importer_name = IMPORTER.split(os.sep)[-1]
         cfg.set('paths', '{0}'.format(importer_name), IMPORTER)
 
