@@ -50,13 +50,14 @@ def patch_offshore_wind(orig_df, columns=None):
     offsh_df = pd.DataFrame(goffsh)
 
     new_cap = offsh_df['capacity'].sum()
-    try:
-        old_cap = orig_df.loc[
-            orig_df['technology'] == 'Offshore', 'capacity'].sum()
+
+    if len(orig_df) > 0:
+        old_cap = orig_df.loc[orig_df['technology'] == 'Offshore',
+                              'capacity'].sum()
         # Remove Offshore technology from power plant table
         orig_df = orig_df.loc[orig_df['technology'] != 'Offshore']
-    except KeyError:
-        old_cap = None
+    else:
+        old_cap = 0
 
     patched_df = pd.DataFrame(pd.concat([orig_df, offsh_df],
                                         ignore_index=True, sort=True))

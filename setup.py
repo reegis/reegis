@@ -19,7 +19,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
         'owslib',
         'pyproj',
         'pytz',
-        'windpowerlib@https://github.com/wind-python/windpowerlib/archive/refactor_v0.2.0_branch.zip',
+        'windpowerlib@https://github.com/wind-python/windpowerlib/archive/dev.zip',
         'python-dateutil',
         'networkx',
         'dill',
