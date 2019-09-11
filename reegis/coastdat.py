@@ -542,7 +542,7 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
 def spatial_average_weather(year, geo, parameter, name,
                             outpath=None, outfile=None):
     """
-    Calculate the mean temperature over all temperature data sets within each
+    Calculate the mean value of a parameter over all data sets within each
     region for one year.
 
     Parameters
@@ -564,6 +564,17 @@ def spatial_average_weather(year, geo, parameter, name,
     -------
     str : Full file name of the created file.
 
+    Example
+    -------
+    >>> germany_geo = geometries.load(
+    ...     cfg.get('paths', 'geometry'),
+    ...     cfg.get('geometry', 'germany_polygon'))
+    >>> fn = spatial_average_weather(2012, germany_geo, 'temp_air', 'deTemp',
+    ...                              outpath=os.path.expanduser('~'))
+    >>> temp = pd.read_csv(fn, index_col=[0], parse_dates=True, squeeze=True)
+    >>> round(temp.mean() - 273.15, 2)
+    8.28
+    >>> os.remove(fn)
     """
     logging.info("Getting average {0} for {1} in {2} from coastdat2.".format(
         parameter, name, year))
@@ -657,8 +668,8 @@ def federal_state_average_weather(year, parameter):
     if not os.path.isfile(filename):
         spatial_average_weather(year, federal_states, parameter,
                                 'federal_states', outfile=filename)
-    return pd.read_csv(filename, index_col=[0],
-                       date_parser=lambda idx: pd.to_datetime(idx, utc=True))
+    return pd.read_csv(filename, index_col=[0], parse_dates=True,
+                       date_parser=lambda col: pd.to_datetime(col, utc=True))
 
 
 def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
@@ -907,7 +918,7 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
     if dump is True:
         filename = 'windzone_{0}.csv'.format(name)
         fn = os.path.join(cfg.get('paths', 'powerplants'), filename)
-        wz_regions.to_csv(fn)
+        wz_regions.to_csv(fn, header=False)
     return wz_regions
 
 

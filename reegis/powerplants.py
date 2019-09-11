@@ -26,7 +26,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import reegis.geometries as geo
 
 
-def patch_offshore_wind(orig_df, columns=None, get_patch=False):
+def patch_offshore_wind(orig_df, columns=None):
     if columns is None:
         df = pd.DataFrame()
     else:
@@ -63,10 +63,6 @@ def patch_offshore_wind(orig_df, columns=None, get_patch=False):
     logging.warning(
         "Offshore wind is patched. {0} MW were replaced by {1} MW".format(
             old_cap, new_cap))
-
-    if get_patch is True:
-        return goffsh
-
     return patched_df
 
 

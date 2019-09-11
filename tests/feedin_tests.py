@@ -41,10 +41,10 @@ def feedin_wind_sets_tests():
             wind_weather, wind_set).sum().sort_index()
     s1 = df.transpose()['1']
     s2 = pd.Series({
-        'ENERCON_127_hub135_7500': 1277.2898,
+        'ENERCON_127_hub135_7500': 1277.28988,
         'ENERCON_82_hub138_2300': 1681.47858,
         'ENERCON_82_hub78_3000': 1057.03957,
-        'ENERCON_82_hub98_2300': 1496.557694})
+        'ENERCON_82_hub98_2300': 1496.55769})
     pd.testing.assert_series_equal(s1.sort_index(), s2.sort_index(),
                                    check_names=False)
 
@@ -55,16 +55,13 @@ def feedin_windpowerlib_test():
     weather = pd.read_csv(fn, header=[0, 1])['1126088']
     turbine = {
         'hub_height': 135,
-        'rotor_diameter': 127,
-        'name': 'E-126/4200',
-        'nominal_power': 4200000,
-        'fetch_curve': 'power_curve'}
+        'turbine_type': 'E-141/4200'}
     data_height = cfg.get_dict('coastdat_data_height')
     wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
          weather, data_height)  # doctest: +SKIP
-    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 1874)
+    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 2164)
     turbine = WindTurbine(**turbine)
-    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 1874)
+    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 2164)
 
 
 def feedin_pvlib_test():

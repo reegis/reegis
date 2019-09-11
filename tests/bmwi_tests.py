@@ -24,7 +24,7 @@ def read_bmwi_sheet_7_test():
     test_path = os.path.join(os.path.dirname(__file__), 'data', 'temp')
     os.makedirs(test_path, exist_ok=True)
     cfg.tmp_set('paths', 'general', test_path)
-    eq_(bmwi.bmwi_re_energy_capacity().loc[2016, ('water', 'capacity')], 5601)
+    eq_(bmwi.bmwi_re_energy_capacity().loc[2016, ('water', 'capacity')], 5598)
     eq_(bmwi.get_annual_electricity_demand_bmwi(2014), 523.988)
     fs = bmwi.read_bmwi_sheet_7('a').sort_index()
     total = int(float(fs.loc[('Industrie', 'gesamt'), 2014]))
