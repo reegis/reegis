@@ -99,8 +99,9 @@ def get_ew_geometry(year, polygon=False):
     return vwg
 
 
-def get_ew_by_region(year, geo, name):
+def get_inhabitants_by_region(year, geo, name):
     """
+    Get inhabitants for the given region polygons.
 
     Parameters
     ----------
@@ -118,12 +119,37 @@ def get_ew_by_region(year, geo, name):
     ...     cfg.get('paths', 'geometry'),
     ...     cfg.get('geometry', 'federalstates_polygon'))
     >>> name = 'federal_states'
-    >>> get_ew_by_region(2014, geo, name=name).sum()  # doctest: +SKIP
+    >>> get_inhabitants_by_region(2014, geo, name=name).sum()  # doctest: +SKIP
     81197537
     """
     ew = get_ew_geometry(year)
     ew = reegis.geometries.spatial_join_with_buffer(
         ew, geo, name=name, step=0.005)
+
+    return ew.groupby(name).sum()['EWZ']
+
+
+def get_inhabitants_by_multi_regions(year, geo, name):
+    """
+    Get a MultiIndex table with the inhabitants from all given geometry sets.
+
+    Parameters
+    ----------
+    year : int
+    geo : list
+    name : list
+
+    Returns
+    -------
+
+    """
+    ew = get_ew_geometry(year)
+    n = 0
+    for geo_one in geo:
+        ew = reegis.geometries.spatial_join_with_buffer(
+            ew, geo_one, name=name[n], step=0.005)
+        n += 1
+
     return ew.groupby(name).sum()['EWZ']
 
 
@@ -133,7 +159,7 @@ def get_ew_by_federal_states(year):
         cfg.get('geometry', 'federalstates_polygon'))
     geo.set_index('iso', drop=True, inplace=True)
     geo.drop(['N0', 'N1', 'O0', 'P0'], inplace=True)
-    return get_ew_by_region(year, geo, name='federal_states')
+    return get_inhabitants_by_region(year, geo, name='federal_states')
 
 
 if __name__ == "__main__":

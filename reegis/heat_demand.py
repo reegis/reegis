@@ -352,7 +352,7 @@ def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
 
     # Get inhabitants for federal states and the given regions
     fs_geo = reegis.geometries.get_federal_states_polygon()
-    ew = reegis.inhabitants.get_ew_by_multi_regions(
+    ew = reegis.inhabitants.get_inhabitants_by_multi_regions(
         year, [regions, fs_geo], name=[name, 'federal_states'])
     ew = ew[ew != 0]
 
