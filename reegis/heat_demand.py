@@ -30,9 +30,21 @@ import reegis.geometries
 import reegis.energy_balance
 import reegis.coastdat
 import reegis.openego
+import reegis.inhabitants
 
 
 def heat_demand(year):
+    """
+    Fetch heat demand per sector from the federal states energy balances.
+
+    Parameters
+    ----------
+    year
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
     eb = reegis.energy_balance.get_states_balance(year)
     eb.sort_index(inplace=True)
 
@@ -98,6 +110,23 @@ def heat_demand(year):
 
 
 def share_of_mechanical_energy_bmwi(year):
+    """
+    Get share of mechanical energy from the overall energy use per sector.
+
+    Parameters
+    ----------
+    year : int
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    Examples
+    --------
+    >>> share_of_mechanical_energy_bmwi(2014).loc['oil', 'retail']
+    0.078
+
+    """
     mech = pd.DataFrame()
     fs = reegis.bmwi.read_bmwi_sheet_7('a')
     fs.sort_index(inplace=True)
@@ -129,65 +158,33 @@ def share_of_mechanical_energy_bmwi(year):
     return mech
 
 
-def share_houses_flats(key=None):
+def get_heat_profile_from_demandlib(temperature, annual_demand, sector, year,
+                                    build_class=1):
     """
+    Create an hourly load profile from the annual demand using the demandlib.
 
     Parameters
     ----------
-    key str
-        Valid keys are: 'total_area', 'avg_area', 'share_area', 'total_number',
-         'share_number'.
+    temperature : pandas.Series
+    annual_demand : float
+    sector : str
+    year : int
+    build_class : int
 
     Returns
     -------
-    dict or pd.DataFrame
+    pandas.DataFrame
+
+    Examples
+    --------
+    >>> temperature = pd.Series(list(range(50)), index=pd.date_range(
+    ...     '2014-05-03 12:00', periods=50, freq='h'))
+    >>> temperature = 10 + temperature * 0.1
+    >>> hp = get_heat_profile_from_demandlib(
+    ...     temperature, 5345, 'retail', 2014)
+    >>> round(hp.sum())
+    5276.0
     """
-    size = pd.Series([1, 25, 50, 70, 90, 110, 130, 150, 170, 190, 210])
-    infile = os.path.join(
-        cfg.get('paths', 'data_de21'),
-        cfg.get('general_sources', 'zensus_flats'))
-    whg = pd.read_csv(infile, delimiter=';', index_col=[0], header=[0, 1],
-                      skiprows=5)
-    whg = whg.loc[whg['Insgesamt', 'Insgesamt'].notnull()]
-    new_index = []
-    states = cfg.get_dict('STATES')
-    for i in whg.index:
-        new_index.append(states[i[3:-13]])
-    whg.index = new_index
-
-    flat = {'total_area': pd.DataFrame(),
-            'total_number': pd.DataFrame(),
-            }
-    for f in whg.columns.get_level_values(0).unique():
-        df = pd.DataFrame(whg[f].values * size.values, columns=whg[f].columns,
-                          index=whg.index)
-        flat['total_area'][f] = df.sum(1) - df['Insgesamt']
-        flat['total_number'][f] = df['Insgesamt']
-    flat['total_area']['1 + 2 Wohnungen'] = (
-        flat['total_area']['1 Wohnung'] + flat['total_area']['2 Wohnungen'])
-    flat['total_number']['1 + 2 Wohnungen'] = (
-        flat['total_number']['1 Wohnung'] +
-        flat['total_number']['2 Wohnungen'])
-
-    flat['avg_area'] = flat['total_area'].div(flat['total_number'])
-    flat['share_area'] = (flat['total_area'].transpose().div(
-        flat['total_area']['Insgesamt'])).transpose().round(3)
-    flat['share_number'] = (flat['total_number'].transpose().div(
-        flat['total_number']['Insgesamt'])).transpose().round(3)
-
-    if key is None:
-        return flat
-    elif key in flat:
-        return flat[key].sort_index()
-    else:
-        logging.warning(
-            "'{0}' is an invalid key for function 'share_houses_flats'".format(
-                key))
-    return None
-
-
-def get_heat_profile_from_demandlib(temperature, annual_demand, sector, year,
-                                    build_class=1):
     cal = Germany()
     holidays = dict(cal.holidays(year))
 
@@ -212,22 +209,45 @@ def get_heat_profile_from_demandlib(temperature, annual_demand, sector, year,
         ).get_bdew_profile()
 
 
-def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
-                               state=None, weather_year=None):
+def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
+                                       weather_year=None):
     """
+    Get heat profiles by state, sector and fuel. Use the pandas `groupby`
+    method to group the results.
+
+    The unit of the resulting data is TJ.
 
     Parameters
     ----------
     year : int
-    to_csv : bool
-    divide_domestic : bool
-    state : list
+        Year of the demand data set.
+    to_csv : str
+        Path to the csv file.
+    state : list or None
+        List of abbreviations of federal states. If None a table with all
+        federal states will be returned. Valid values are: BB, BE, BW, BY, HB,
+        HE, HH, MV, NI, NW, RP, SH, SL, SN, ST, TH
     weather_year : int or None
+        Can be used if the year of the weather data differs from the year of
+        the demand data. If None the year parameter will be used. Use with
+        care, because the demand data may include implicit weather effects.
 
     Returns
     -------
     pd.DataFrame
 
+    Examples
+    --------
+    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> hp = get_heat_profiles_by_federal_state(2014, state=['BE', 'BB'],
+    ...                                 to_csv=fn)
+    >>> round(hp.groupby(level=[0], axis=1).sum().sum().loc['BE'], 1)
+    112950.7
+    >>> round(hp.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
+    6017.0
+    >>> hp_MWh = hp.div(0.0036)
+    >>> round(hp_MWh.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
+    1671392.1
     """
 
     if weather_year is None:
@@ -239,21 +259,6 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
             building_class[s] = int(k)
 
     demand_state = heat_demand(year).sort_index()
-
-    if divide_domestic:
-        house_flats = share_houses_flats('share_area')
-        for state in demand_state.index.get_level_values(0).unique():
-            dom = demand_state.loc[state, 'domestic']
-            demand_state.loc[(state, 'domestic_efh'), ] = (
-                dom * house_flats.loc[state, '1 + 2 Wohnungen'])
-            demand_state.sort_index(0, inplace=True)
-            dom = demand_state.loc[state, 'domestic']
-            demand_state.loc[(state, 'domestic_mfh'), ] = (
-                dom * house_flats.loc[state, '3 und mehr Wohnungen'])
-            demand_state.sort_index(0, inplace=True)
-
-        demand_state.sort_index(inplace=True)
-        demand_state.drop('domestic', level=1, inplace=True)
 
     temperatures = reegis.coastdat.federal_state_average_weather(
         weather_year, 'temp_air')
@@ -283,21 +288,101 @@ def get_heat_profiles_by_state(year, to_csv=False, divide_domestic=False,
                         building_class[region]))
     heat_profiles.sort_index(1, inplace=True)
 
-    if to_csv:
-        if weather_year is None:
-            fn = os.path.join(
-                cfg.get('paths', 'demand'),
-                cfg.get('demand', 'heat_profile_state').format(year=year))
-        else:
-            fn = os.path.join(
-                cfg.get('paths', 'demand'),
-                cfg.get('demand', 'heat_profile_state_var').format(
-                    year=year, weather_year=weather_year))
-        heat_profiles.to_csv(fn)
+    if to_csv is not None:
+        heat_profiles.to_csv(to_csv)
     return heat_profiles
+
+
+def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
+                                to_csv=None, weather_year=None):
+    """
+    Get heat profiles for any region devided by sector and fuel. Use the
+    pandas `groupby` method to group the results.
+
+    The unit of the resulting data is TJ.
+
+    Parameters
+    ----------
+    year : int
+        Year of the demand data set.
+    regions : geopandas.geoDataFrame
+        A table with region geometries and there id as index.
+    name : str
+        Name of the regions set.
+    from_csv : str
+        Path to the file of the demand state profiles.
+    to_csv : str
+        Path with filename of the output file.
+    weather_year : int or None
+        Can be used if the year of the weather data differs from the year of
+        the demand data. If None the year parameter will be used. Use with
+        care, because the demand data may include implicit weather effects.
+
+    Returns
+    -------
+    pd.DataFrame
+
+    Examples
+    --------
+    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> regions = reegis.geometries.load(
+    ...     cfg.get('paths', 'geometry'),
+    ...     'region_polygons_de21_vg.csv')
+    >>> hp1 = get_heat_profiles_by_region(2014, regions, from_csv=fn)
+    """
+    if weather_year is None:
+        weather_year = year
+
+    # Get demand by federal state
+    if from_csv is None:
+        from_csv = os.path.join(
+            cfg.get('paths', 'demand'),
+            cfg.get('demand', 'heat_profile_state_var').format(
+                year=year, weather_year=weather_year))
+    if not os.path.isfile(from_csv):
+        get_heat_profiles_by_federal_state(
+            year, to_csv=from_csv, weather_year=weather_year)
+    demand_state = pd.read_csv(from_csv, index_col=[0], header=[0, 1, 2])
+
+    # Create empty MulitIndex DataFrame to take the results
+    four_level_columns = pd.MultiIndex(levels=[[], [], [], []],
+                                       codes=[[], [], [], []])
+    demand_region = pd.DataFrame(index=demand_state.index,
+                                 columns=four_level_columns)
+
+    # Get inhabitants for federal states and the given regions
+    fs_geo = reegis.geometries.get_federal_states_polygon()
+    ew = reegis.inhabitants.get_ew_by_multi_regions(
+        year, [regions, fs_geo], name=[name, 'federal_states'])
+    ew = ew[ew != 0]
+
+    # Calculate the share of the federal states within the regions.
+    fs_sum = ew.groupby(level=1).sum().copy()
+    for reg in ew.index.get_level_values(0).unique():
+        for fs in ew.loc[reg].index:
+            ew.loc[reg, fs] = ew.loc[reg, fs] / fs_sum[fs]
+
+    # Use the inhabitants to recalculate the demand from federal states to
+    # the given regions.
+    for i in ew.items():
+        state = i[0][1]
+        region = i[0][0]
+        share = i[1]
+        if state in demand_state.columns.get_level_values(0).unique():
+            for sector in demand_state[state].columns.get_level_values(
+                    0).unique():
+                for fuel in demand_state[state, sector].columns:
+                    demand_region[
+                        region, fuel, sector, state] = (
+                            demand_state[state, sector, fuel] * share)
+    demand_region.sort_index(1, inplace=True)
+    demand_region = demand_region.groupby(level=[0, 1, 2], axis=1).sum()
+
+    if to_csv is not None:
+        demand_region.to_csv(to_csv)
+
+    return demand_region
 
 
 if __name__ == "__main__":
     logger.define_logging()
-    print(heat_demand(2014).loc['BE'])
-    print(get_heat_profiles_by_state(2014, state=['BE'])['BE'])
