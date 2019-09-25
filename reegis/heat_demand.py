@@ -248,6 +248,8 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
     >>> hp_MWh = hp.div(0.0036)
     >>> round(hp_MWh.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
     1671392.1
+    >>> round(hp.sum().sum(), 1)
+    272727.7
     """
 
     if weather_year is None:
@@ -329,6 +331,8 @@ def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
     ...     cfg.get('paths', 'geometry'),
     ...     'region_polygons_de21_vg.csv')
     >>> hp1 = get_heat_profiles_by_region(2014, regions, from_csv=fn)
+    >>> round(hp1.sum().sum(), 1)
+    272727.7
     """
     if weather_year is None:
         weather_year = year
