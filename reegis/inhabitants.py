@@ -136,8 +136,8 @@ def get_inhabitants_by_multi_regions(year, geo, name):
     Parameters
     ----------
     year : int
-    geo : list
-    name : list
+    geo : tuple or list
+    name : tuple or list
 
     Returns
     -------
