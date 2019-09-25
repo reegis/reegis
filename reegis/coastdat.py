@@ -661,9 +661,7 @@ def federal_state_average_weather(year, parameter):
     -------
 
     """
-    federal_states = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))
+    federal_states = geometries.get_federal_states_polygon()
     filename = os.path.join(
         cfg.get('paths', 'coastdat'),
         'average_{0}_BB_TH_{1}.csv'.format(parameter, year))
