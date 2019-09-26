@@ -30,7 +30,7 @@ import reegis.geometries
 import reegis.energy_balance
 import reegis.coastdat
 import reegis.openego
-import reegis.inhabitants
+from reegis import inhabitants
 
 
 def heat_demand(year):
@@ -355,16 +355,7 @@ def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
                                  columns=four_level_columns)
 
     # Get inhabitants for federal states and the given regions
-    fs_geo = reegis.geometries.get_federal_states_polygon()
-    ew = reegis.inhabitants.get_inhabitants_by_multi_regions(
-        year, [regions, fs_geo], name=[name, 'federal_states'])
-    ew = ew[ew != 0]
-
-    # Calculate the share of the federal states within the regions.
-    fs_sum = ew.groupby(level=1).sum().copy()
-    for reg in ew.index.get_level_values(0).unique():
-        for fs in ew.loc[reg].index:
-            ew.loc[reg, fs] = ew.loc[reg, fs] / fs_sum[fs]
+    ew = inhabitants.get_share_of_federal_states_by_region(year, regions, name)
 
     # Use the inhabitants to recalculate the demand from federal states to
     # the given regions.
