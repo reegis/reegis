@@ -24,11 +24,25 @@ if not os.environ.get('READTHEDOCS') == 'True':
 
     # Internal modules
     import reegis.config as cfg
-    import reegis.geometries
+    from reegis import geometries
     import reegis.tools as tools
 
 
 def get_ew_shp_file(year):
+    """
+
+    Parameters
+    ----------
+    year
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> print(get_ew_shp_file(2014)[-35:])
+    data/inhabitants/VG250_VWG_2014.shp
+    """
     if year < 2011:
         logging.error("Shapefile with inhabitants are available since 2011.")
         logging.error("Try to find another source to get older data sets.")
@@ -81,6 +95,7 @@ def get_ew_shp_file(year):
         shutil.rmtree(os.path.join(cfg.get('paths', 'inhabitants'), mysub))
 
         os.remove(filename_zip)
+    return outshp
 
 
 def get_ew_geometry(year, polygon=False):
@@ -115,15 +130,15 @@ def get_inhabitants_by_region(year, geo, name):
 
     Examples
     --------
-    >>> geo = reegis.geometries.load(
+    >>> geo = geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     cfg.get('geometry', 'federalstates_polygon'))
     >>> name = 'federal_states'
-    >>> get_inhabitants_by_region(2014, geo, name=name).sum()  # doctest: +SKIP
+    >>> get_inhabitants_by_region(2014, geo, name=name).sum()
     81197537
     """
     ew = get_ew_geometry(year)
-    ew = reegis.geometries.spatial_join_with_buffer(
+    ew = geometries.spatial_join_with_buffer(
         ew, geo, name=name, step=0.005)
 
     return ew.groupby(name).sum()['EWZ']
@@ -142,19 +157,71 @@ def get_inhabitants_by_multi_regions(year, geo, name):
     Returns
     -------
 
+    Examples
+    --------
+    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> geo1 = geometries.load(
+    ...     cfg.get('paths', 'geometry'),
+    ...     'region_polygons_de21_vg.csv')
+    >>> geo2 = geometries.get_federal_states_polygon()
+    >>> inh = get_inhabitants_by_multi_regions(
+    ...     2014, [geo1, geo2], ['de21', 'fs'])
+    >>> inh.loc['DE01']['BB']
+    2022458
+    >>> inh.loc['DE01']['BE']
+    3469849
+
     """
     ew = get_ew_geometry(year)
     n = 0
     for geo_one in geo:
-        ew = reegis.geometries.spatial_join_with_buffer(
+        ew = geometries.spatial_join_with_buffer(
             ew, geo_one, name=name[n], step=0.005)
         n += 1
 
     return ew.groupby(name).sum()['EWZ']
 
 
+def get_share_of_federal_states_by_region(year, regions, name):
+    """
+
+    Parameters
+    ----------
+    year : int
+    regions : tuple or list
+    name : tuple or list
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> regions = geometries.load(
+    ...     cfg.get('paths', 'geometry'),
+    ...     'region_polygons_de21_vg.csv')
+    >>> inh = get_share_of_federal_states_by_region(2014, regions, 'de21')
+    >>> round(inh.loc['DE01']['BB'], 2)
+    0.82
+    >>> round(inh.loc['DE01']['BE'], 2)
+    1.0
+    """
+    # Get inhabitants for federal states and the given regions
+    fs_geo = geometries.get_federal_states_polygon()
+    ew = get_inhabitants_by_multi_regions(
+        year, [regions, fs_geo], name=[name, 'federal_states'])
+    ew = ew[ew != 0]
+
+    # Calculate the share of the federal states within the regions.
+    fs_sum = ew.groupby(level=1).sum().copy()
+    for reg in ew.index.get_level_values(0).unique():
+        for fs in ew.loc[reg].index:
+            ew.loc[reg, fs] = ew.loc[reg, fs] / fs_sum[fs]
+    return ew
+
+
 def get_ew_by_federal_states(year):
-    geo = reegis.geometries.load(
+    geo = geometries.load(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
     geo.set_index('iso', drop=True, inplace=True)
