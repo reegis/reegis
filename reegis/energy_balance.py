@@ -22,7 +22,8 @@ from oemof.tools import logger
 
 # internal modules
 import reegis.config as cfg
-
+from reegis import inhabitants
+from reegis import geometries
 
 def check_balance(orig, ebfile):
     logging.info('Analyse the energy balances')
@@ -381,17 +382,53 @@ def get_conversion_balance(year):
     return eb
 
 
+def get_conversion_balance_by_region(year, regions, name='region'):
+    """
+
+    Parameters
+    ----------
+    year
+    regions
+    name
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> regions = geometries.load(
+    ...     cfg.get('paths', 'geometry'),
+    ...     'region_polygons_de21_vg.csv')
+    >>> cb = get_conversion_balance_by_region(2014, regions, 'de21')
+    >>> int(cb.sum()['electricity'])
+    6948288
+    """
+
+    cb = get_conversion_balance(year)
+    # create empty DataFrame to take the conversion balance for the regions
+    my_index = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []])
+    cb_new = pd.DataFrame(index=my_index, columns=cb.columns)
+
+    # Use the number of inhabitants to reshape the balance to the new regions
+    logging.debug(
+        "Fetching inhabitants table to reshape the conversion balance.")
+    ew = inhabitants.get_share_of_federal_states_by_region(year, regions, name)
+
+    # Loop over the deflex regions
+    for region in sorted(ew.index.get_level_values(0).unique()):
+        # Get all states that intersects with the current deflex-region
+        states = ew.loc[region].index
+
+        # Sum up the fraction of each state-table to get the new region table
+        for idx in cb.loc[states[0]].index:
+            cb_new.loc[region, idx[0], idx[1]] = 0
+            for state in states:
+                share = ew.loc[region, state]
+                cb_new.loc[region, idx[0], idx[1]] += (
+                    cb.loc[state, idx[0], idx[1]] * float(share))
+    return cb_new
+
+
 if __name__ == "__main__":
     logger.define_logging()
-    print(get_states_balance(2014).loc[
-              (slice(None), 'total'), ('electricity', 'district heating')])
-    print(get_states_balance(2014, overwrite=True).loc['BE'])
-    exit(0)
-    f = os.path.join(cfg.get('paths', 'static_sources'),
-                     cfg.get('energy_balance', 'energiebilanzen_laender'))
-    check_balance(orig=True, ebfile=f)
-    f = edit_balance()
-    check_balance(orig=False, ebfile=f)
-    print(get_de_balance(year=None, grouped=False).columns)
-    print(get_states_balance(2012, overwrite=True))
-    print(get_domestic_retail_share(2012))
