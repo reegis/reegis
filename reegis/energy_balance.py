@@ -25,6 +25,7 @@ import reegis.config as cfg
 from reegis import inhabitants
 from reegis import geometries
 
+
 def check_balance(orig, ebfile):
     logging.info('Analyse the energy balances')
 
@@ -188,7 +189,7 @@ def edit_balance():
     eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
 
     new_index_values = list()
-    sector = cfg.get_dict('SECTOR')
+    sector = cfg.get_dict('SECTOR_OLD')
     for value in eb.index.get_level_values(2):
         new_index_values.append(sector[value])
     eb.index.set_levels(new_index_values[:10], level=2, inplace=True)
@@ -297,7 +298,7 @@ def get_de_balance(year=None, grouped=False):
     deb = deb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
 
     new_index_values = list()
-    sector = cfg.get_dict('SECTOR')
+    sector = cfg.get_dict('SECTOR_OLD')
     for value in deb.index.get_level_values(2):
         new_index_values.append(sector[value])
     deb.index.set_levels(new_index_values[:10], level=2, inplace=True)
@@ -342,6 +343,36 @@ def get_states_balance(year=None, grouped=False, overwrite=False):
     return eb
 
 
+def get_usage_balance(year, grouped=False):
+    """
+    GEt the usage part of the energy balance.
+
+    Parameters
+    ----------
+    year : int
+        Year of the energy balance.
+    grouped : bool
+        If set to True the fuels will be grouped to main groups like hard coal
+        or lignite.
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    Examples
+    --------
+    >>> get_usage_balance(2014, grouped=True).loc['BB']['electricity']['total']
+    58640.4972
+    """
+    eb = get_energy_balance(year)
+    eb = eb.loc[
+        (slice(None), list(cfg.get_dict('SECTOR').keys())), slice(None)]
+    eb = eb.rename(index=cfg.get_dict('SECTOR'), level=1)
+    if grouped:
+        eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
+    return eb
+
+
 def fix_states(year, eb):
     """This is a fix after a manual analysis of the energy balances."""
     # *********** BB ********************************************************
@@ -368,7 +399,8 @@ def fix_states(year, eb):
     return eb
 
 
-def get_conversion_balance(year):
+def get_conversion_balance_old(year):
+    """ DEPRECATED! """
     fn = os.path.join(
         cfg.get('paths', 'static_sources'),
         cfg.get('energy_balance', 'energy_balance_states_conversion'))
@@ -382,29 +414,171 @@ def get_conversion_balance(year):
     return eb
 
 
-def get_conversion_balance_by_region(year, regions, name='region'):
+def get_energy_balance(year):
     """
+    Get the energy balance for a given year. The input file is the csv-file
+    downloaded from:
+    https://www.lak-energiebilanzen.de/eingabe-dynamisch/?a=e900
 
     Parameters
     ----------
-    year
-    regions
-    name
+    year : int
 
     Returns
     -------
+    pandas.DataFrame
+
+    """
+    header_fn = os.path.join(cfg.get('paths', 'static_sources'),
+                             'energy_balance_header.csv')
+    header = pd.read_csv(header_fn)
+    fn = os.path.join(cfg.get('paths', 'static_sources'),
+                      'energy_balance_federal_states.csv')
+    eb = pd.read_csv(fn, sep=';', skiprows=4, index_col=[0, 1, 2],
+                     skipfooter=10, engine='python')
+    eb.columns = header.columns
+    codes = {
+        'Baden-Württemberg': 'BW',
+        'Bayern': 'BY',
+        'Berlin': 'BE',
+        'Brandenburg': 'BB',
+        'Bremen': 'HB',
+        'Hamburg': 'HH',
+        'Hessen': 'HE',
+        'Mecklenburg-Vorpommern': 'MV',
+        'Niedersachsen': 'NI',
+        'Nordrhein-Westfalen': 'NW',
+        'Rheinland-Pfalz': 'RP',
+        'Saarland': 'SL',
+        'Sachsen': 'SN',
+        'Sachsen-Anhalt': 'ST',
+        'Schleswig-Holstein': 'SH',
+        'Thüringen': 'TH'}
+
+    fs_list = [codes[x] for x in eb.index.get_level_values(0).unique()]
+    eb.index.set_levels(fs_list, level=0, inplace=True)
+    eb = eb.fillna(0)
+    eb.drop(['Anmerkung', 'Stand'], axis=1, inplace=True)
+    eb = eb.swaplevel(0, 1)
+    eb = eb.loc[year]
+    return eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'))
+
+
+def get_conversion_balance(year):
+    """
+    Reshape the energy balance and return the conversion part as a MultiIndex
+    DataFrame.
+
+    Parameters
+    ----------
+    year : int
+
+    Returns
+    -------
+    pandas.DataFrame
 
     Examples
     --------
-    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> cb = get_conversion_balance(2014)
+    >>> total = cb.pop('total')
+    >>> int((cb.loc['BE'].sum(axis=1) - total.loc['BE']).sum())
+    0
+    """
+    eb = get_energy_balance(year)
+    eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
+    my_index = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []])
+    cb = pd.DataFrame(index=my_index, columns=eb.columns)
+
+    for i in eb.iterrows():
+        if 'Umw-Einsatz:' in i[0][1]:
+            cb.loc[
+                i[0][0], 'input', i[0][1].replace('Umw-Einsatz: ', '')] = i[1]
+        elif 'Umw-Ausstoß:' in i[0][1]:
+            cb.loc[
+                i[0][0], 'output', i[0][1].replace('Umw-Ausstoß: ', '')] = i[1]
+        elif 'Primär' in i[0][1]:
+            cb.loc[i[0][0], 'primary', i[0][1]] = i[1]
+        elif 'Energieangebot' in i[0][1]:
+            cb.loc[i[0][0], 'tender', i[0][1]] = i[1]
+        elif 'Endenergieverbrauch' in i[0][1]:
+            cb.loc[i[0][0], 'usage', i[0][1]] = i[1]
+    cb.sort_index(inplace=True)
+    return cb
+
+
+def check_conversion_balance(years, path=None):
+    """
+    Checks the balance of the conversion balance. If the difference is greater
+    than 5 the name of the region and the difference will be printed. If a path
+    is given wrong balances will be stored as an excel sheet in this path. One
+    excel table for each year will be created.
+
+    Parameters
+    ----------
+    years : list
+        List of years to check.
+    path : str
+        A directory where the regions
+
+    Examples
+    --------
+    >>> check_conversion_balance([2014])
+    2014 - BB: 460589
+    2014 - BW: 706972
+    2014 - BY: 2288252
+    2014 - MV: 19242
+    2014 - NI: 705997
+    2014 - SH: 377561
+    2014 - ST: 51495
+    """
+    for year in years:
+        cb = get_conversion_balance(year)
+        cb_orig = None
+        writer = None
+        fn = None
+        if path is not None:
+            cb_orig = cb.copy()
+            fn = os.path.join(path, 'check_{0}.xls'.format(year))
+            writer = pd.ExcelWriter(fn)
+        total = cb.pop('total')
+        for region in cb.index.get_level_values(0).unique():
+            value = (cb.loc[region].sum(axis=1) - total.loc[region]).sum()
+            if abs(value) > 5:
+                if path is not None:
+                    cb_orig.loc[region].to_excel(writer, region)
+                else:
+                    print('{0} - {1}: {2}'.format(
+                        year, region, int(abs(value))))
+        if path is not None:
+            writer.save()
+            logging.info("File saved to {0}".format(fn))
+
+
+def get_conversion_balance_by_region(year, regions, name='region'):
+    """
+    Get the conversion part of the energy balance for a given region set. The
+    values will be recalculated by the number of inhabitants.
+
+    Parameters
+    ----------
+    year : int
+    regions : geopandas.geoDataFrame
+    name : str
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    Examples
+    --------
+    >>> cb_orig = get_conversion_balance(2014)
     >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     'region_polygons_de21_vg.csv')
     >>> cb = get_conversion_balance_by_region(2014, regions, 'de21')
-    >>> int(cb.sum()['electricity'])
-    6948288
+    >>> int(cb.sum()['electricity']) == int(cb_orig.sum()['electricity'])
+    True
     """
-
     cb = get_conversion_balance(year)
     # create empty DataFrame to take the conversion balance for the regions
     my_index = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []])
@@ -427,8 +601,11 @@ def get_conversion_balance_by_region(year, regions, name='region'):
                 share = ew.loc[region, state]
                 cb_new.loc[region, idx[0], idx[1]] += (
                     cb.loc[state, idx[0], idx[1]] * float(share))
+
     return cb_new
 
 
 if __name__ == "__main__":
-    logger.define_logging()
+    logger.define_logging(screen_level=logging.DEBUG)
+    print(get_states_balance(2014, grouped=True).loc['BB'].sort_index().sum())
+    print(get_usage_balance(2014, grouped=True).loc['BB'].sort_index().sum())

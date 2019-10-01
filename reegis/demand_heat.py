@@ -45,7 +45,7 @@ def heat_demand(year):
     -------
     pandas.DataFrame
     """
-    eb = reegis.energy_balance.get_states_balance(year)
+    eb = reegis.energy_balance.get_usage_balance(year)
     eb.sort_index(inplace=True)
 
     # get fraction of domestic and retail from the german energy balance

@@ -434,7 +434,7 @@ def calculate_chp_share_and_efficiency(eb):
     heat plants (hp) from conversion balance."""
     row_chp = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
     row_hp = 'Heizwerke'
-    row_total = 'Umwandlungsausstoß insgesamt'
+    row_total = 'Insgesamt'
 
     regions = list(eb.index.get_level_values(0).unique())
     eta = {}
