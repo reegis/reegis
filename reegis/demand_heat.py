@@ -247,9 +247,9 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
     6017.1
     >>> hp_MWh = hp.div(0.0036)
     >>> round(hp_MWh.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
-    1671392.1
+    1671427.4
     >>> round(hp.sum().sum(), 1)
-    272727.7
+    272750.6
     """
 
     if weather_year is None:
