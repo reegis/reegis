@@ -242,9 +242,9 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
     >>> hp = get_heat_profiles_by_federal_state(2014, state=['BE', 'BB'],
     ...                                 to_csv=fn)
     >>> round(hp.groupby(level=[0], axis=1).sum().sum().loc['BE'], 1)
-    112950.7
+    112945.1
     >>> round(hp.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
-    6017.0
+    6017.1
     >>> hp_MWh = hp.div(0.0036)
     >>> round(hp_MWh.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
     1671392.1
