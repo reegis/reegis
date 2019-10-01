@@ -332,7 +332,7 @@ def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
     ...     'region_polygons_de21_vg.csv')
     >>> hp1 = get_heat_profiles_by_region(2014, regions, from_csv=fn)
     >>> round(hp1.sum().sum(), 1)
-    272727.7
+    272750.6
     """
     if weather_year is None:
         weather_year = year
