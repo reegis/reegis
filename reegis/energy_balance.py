@@ -24,274 +24,50 @@ from oemof.tools import logger
 import reegis.config as cfg
 from reegis import inhabitants
 from reegis import geometries
-
-
-def check_balance(orig, ebfile):
-    logging.info('Analyse the energy balances')
-
-    years = [2012, 2013, 2014]
-    # energy balance
-    file_type = ebfile.split('.')[1]
-    if file_type == 'xlsx' or file_type == 'xls':
-        eb = pd.read_excel(ebfile, index_col=[0, 1, 2]).fillna(0)
-    elif file_type == 'csv':
-        eb = pd.read_csv(ebfile, index_col=[0, 1, 2]).fillna(0)
-    else:
-        logging.error('.{0} is an invalid suffix.'.format(file_type))
-        logging.error('Cannot load {0}'.format(ebfile))
-        eb = None
-        exit(0)
-    eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
-    eb.sort_index(0, inplace=True)
-    eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
-    eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
-
-    # sum table (fuel)
-    ftfile = os.path.join(cfg.get('paths', 'static_sources'),
-                          'sum_table_fuel_groups.csv')
-    ft = pd.read_csv(ftfile)
-    states = cfg.get_dict('STATES')
-    ft['Bundesland'] = ft['Bundesland'].apply(lambda x: states[x])
-    ft.set_index(['Jahr', 'Bundesland'], inplace=True)
-    ft.rename(columns=cfg.get_dict('SUM_COLUMNS'), inplace=True)
-    ft.sort_index(inplace=True)
-
-    # sum table (sector)
-    stfile = os.path.join(cfg.get('paths', 'static_sources'),
-                          'sum_table_sectors.csv')
-
-    st = pd.read_csv(stfile)
-    st['Bundesland'] = st['Bundesland'].apply(lambda x: states[x])
-    st.set_index(['Jahr', 'Bundesland'], inplace=True)
-    st.rename(columns=cfg.get_dict('SECTOR_SHORT'), inplace=True)
-    st.sort_index(inplace=True)
-    del st['Anm.']
-
-    if orig:
-        outfile = os.path.join(cfg.get('paths', 'messages'),
-                               'energy_balance_check_original.xlsx')
-    else:
-        outfile = os.path.join(cfg.get('paths', 'messages'),
-                               'energy_balance_check_edited.xlsx')
-
-    writer = pd.ExcelWriter(outfile)
-
-    for year in years:
-        # Compare sum of fuel groups with LAK-table
-        endenergie_check = pd.DataFrame()
-        for col in ft.columns:
-            ft_piece = ft.loc[(year, slice(None)), col]
-            ft_piece.index = ft_piece.index.droplevel([0])
-            ft_piece = ft_piece.apply(lambda x: pd.to_numeric(x,
-                                                              errors='coerce'))
-            try:
-                eb_piece = eb.loc[(year, slice(None), 'Endenergieverbrauch'),
-                                  col]
-            except KeyError:
-                eb_piece = eb.loc[(year, slice(None), 'total'), col]
-            eb_piece.index = eb_piece.index.droplevel([0, 2])
-            endenergie_check[col] = ft_piece-eb_piece.round()
-
-        endenergie_check['check'] = (endenergie_check.sum(1) -
-                                     2 * endenergie_check['total'])
-        endenergie_check.loc['all'] = endenergie_check.sum()
-        endenergie_check.to_excel(writer, 'fuel_groups_{0}'.format(year),
-                                  freeze_panes=(1, 1))
-
-        # Compare subtotal of transport, industrial and domestic and retail
-        # with the total of end-energy
-        endenergie_summe = pd.DataFrame()
-
-        if orig:
-            main_cat = [
-                'Haushalte, Gewerbe, Handel, Dienstleistungen,'
-                ' übrige Verbraucher', 'Verkehr insgesamt',
-                'Gewinngung und verarbeitendes Gewerbe']
-            total = 'Endenergieverbrauch'
-        else:
-            main_cat = [
-                    'domestic and retail', 'transport',
-                    'industrial']
-            total = 'total'
-        for state in eb.index.get_level_values(1).unique():
-            try:
-                tmp = pd.DataFrame()
-                n = 0
-                for idx in main_cat:
-                    n += 1
-                    tmp[state, n] = eb.loc[year, state, idx]
-                tmp = (tmp.sum(1) - eb.loc[year, state, total]
-                       ).round()
-
-                endenergie_summe[state] = tmp
-            except KeyError:
-                endenergie_summe[state] = None
-        endenergie_summe.transpose().to_excel(
-            writer, 'internal sum check {0}'.format(year), freeze_panes=(1, 1))
-
-        # Compare sum of sector groups with LAK-table
-        eb_fuel = (eb[['hard coal',  'lignite',  'oil',  'gas', 're',
-                       'electricity', 'district heating', 'other']])
-
-        eb_fuel = eb_fuel.sum(1)
-        eb_sector = eb_fuel.round().unstack()
-        eb_sector.rename(columns=cfg.get_dict('SECTOR_SHORT'), inplace=True)
-        eb_sector.rename(columns=cfg.get_dict('SECTOR_SHORT_EN'), inplace=True)
-        try:
-            del eb_sector['ghd']
-            del eb_sector['dom']
-        except KeyError:
-            del eb_sector['retail']
-            del eb_sector['domestic']
-        eb_sector = eb_sector.sort_index(1).loc[year]
-
-        st_year = st.sort_index(1).loc[year]
-        st_year.index = st_year.index
-        st_year = st_year.apply(
-            lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
-        (eb_sector.astype(int) - st_year.astype(int)).to_excel(
-            writer, 'sector_groups_{0}'.format(year), freeze_panes=(1, 1))
-
-        # Compare the sum of the columns with the "total" column.
-        sum_check_hrz = pd.DataFrame()
-        for row in eb.index.get_level_values(2).unique():
-            eb.sort_index(0, inplace=True)
-            summe = (eb.loc[(year, slice(None), row)]).sum(1)
-            ges = (eb.loc[(year, slice(None), row), 'total'])
-
-            tmp_check = round(summe - 2 * ges)
-            tmp_check.index = tmp_check.index.droplevel(0)
-            tmp_check.index = tmp_check.index.droplevel(1)
-            sum_check_hrz[row] = tmp_check
-        sum_check_hrz.to_excel(
-                writer, 'sum_check_hrz_{0}'.format(year), freeze_panes=(1, 1))
-
-        # Check states
-        for state, abr in states.items():
-            if abr not in eb.loc[year].index.get_level_values(0).unique():
-                logging.warning(
-                    '{0} ({1}) not present in the {2} balance.'.format(
-                        state, abr, year))
-
-    writer.save()
-
-
-def edit_balance():
-    """Fixes the energy balances after analysing them. This is done manually.
-    """
-
-    # Read energy balance table
-    ebfile = os.path.join(cfg.get('paths', 'static_sources'),
-                          cfg.get('energy_balance', 'energiebilanzen_laender'))
-    eb = pd.read_csv(ebfile, index_col=[0, 1, 2]).fillna(0)
-    eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
-    eb.sort_index(0, inplace=True)
-    eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
-
-    new_index_values = list()
-    sector = cfg.get_dict('SECTOR_OLD')
-    for value in eb.index.get_level_values(2):
-        new_index_values.append(sector[value])
-    eb.index.set_levels(new_index_values[:10], level=2, inplace=True)
-
-    # ************************************************************************
-    # Bavaria (Bayern) - Missing coal values
-    # Difference between fuel sum and LAK table
-    missing = {2012: 10529, 2013: 8995, 2014: 9398}
-    for y in [2012, 2013, 2014]:
-        fix = missing[y]
-        # the missing value is added to 'hard coal raw' even though it is not
-        # specified which hard coal product is missing.
-        eb.loc[(y, 'BY', 'total'), 'hard coal (raw)'] = fix
-
-        # There is a small amount specified in the 'domestic and retail'
-        # sector.
-        dom_retail = eb.loc[(y, 'BY', 'domestic and retail'),
-                            'hard coal (raw)']
-
-        # The rest of the total hard coal consumption comes from the industrial
-        # sector.
-        eb.loc[(y, 'BY', 'industrial'), 'hard coal (raw)'] = fix - dom_retail
-
-    # ************************************************************************
-    # Berlin (Berlin) - corrected values for domestic gas and electricity
-    # In new publications (e.g. LAK table) these values have changed. The newer
-    # values will be used.
-    electricity = {2012: 9150, 2013: 7095}
-    gas = {2012: -27883, 2013: -13317}
-    total = {2012: -18733, 2013: -6223}
-    for row in ['total', 'domestic and retail', 'retail']:
-        for y in [2012, 2013]:
-            eb.loc[(y, 'BE', row), 'electricity'] += electricity[y]
-            eb.loc[(y, 'BE', row), 'natural gas'] += gas[y]
-            eb.loc[(y, 'BE', row), 'total'] += total[y]
-
-    # ************************************************************************
-    # Saxony-Anhalt (Sachsen Anhalt) - missing values for hard coal, oil and
-    # other depending on the year. Due to a lack of information the difference
-    # will be halved between the sectors.
-    missing = {2012: 5233, 2013: 4396, 2014: 3048}
-
-    y = 2012
-    fix = missing[y]
-    # the missing value is added to 'hard coal raw' even though it is not
-    # specified which hard coal product is missing.
-    eb.loc[(y, 'ST', 'industrial'), 'waste (fossil)'] += fix / 2
-    eb.loc[(y, 'ST', 'industrial'), 'hard coal (raw)'] += fix / 2
-
-    # There is a small amount specified in the 'domestic and retail' sector.
-    dom_retail_hc = eb.loc[(y, 'ST', 'domestic and retail'), 'hard coal (raw)']
-
-    # The rest of the total hard coal consumption comes from the industrial
-    # sector.
-    eb.loc[(y, 'ST', 'total'), 'waste (fossil)'] += fix / 2
-    eb.loc[(y, 'ST', 'total'), 'hard coal (raw)'] += fix / 2 + dom_retail_hc
-
-    y = 2013
-    fix = missing[y]
-    # the missing value is added to 'hard coal raw' even though it is not
-    # specified which hard coal product is missing.
-    eb.loc[(y, 'ST', 'industrial'), 'mineral oil products'] += fix / 2
-    eb.loc[(y, 'ST', 'industrial'), 'hard coal (raw)'] += fix / 2
-
-    # There is a small amount specified in the 'domestic and retail' sector.
-    dom_retail_hc = eb.loc[(y, 'ST', 'domestic and retail'), 'hard coal (raw)']
-    dom_retail_oil = eb.loc[(y, 'ST', 'domestic and retail'),
-                            'mineral oil products']
-    # The rest of the total hard coal consumption comes from the industrial
-    # sector.
-    eb.loc[(y, 'ST', 'total'), 'mineral oil products'] += fix / 2 + (
-        dom_retail_oil)
-    eb.loc[(y, 'ST', 'total'), 'hard coal (raw)'] += fix / 2 + dom_retail_hc
-
-    y = 2014
-    fix = missing[y]
-    # the missing value is added to 'hard coal raw' even though it is not
-    # specified which hard coal product is missing.
-    eb.loc[(y, 'ST', 'industrial'), 'mineral oil products'] += fix / 2
-    eb.loc[(y, 'ST', 'industrial'), 'hard coal (coke)'] += fix / 2
-
-    # There is a small amount specified in the 'domestic and retail' sector.
-    dom_retail = eb.loc[(y, 'ST', 'domestic and retail'),
-                        'mineral oil products']
-
-    # The rest of the total hard coal consumption comes from the industrial
-    # sector.
-    eb.loc[(y, 'ST', 'total'), 'mineral oil products'] += fix / 2 + dom_retail
-    eb.loc[(y, 'ST', 'total'), 'hard coal (coke)'] += fix / 2
-
-    # ************************************************************************
-    # Write results to table
-    fname = os.path.join(cfg.get('paths', 'energy_balance'),
-                         cfg.get('energy_balance', 'energy_balance_edited'))
-    eb.to_csv(fname)
-    return fname
+from reegis import tools
+import requests
 
 
 def get_de_balance(year=None, grouped=False):
-    fname_de = os.path.join(
+
+    base_url = "https://ag-energiebilanzen.de/index.php?"
+    url_xls = "article_id=29&fileName=bilanz{0}d.xls".format(str(year)[-2:])
+    url_xlsx = "article_id=29&fileName=bilanz{0}d.xlsx".format(str(year)[-2:])
+    url = base_url + url_xls
+    req = requests.get(url)
+
+    if int(req.headers['Content-length']) > 0:
+        fn_de = os.path.join(
+            cfg.get('paths', 'energy_balance'),
+            cfg.get('energy_balance', 'energy_balance_de_original')
+        ).format(year=year, suffix='xls')
+        with open(fn_de, 'wb') as fout:
+            fout.write(req.content)
+    else:
+        url = base_url + url_xlsx
+        req = requests.get(url)
+        if int(req.headers['Content-length']) > 0:
+            fn_de = os.path.join(
+                cfg.get('paths', 'energy_balance'),
+                cfg.get('energy_balance', 'energy_balance_de_original')
+            ).format(year=year, suffix='xlsx')
+            with open(fn_de, 'wb') as fout:
+                fout.write(req.content)
+        else:
+            raise ValueError("No file received. Check url.")
+    fn_h = os.path.join(
         cfg.get('paths', 'static_sources'),
-        cfg.get('energy_balance', 'energy_balance_de_original'))
+        'energy_balance_header_germany.csv')
+    head = pd.read_csv(fn_h, header=[0]).columns
+    print(head)
+    df = pd.read_excel(fn_de, 'tj', index_col=[0], skiprows=6)
+    df.columns = head[1:]
+    df['Braunkohle (sonstige)'] += df['Hartbraunkohle']
+    df.drop(['Hartbraunkohle', 'primär (gesamt)', 'sekundär (gesamt)', 'Row'],
+            axis=1, inplace=True)
+    df = df.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'))
+    print(df.columns)
+    exit(0)
     deb = pd.read_csv(fname_de, index_col=[0, 1, 2]).fillna(0)
     deb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
     deb.sort_index(0, inplace=True)
@@ -327,94 +103,7 @@ def get_domestic_retail_share(year, grouped=False):
     return share
 
 
-def get_states_balance(year=None, grouped=False, overwrite=False):
-    fname = os.path.join(cfg.get('paths', 'energy_balance'),
-                         cfg.get('energy_balance', 'energy_balance_edited'))
-    if not os.path.isfile(fname) or overwrite:
-        edit_balance()
-    eb = pd.read_csv(fname, index_col=[0, 1, 2])
-    if grouped:
-        eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
-    eb.index = eb.index.set_names(['year', 'state', 'sector'])
-
-    if year is not None:
-        eb = eb.loc[year]
-
-    return eb
-
-
-def get_usage_balance(year, grouped=False):
-    """
-    GEt the usage part of the energy balance.
-
-    Parameters
-    ----------
-    year : int
-        Year of the energy balance.
-    grouped : bool
-        If set to True the fuels will be grouped to main groups like hard coal
-        or lignite.
-
-    Returns
-    -------
-    pandas.DataFrame
-
-    Examples
-    --------
-    >>> get_usage_balance(2014, grouped=True).loc['BB']['electricity']['total']
-    58640.4972
-    """
-    eb = get_energy_balance(year)
-    eb = eb.loc[
-        (slice(None), list(cfg.get_dict('SECTOR').keys())), slice(None)]
-    eb = eb.rename(index=cfg.get_dict('SECTOR'), level=1)
-    if grouped:
-        eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
-    return eb
-
-
-def fix_states(year, eb):
-    """This is a fix after a manual analysis of the energy balances."""
-    # *********** BB ********************************************************
-    # BB: Total input calculated by total output
-    # BB: Gas input calculated by total input - sum input without gas.
-    eb.loc[year, 'BB', 'input', 'Heizwerke']['total'] = (
-        eb.loc[year, 'BB', 'output', 'Heizwerke']['total'] * 0.9
-    )
-    total = eb.loc[year, 'BB', 'input', 'Heizwerke']['total']
-    eb.loc[year, 'BB', 'input', 'Heizwerke']['gas'] = (
-            total - eb.loc[year, 'BB', 'input', 'Heizwerke'].sum() + total)
-
-    # *********** BY ********************************************************
-    # BY: The missing fuel for CHP is assumed to be hard coal.
-    kwk_row = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
-    total = eb.loc[year, 'BY', 'input', kwk_row]['total']
-    eb.loc[year, 'BY', 'input', kwk_row]['hard coal'] = (
-        total - eb.loc[year, 'BY', 'input', kwk_row].sum() + total)
-
-    # BY: The missing fuel for heat plants is assumed to be natural gas.
-    total = eb.loc[year, 'BY', 'input', 'Heizwerke']['total']
-    eb.loc[year, 'BY', 'input', 'Heizwerke']['gas'] = (
-            total - eb.loc[year, 'BY', 'input', 'Heizwerke'].sum() + total)
-    return eb
-
-
-def get_conversion_balance_old(year):
-    """ DEPRECATED! """
-    fn = os.path.join(
-        cfg.get('paths', 'static_sources'),
-        cfg.get('energy_balance', 'energy_balance_states_conversion'))
-
-    eb = pd.read_csv(fn, index_col=[0, 1, 2, 3])
-    eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
-    eb.sort_index(0, inplace=True)
-    eb = eb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
-    eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
-    eb = fix_states(year, eb).loc[year]
-    return eb
-
-
-def get_energy_balance(year):
+def get_states_energy_balance(year):
     """
     Get the energy balance for a given year. The input file is the csv-file
     downloaded from:
@@ -464,6 +153,154 @@ def get_energy_balance(year):
     return eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'))
 
 
+def get_usage_balance(year, grouped=False):
+    """
+    GEt the usage part of the energy balance.
+
+    Parameters
+    ----------
+    year : int
+        Year of the energy balance.
+    grouped : bool
+        If set to True the fuels will be grouped to main groups like hard coal
+        or lignite.
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    Examples
+    --------
+    >>> year = 2013
+    >>> cb = get_usage_balance(year)
+    >>> total = cb.pop('total')
+    >>> int((cb.loc['BE'].sum(axis=1) - total.loc['BE']).sum())
+    0
+    >>> int((cb.loc['ST'].sum(axis=1) - total.loc['ST']).sum())
+    -8952
+    >>> int((cb.loc['BY'].sum(axis=1) - total.loc['BY']).sum())
+    -17731
+    >>> cb = get_usage_balance(year)
+    >>> cb = fix_usage_balance(cb, year)
+    >>> total = cb.pop('total')
+    >>> int((cb.loc['BE'].sum(axis=1) - total.loc['BE']).sum())
+    0
+    >>> int((cb.loc['ST'].sum(axis=1) - total.loc['ST']).sum())
+    0
+    >>> int((cb.loc['BY'].sum(axis=1) - total.loc['BY']).sum())
+    0
+    """
+    eb = get_states_energy_balance(year)
+    eb = eb.loc[
+        (slice(None), list(cfg.get_dict('SECTOR').keys())), slice(None)]
+    eb = eb.rename(index=cfg.get_dict('SECTOR'), level=1)
+    if grouped:
+        eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
+    return eb
+
+
+def fix_usage_balance(eb, year):
+    """
+    Fixes the energy balances after analysing them. This is done manually.
+    """
+    if year not in [2012, 2013, 2014]:
+        raise ValueError("You cannot edit the balance for year {0}".format(
+            year))
+    # ******************************************************************
+    # Bavaria (Bayern) - Missing coal values
+    # Difference between fuel sum and LAK table
+    missing = {2012: 10529, 2013: 8995, 2014: 9398}
+
+    fix = missing[year]
+    # the missing value is added to 'hard coal raw' even though it is not
+    # specified which hard coal product is missing.
+    eb.loc[('BY', 'total'), 'hard coal (raw)'] = fix
+
+    # There is a small amount specified in the 'domestic and retail'
+    # sector.
+    dom_retail = eb.loc[('BY', 'domestic and retail'),
+                        'hard coal (raw)']
+
+    # The rest of the total hard coal consumption comes from the industrial
+    # sector.
+    eb.loc[('BY', 'industrial'), 'hard coal (raw)'] = fix - dom_retail
+
+    # ******************************************************************
+    # Berlin (Berlin) - corrected values for domestic gas and electricity
+    # In new publications (e.g. LAK table) these values have changed. The newer
+    # values will be used.
+    if year == 2013 or year == 2012:
+        electricity = {2012: 9150, 2013: 7095}
+        gas = {2012: -27883, 2013: -13317}
+        total = {2012: -18733, 2013: -6222}
+        for row in ['total', 'domestic and retail', 'retail']:
+            eb.loc[('BE', row), 'electricity'] += electricity[year]
+            eb.loc[('BE', row), 'natural gas'] += gas[year]
+            eb.loc[('BE', row), 'total'] += total[year]
+
+    # ******************************************************************
+    # Saxony-Anhalt (Sachsen Anhalt) - missing values for hard coal, oil and
+    # other depending on the year. Due to a lack of information the
+    # difference
+    # will be halved between the sectors.
+    missing = {2012: 5233, 2013: 4396, 2014: 3048}
+
+    if year == 2012:
+        fix = missing[year]
+        # the missing value is added to 'hard coal raw' even though it is not
+        # specified which hard coal product is missing.
+        eb.loc[('ST', 'industrial'), 'other'] += fix / 2
+        eb.loc[('ST', 'industrial'), 'hard coal (raw)'] += fix / 2
+
+        # There is a small amount specified in the 'domestic and retail'
+        # sector.
+        dom_retail_hc = eb.loc[('ST', 'domestic and retail'),
+                               'hard coal (raw)']
+
+        # The rest of the total hard coal consumption comes from the industrial
+        # sector.
+        eb.loc[('ST', 'total'), 'other'] += fix / 2
+        eb.loc[('ST', 'total'), 'hard coal (raw)'] += fix / 2 + dom_retail_hc
+
+    if year == 2013:
+        fix = missing[year]
+        # the missing value is added to 'hard coal raw' even though it is not
+        # specified which hard coal product is missing.
+        eb.loc[('ST', 'industrial'), 'mineral oil products'] += fix / 2
+        eb.loc[('ST', 'industrial'), 'hard coal (raw)'] += fix / 2
+
+        # There is a small amount specified in the 'domestic and retail'
+        # sector.
+        dom_retail_hc = eb.loc[('ST', 'domestic and retail'),
+                               'hard coal (raw)']
+        dom_retail_oil = eb.loc[('ST', 'domestic and retail'),
+                                'mineral oil products']
+        # The rest of the total hard coal consumption comes from the industrial
+        # sector.
+        eb.loc[('ST', 'total'), 'mineral oil products'] += fix / 2 + (
+            dom_retail_oil)
+        eb.loc[('ST', 'total'), 'hard coal (raw)'] += fix / 2 + dom_retail_hc
+
+    if year == 2014:
+        fix = missing[year]
+        # the missing value is added to 'hard coal raw' even though it is not
+        # specified which hard coal product is missing.
+        eb.loc[('ST', 'industrial'), 'mineral oil products'] += fix / 2
+        eb.loc[('ST', 'industrial'), 'hard coal (coke)'] += fix / 2
+
+        # There is a small amount specified in the 'domestic and retail'
+        # sector.
+        dom_retail = eb.loc[('ST', 'domestic and retail'),
+                            'mineral oil products']
+
+        # The rest of the total hard coal consumption comes from the industrial
+        # sector.
+        eb.loc[('ST', 'total'), 'mineral oil products'] += fix / 2 + dom_retail
+        eb.loc[('ST', 'total'), 'hard coal (coke)'] += fix / 2
+
+    return eb
+
+
 def get_conversion_balance(year):
     """
     Reshape the energy balance and return the conversion part as a MultiIndex
@@ -479,12 +316,15 @@ def get_conversion_balance(year):
 
     Examples
     --------
-    >>> cb = get_conversion_balance(2014)
-    >>> total = cb.pop('total')
-    >>> int((cb.loc['BE'].sum(axis=1) - total.loc['BE']).sum())
+    >>> year = 2014
+    >>> ub = get_conversion_balance(year)
+    >>> int(ub.loc[('BB', 'input', 'Heizwerke'), 'total'])
     0
+    >>> ub = fix_conversion_balance(ub)
+    >>> int(ub.loc[('BB', 'input', 'Heizwerke'), 'total'])
+    5347
     """
-    eb = get_energy_balance(year)
+    eb = get_states_energy_balance(year)
     eb = eb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
     my_index = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []])
     cb = pd.DataFrame(index=my_index, columns=eb.columns)
@@ -506,7 +346,7 @@ def get_conversion_balance(year):
     return cb
 
 
-def check_conversion_balance(years, path=None):
+def check_conversion_balance(years=None, balance=None, path=None):
     """
     Checks the balance of the conversion balance. If the difference is greater
     than 5 the name of the region and the difference will be printed. If a path
@@ -530,14 +370,24 @@ def check_conversion_balance(years, path=None):
     2014 - NI: 705997
     2014 - SH: 377561
     2014 - ST: 51495
+
     """
-    for year in years:
-        cb = get_conversion_balance(year)
+    if balance is not None:
+        years = ['none']
+        cb = balance
+        cb_orig = cb.copy()
+    else:
+        cb = None
         cb_orig = None
-        writer = None
-        fn = None
-        if path is not None:
+
+    writer = None
+    fn = None
+
+    for year in years:
+        if balance is None:
+            cb = get_conversion_balance(int(year))
             cb_orig = cb.copy()
+        if path is not None:
             fn = os.path.join(path, 'check_{0}.xls'.format(year))
             writer = pd.ExcelWriter(fn)
         total = cb.pop('total')
@@ -552,9 +402,43 @@ def check_conversion_balance(years, path=None):
         if path is not None:
             writer.save()
             logging.info("File saved to {0}".format(fn))
+    if balance is not None:
+        return cb_orig
+    else:
+        return None
 
 
-def get_conversion_balance_by_region(year, regions, name='region'):
+def fix_conversion_balance(eb):
+    """
+    This is a fix after a manual analysis of the energy balances.
+
+    Use with care and check the results.,
+    """
+    # *********** BB ********************************************************
+    # BB: Total input calculated by total output
+    # BB: Gas input calculated by total input - sum input without gas.
+    eb.loc['BB', 'input', 'Heizwerke']['total'] = (
+        eb.loc['BB', 'output', 'Heizwerke']['total'] * 0.9
+    )
+    total = eb.loc['BB', 'input', 'Heizwerke']['total']
+    eb.loc['BB', 'input', 'Heizwerke']['gas'] = (
+            total - eb.loc['BB', 'input', 'Heizwerke'].sum() + total)
+
+    # *********** BY ********************************************************
+    # BY: The missing fuel for CHP is assumed to be hard coal.
+    kwk_row = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
+    total = eb.loc['BY', 'input', kwk_row]['total']
+    eb.loc['BY', 'input', kwk_row]['hard coal'] = (
+        total - eb.loc['BY', 'input', kwk_row].sum() + total)
+
+    # BY: The missing fuel for heat plants is assumed to be natural gas.
+    total = eb.loc['BY', 'input', 'Heizwerke']['total']
+    eb.loc['BY', 'input', 'Heizwerke']['gas'] = (
+            total - eb.loc['BY', 'input', 'Heizwerke'].sum() + total)
+    return eb
+
+
+def get_conversion_balance_by_region(year, regions, name='region', fix=False):
     """
     Get the conversion part of the energy balance for a given region set. The
     values will be recalculated by the number of inhabitants.
@@ -564,6 +448,7 @@ def get_conversion_balance_by_region(year, regions, name='region'):
     year : int
     regions : geopandas.geoDataFrame
     name : str
+    fix : bool
 
     Returns
     -------
@@ -580,6 +465,8 @@ def get_conversion_balance_by_region(year, regions, name='region'):
     True
     """
     cb = get_conversion_balance(year)
+    if fix is True:
+        cb = fix_conversion_balance(cb)
     # create empty DataFrame to take the conversion balance for the regions
     my_index = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []])
     cb_new = pd.DataFrame(index=my_index, columns=cb.columns)
@@ -607,5 +494,6 @@ def get_conversion_balance_by_region(year, regions, name='region'):
 
 if __name__ == "__main__":
     logger.define_logging(screen_level=logging.DEBUG)
-    print(get_states_balance(2014, grouped=True).loc['BB'].sort_index().sum())
-    print(get_usage_balance(2014, grouped=True).loc['BB'].sort_index().sum())
+    year = 2014
+    get_de_balance(year)
+    # print(get_usage_balance(2014, grouped=True).loc['BB'].sort_index().sum())
