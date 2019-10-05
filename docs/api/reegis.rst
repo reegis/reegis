@@ -20,6 +20,14 @@ reegis.coastdat module
     :undoc-members:
     :show-inheritance:
 
+reegis.energy_balance module
+----------------------
+
+.. automodule:: reegis.energy_balance
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 reegis.feedin module
 --------------------
 
