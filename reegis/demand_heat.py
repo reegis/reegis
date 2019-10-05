@@ -240,7 +240,7 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
     --------
     >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
     >>> hp = get_heat_profiles_by_federal_state(2014, state=['BE', 'BB'],
-    ...                                 to_csv=fn)
+    ...                                         to_csv=fn)
     >>> round(hp.groupby(level=[0], axis=1).sum().sum().loc['BE'], 1)
     112945.1
     >>> round(hp.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)

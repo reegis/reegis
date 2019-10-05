@@ -59,15 +59,18 @@ def get_de_balance(year=None, grouped=False):
         cfg.get('paths', 'static_sources'),
         'energy_balance_header_germany.csv')
     head = pd.read_csv(fn_h, header=[0]).columns
-    print(head)
+
     df = pd.read_excel(fn_de, 'tj', index_col=[0], skiprows=6)
     df.columns = head[1:]
     df['Braunkohle (sonstige)'] += df['Hartbraunkohle']
     df.drop(['Hartbraunkohle', 'primär (gesamt)', 'sekundär (gesamt)', 'Row'],
             axis=1, inplace=True)
     df = df.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'))
-    print(df.columns)
-    exit(0)
+    # print(df.columns)
+    # exit(0)
+    fname_de = os.path.join(
+            cfg.get('paths', 'static_sources'),
+            'energybalance_DE_2012_to_2014.csv')
     deb = pd.read_csv(fname_de, index_col=[0, 1, 2]).fillna(0)
     deb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
     deb.sort_index(0, inplace=True)
