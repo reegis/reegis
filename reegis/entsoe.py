@@ -30,7 +30,7 @@ import reegis.config as cfg
 def read_original_timeseries_file(overwrite=False):
     """Read timeseries file if it exists. Otherwise download it from opsd.
     """
-    version = cfg.get('entsoe', 'time_series_version')
+    version = cfg.get('entsoe', 'timeseries_version')
     orig_csv_file = os.path.join(
         cfg.get('paths', 'entsoe'),
         cfg.get('entsoe', 'original_file')).format(version=version)
@@ -74,7 +74,7 @@ def read_original_timeseries_file(overwrite=False):
 
 def prepare_de_file(overwrite=False):
     """Convert demand file. CET index and Germany's load only."""
-    version = cfg.get('entsoe', 'time_series_version')
+    version = cfg.get('entsoe', 'timeseries_version')
     de_file = os.path.join(
         cfg.get('paths', 'entsoe'),
         cfg.get('entsoe', 'de_file').format(version=version))
@@ -89,7 +89,7 @@ def prepare_de_file(overwrite=False):
 
 def split_timeseries_file(overwrite=False, csv=False):
     logging.info("Splitting time series.")
-    version = cfg.get('entsoe', 'time_series_version')
+    version = cfg.get('entsoe', 'timeseries_version')
     path_pattern = os.path.join(cfg.get('paths', 'entsoe'), '{0}')
     de_file = path_pattern.format(cfg.get('entsoe', 'de_file').format(
         version=version))
