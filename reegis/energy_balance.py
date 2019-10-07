@@ -28,8 +28,8 @@ from reegis import tools
 import requests
 
 
-def get_de_balance(year=None, grouped=False):
-
+def get_de_balance(year):
+    """Download and return energy balance of germany for a given year."""
     base_url = "https://ag-energiebilanzen.de/index.php?"
     url_xls = "article_id=29&fileName=bilanz{0}d.xls".format(str(year)[-2:])
     url_xlsx = "article_id=29&fileName=bilanz{0}d.xlsx".format(str(year)[-2:])
@@ -62,40 +62,59 @@ def get_de_balance(year=None, grouped=False):
 
     df = pd.read_excel(fn_de, 'tj', index_col=[0], skiprows=6)
     df.columns = head[1:]
+    return df
+
+
+def get_de_usage_balance(year, grouped=False):
+    """
+
+    Parameters
+    ----------
+    year
+    grouped
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> df = get_de_usage_balance(2015, True)
+    >>> df.loc['total', 'total']
+    8898093
+    """
+    df = get_de_balance(year)
     df['Braunkohle (sonstige)'] += df['Hartbraunkohle']
     df.drop(['Hartbraunkohle', 'primär (gesamt)', 'sekundär (gesamt)', 'Row'],
             axis=1, inplace=True)
     df = df.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'))
-    # print(df.columns)
-    # exit(0)
-    fname_de = os.path.join(
-            cfg.get('paths', 'static_sources'),
-            'energybalance_DE_2012_to_2014.csv')
-    deb = pd.read_csv(fname_de, index_col=[0, 1, 2]).fillna(0)
-    deb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'), inplace=True)
-    deb.sort_index(0, inplace=True)
-    deb = deb.apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(0)
-
-    new_index_values = list()
-    sector = cfg.get_dict('SECTOR_OLD')
-    for value in deb.index.get_level_values(2):
-        new_index_values.append(sector[value])
-    deb.index.set_levels(new_index_values[:10], level=2, inplace=True)
-
+    df = df.rename(cfg.get_dict('SECTOR'))
+    df = df.loc[set(cfg.get_dict('SECTOR_OLD').values())]
     if grouped:
-        deb = deb.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
-    deb.index = deb.index.set_names(['year', 'state', 'sector'])
-    deb.sort_index(0, inplace=True)
-    if year is not None:
-        deb = deb.loc[year]
-    return deb
+        df = df.groupby(by=cfg.get_dict('FUEL_GROUPS'), axis=1).sum()
+    return df
 
 
 def get_domestic_retail_share(year, grouped=False):
-    deb = get_de_balance(year=year, grouped=grouped)
+    """
+
+    Parameters
+    ----------
+    year
+    grouped
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> df = get_domestic_retail_share(2014, True)
+    >>> df.loc['district heating', 'domestic']
+    0.73
+    """
+    deb = get_de_usage_balance(year=year, grouped=grouped)
     deb.sort_index(1, inplace=True)
 
-    deb = deb.groupby(level=[1]).sum()
+    # deb = deb.groupby(level=[1]).sum()
 
     share = pd.DataFrame()
     share['domestic'] = (deb.loc['domestic'] /
@@ -498,5 +517,5 @@ def get_conversion_balance_by_region(year, regions, name='region', fix=False):
 if __name__ == "__main__":
     logger.define_logging(screen_level=logging.DEBUG)
     year = 2014
-    get_de_balance(year)
+    get_de_usage_balance(year)
     # print(get_usage_balance(2014, grouped=True).loc['BB'].sort_index().sum())
