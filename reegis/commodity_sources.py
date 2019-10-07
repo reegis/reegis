@@ -91,6 +91,16 @@ def prices_2014_from_znes(src, force_znes=False):
 
 
 def get_commodity_sources():
+    """
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> get_commodity_sources().loc[2014, 'hard coal']['emission'] * 1000
+    0.0934
+    """
     logging.info("Get prices and emissions for commodity sources.")
     commodity_sources = initialise_commodity_sources()
     commodity_sources = prices_from_bmwi_energiedaten(commodity_sources)
