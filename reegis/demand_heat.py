@@ -65,9 +65,14 @@ def heat_demand(year):
                      eb.loc[(state, 'domestic and retail'), col]).round()
             if check < 0:
                 for sector in ['domestic', 'retail']:
-                    eb.loc[(state, sector), col] = (
-                        eb.loc[(state, 'domestic and retail'), col] *
-                        share.loc[col, sector])
+                    try:
+                        eb.loc[(state, sector), col] = (
+                            eb.loc[(state, 'domestic and retail'), col] *
+                            share.loc[col, sector])
+                    except KeyError:
+                        eb.loc[(state, sector), col] = (
+                            eb.loc[(state, 'domestic and retail'), col] *
+                            0.5)
 
                 check = (eb.loc[(state, 'domestic'), col] +
                          eb.loc[(state, 'retail'), col] -
