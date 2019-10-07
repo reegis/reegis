@@ -25,109 +25,6 @@ from shapely.geometry.base import BaseGeometry
 from reegis import config as cfg
 
 
-class Geometry:
-    """Reegis geometry class.
-
-    Attributes
-    ----------
-    name : str
-    df = pandas.DataFrame
-    gdf = geopandas.GeoDataFrame
-    invalid = pandas.Dataframe
-    lon_column : str
-    lat_column :str
-
-    """
-    def __init__(self, name='no_name', df=None):
-        msg = "The Geometry class will be removed. Use the geometry functions."
-        warnings.warn(msg, FutureWarning)
-        self.name = name
-        self.df = df
-        self.gdf = None
-        self.invalid = None
-        self.lon_column = 'lon'
-        self.lat_column = 'lat'
-
-    def load(self, path=None, filename=None, fullname=None, hdf_key=None,
-             index_col=None):
-        """Load csv-file into a DataFrame and a GeoDataFrame."""
-        if fullname is None:
-            fullname = os.path.join(path, filename)
-
-        if fullname[-4:] == '.csv':
-            self.load_csv(fullname=fullname, index_col=index_col)
-
-        elif fullname[-4:] == '.hdf':
-            self.load_hdf(fullname=fullname, key=hdf_key)
-
-        elif fullname[-4:] == '.shp':
-            self.load_shp(fullname=fullname)
-
-        else:
-            raise ValueError("Cannot load file with a '{0}' extension.")
-
-        self.create_geo_df()
-        return self
-
-    def load_shp(self, path=None, filename=None, fullname=None):
-        if fullname is None:
-            fullname = os.path.join(path, filename)
-        self.df = gpd.read_file(fullname)
-
-    def load_hdf(self, path=None, filename=None, fullname=None, key=None):
-        if fullname is None:
-            fullname = os.path.join(path, filename)
-        self.df = pd.read_hdf(fullname, key, mode='r')
-
-    def load_csv(self, path=None, filename=None, fullname=None,
-                 index_col=None):
-        """Load csv-file into a DataFrame."""
-        if fullname is None:
-            fullname = os.path.join(path, filename)
-        self.df = pd.read_csv(fullname)
-
-        # Make the first column the index if all values are unique.
-        if index_col is None:
-            first_col = self.df.columns[0]
-            if not any(self.df[first_col].duplicated()):
-                self.df.set_index(first_col, drop=True, inplace=True)
-        else:
-            self.df.set_index(index_col, drop=True, inplace=True)
-
-    def lat_lon2point(self, df):
-        """Create shapely point object of latitude and longitude."""
-        return Point(df[self.lon_column], df[self.lat_column])
-
-    def create_geo_df(self, wkt_column=None, keep_wkt=False,
-                      lon_col=None, lat_col=None, update=False):
-        """Convert pandas.DataFrame to geopandas.geoDataFrame"""
-        if 'geom' in self.df:
-            self.df = self.df.rename(columns={'geom': 'geometry'})
-        if lon_col is not None:
-            self.lon_column = lon_col
-        if lat_col is not None:
-            self.lat_column = lat_col
-        if wkt_column is not None:
-            self.df['geometry'] = self.df[wkt_column].apply(wkt_loads)
-            if not keep_wkt and wkt_column != 'geometry':
-                del self.df[wkt_column]
-        elif ('geometry' not in self.df and self.lon_column in self.df and
-                self.lat_column in self.df):
-            self.df['geometry'] = self.df.apply(self.lat_lon2point, axis=1)
-        elif isinstance(self.df.iloc[0]['geometry'], str):
-            self.df['geometry'] = self.df['geometry'].apply(wkt_loads)
-        # else:
-            # msg = "Could not create GeoDataFrame {0}. Missing geometries."
-            # logging.error(msg.format(self.name))
-            # return None
-        if self.gdf is None or update:
-            self.gdf = gpd.GeoDataFrame(self.df, crs={'init': 'epsg:4326'},
-                                        geometry='geometry')
-            logging.info("GeoDataFrame for {0} created.".format(self.name))
-        self.df = None
-        return self
-
-
 def get_federal_states_polygon():
     federal_states = load(
         cfg.get('paths', 'geometry'),
@@ -268,9 +165,9 @@ def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,
 
     Parameters
     ----------
-    geo1 : reegis.geometries.Geometry or geopandas.geoDataFrame
+    geo1 : geopandas.geoDataFrame
         Point layer.
-    geo2 : reegis.geometries.Geometry or geopandas.geoDataFrame
+    geo2 : geopandas.geoDataFrame
         Polygon layer.
     jcol : str
     name : str
@@ -287,12 +184,6 @@ def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,
         jcol = 'index_right'
 
     logging.info("Doing spatial join...")
-
-    if isinstance(geo1, Geometry):
-        geo1 = geo1.gdf
-
-    if isinstance(geo2, Geometry):
-        geo2 = geo2.gdf
 
     # Spatial (left) join with the "within" operation.
     jgdf = gpd.sjoin(geo1, geo2, how='left', op='within')
