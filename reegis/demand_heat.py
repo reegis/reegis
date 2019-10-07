@@ -37,6 +37,10 @@ def heat_demand(year):
     """
     Fetch heat demand per sector from the federal states energy balances.
 
+    If the share between domestic and retail does not exist the share from
+    the german balance is used. If this value also not exists a default
+    share of 0.5 is used.
+
     Parameters
     ----------
     year
@@ -44,6 +48,12 @@ def heat_demand(year):
     Returns
     -------
     pandas.DataFrame
+
+    Examples
+    --------
+    >>> hd = heat_demand(2014)
+    >>> hd.loc[('MV', 'domestic'), 'district heating']
+    5151.5
     """
     eb = reegis.energy_balance.get_usage_balance(year)
     eb.sort_index(inplace=True)
