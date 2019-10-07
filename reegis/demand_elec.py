@@ -39,6 +39,10 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
     Returns
     -------
 
+    Examples
+    --------
+    >>> int(get_electricity_profile_by_federal_states(2014)['BE'].sum())
+    11249139
     """
     logging.debug("Get entsoe profile {0} for {1}".format(name, year))
     de_load_profile = entsoe.get_entsoe_load(2014).DE_load_
@@ -63,7 +67,17 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
     return load_profile
 
 
-def get_electricity_profile_by_federal_states(year, profile=entsoe):
+def get_electricity_profile_by_federal_states(year):
+    """
+
+    Parameters
+    ----------
+    year
+
+    Returns
+    -------
+
+    """
     federal_states = geometries.load(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
@@ -73,4 +87,3 @@ def get_electricity_profile_by_federal_states(year, profile=entsoe):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    print(get_electricity_profile_by_federal_states(2014)['BE'])
