@@ -193,25 +193,6 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
     return filename_out
 
 
-def add_capacity_by_year(year, pp=None, filename=None, key='pp'):
-    if pp is None:
-        pp = pd.read_hdf(filename, key, mode='r')
-    
-    filter_cap_col = 'capacity_{0}'.format(year)
-
-    # Get all powerplants for the given year.
-    c1 = (pp['com_year'] < year) & (pp['decom_year'] > year)
-    pp.loc[c1, filter_cap_col] = pp.loc[c1, 'capacity']
-
-    c2 = pp['com_year'] == year
-    pp.loc[c2, filter_cap_col] = (pp.loc[c2, 'capacity'] *
-                                  (12 - pp.loc[c2, 'com_month']) / 12)
-    c3 = pp['decom_year'] == year
-    pp.loc[c3, filter_cap_col] = (pp.loc[c3, 'capacity'] *
-                                  pp.loc[c3, 'com_month'] / 12)
-    return pp
-
-
 def add_capacity_in(pp):
     """Add a column to the conventional power plants to make it possible to
     calculate an average efficiency for the summed up groups.
@@ -431,7 +412,14 @@ def add_regions_to_powerplants(region, column, filename=None,
 
 def calculate_chp_share_and_efficiency(eb):
     """Efficiency and fuel share of combined heat and power plants (chp) and
-    heat plants (hp) from conversion balance."""
+    heat plants (hp) from conversion balance.
+
+    Examples
+    --------
+    >>> cb = energy_balance.get_conversion_balance(2014)
+    >>> round(calculate_chp_share_and_efficiency(cb)['NI']['hp'], 4)
+    0.9888
+    """
     row_chp = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
     row_hp = 'Heizwerke'
     row_total = 'Insgesamt'
