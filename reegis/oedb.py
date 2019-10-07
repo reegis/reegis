@@ -55,24 +55,4 @@ def oedb(oep_url, schema, table, query, geo_column, epsg):
 
 
 if __name__ == "__main__":
-    from matplotlib import pyplot as plt
-
-    basic_url = 'http://oep.iks.cs.ovgu.de/api/v0'
-
-    my_request = {
-        'schema': 'boundaries',
-        'table': 'bkg_vg250_1_sta',
-        'geo_column': 'geom',
-        'query': '',
-        'epsg': 31467}
-    ax = oedb(basic_url, **my_request).plot(color='#999999')
-
-    my_request = {
-        'schema': 'model_draft',
-        'table': 'ego_demand_hv_largescaleconsumer',
-        'geo_column': 'geom_centre',
-        'query': '',  # '?where=version=v0.4.5'
-        'epsg': 3035}
-    oedb(basic_url, **my_request).to_crs({'init': 'epsg:31467'}).plot(ax=ax)
-
-    plt.show()
+    pass
