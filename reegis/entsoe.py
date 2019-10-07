@@ -156,6 +156,21 @@ def prepare_entsoe_timeseries(overwrite=False):
 
 
 def get_entsoe_load(year):
+    """
+
+    Parameters
+    ----------
+    year
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> entsoe = get_entsoe_load(2015)
+    >>> int(entsoe.sum())
+    477924124
+    """
     filename = os.path.join(cfg.get('paths', 'entsoe'),
                             cfg.get('entsoe', 'load_file'))
     if not os.path.isfile(filename):
@@ -169,21 +184,25 @@ def get_entsoe_load(year):
     return df.loc[f:t]
 
 
-def get_entsoe_renewable_data(csv=False, overwrite=False):
-    version = cfg.get('entsoe', 'time_series_version')
+def get_entsoe_renewable_data():
+    """
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> re = get_entsoe_renewable_data()
+    >>> int(re['DE_solar_generation_actual'].sum())
+    237214558
+    """
+    version = cfg.get('entsoe', 'timeseries_version')
     path_pattern = os.path.join(cfg.get('paths', 'entsoe'), '{0}')
-    if csv:
-        fn = path_pattern.format(
-            cfg.get('entsoe', 'renewables_file_csv').format(version=version))
-    else:
-        fn = path_pattern.format(
-            cfg.get('entsoe', 'renewables_file').format(version=version))
+    fn = path_pattern.format(
+       cfg.get('entsoe', 'renewables_file').format(version=version))
     if not os.path.isfile(fn):
-        split_timeseries_file(csv=csv)
-    if csv:
-        re = pd.read_csv(fn, index_col=[0], parse_dates=True)
-    else:
-        re = pd.DataFrame(pd.read_hdf(fn, 're'))
+        split_timeseries_file(csv=True)
+    re = pd.read_csv(fn, index_col=[0], parse_dates=True)
     return re
 
 
