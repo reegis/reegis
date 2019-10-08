@@ -41,7 +41,9 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
 
     Examples
     --------
-    >>> int(get_electricity_profile_by_federal_states(2014)['BE'].sum())
+    >>> fs = geometries.get_federal_states_polygon()  # doctest: +SKIP
+    >>> ep_fs = get_entsoe_profile_by_region(
+    ...     fs, 2014, 'federal_statees')  # doctest: +SKIP
     11249139
     """
     logging.debug("Get entsoe profile {0} for {1}".format(name, year))
@@ -76,6 +78,12 @@ def get_electricity_profile_by_federal_states(year):
 
     Returns
     -------
+
+        Examples
+    --------
+    >>> ep_fs = get_electricity_profile_by_federal_states(2014)# doctest: +SKIP
+    >>> int(ep_fs['BE'].sum())  # doctest: +SKIP
+    11249139
 
     """
     federal_states = geometries.load(
