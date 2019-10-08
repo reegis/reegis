@@ -516,6 +516,4 @@ def get_conversion_balance_by_region(year, regions, name='region', fix=False):
 
 if __name__ == "__main__":
     logger.define_logging(screen_level=logging.DEBUG)
-    year = 2014
-    get_de_usage_balance(year)
-    # print(get_usage_balance(2014, grouped=True).loc['BB'].sort_index().sum())
+    pass
