@@ -1,5 +1,0 @@
-[run]
-omit =
-    *scenario_tools*
-    *gui*
-    *snippets*
