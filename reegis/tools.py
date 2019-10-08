@@ -18,17 +18,9 @@ import logging
 if not os.environ.get('READTHEDOCS') == 'True':
     # External libraries
     import requests
-    from shapely.wkt import loads as wkt_loads
 
     # oemof packages
     from oemof.tools import logger
-
-
-def postgis2shapely(postgis):
-    geom = list()
-    for geo in postgis:
-        geom.append(wkt_loads(geo))
-    return geom
 
 
 def download_file(filename, url, overwrite=False):
