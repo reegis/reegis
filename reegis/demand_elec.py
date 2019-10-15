@@ -52,7 +52,7 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
     523
     >>> d3 = get_entsoe_profile_by_region(fs, 2014, 'federal_states', 200
     ...     )  # doctest: +SKIP
-    >>> round(d3.sum().sum())
+    >>> round(d3.sum().sum())  # doctest: +SKIP
     200.0
 
     """
