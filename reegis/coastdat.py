@@ -42,8 +42,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import reegis.bmwi
 
 
-def download_coastdat_data(filename=None, year=None, url=None,
-                           test_only=False, overwrite=True):
+def download_coastdat_data(filename=None, year=None, url=None, overwrite=True):
     """
     Download coastdat data set from internet source.
 
@@ -57,9 +56,6 @@ def download_coastdat_data(filename=None, year=None, url=None,
     url : str or None
         Own url can be used if the default url does not work an one found an
         alternative valid url.
-    test_only : bool
-        If True the the url is tested but the file will not be downloaded
-        (default: False).
     overwrite : bool
         If True the file will be downloaded even if it already exist.
         (default: True)
@@ -70,11 +66,10 @@ def download_coastdat_data(filename=None, year=None, url=None,
 
     Examples
     --------
-    >>> download_coastdat_data(year=2014, test_only=True)
+    >>> download_coastdat_data(year=2014)  # doctest: +SKIP
     'coastDat2_de_2014.h5'
-    >>> print(download_coastdat_data(url='https://osf.io/url', test_only=True))
-    None
     >>> download_coastdat_data(filename='w14.hd5', year=2014)  # doctest: +SKIP
+    'w14.hd5'
 
     """
     if url is None:
@@ -83,29 +78,18 @@ def download_coastdat_data(filename=None, year=None, url=None,
         if url_id is not None:
             url = cfg.get('coastdat', 'basic_url').format(url_id=url_id)
 
-    if url is not None and not test_only:
-        response = requests.get(url, stream=True)
-        if response.status_code == 200:
-            msg = "Downloading the coastdat2 file of {0} from {1} ..."
-            logging.info(msg.format(year, url))
-            if filename is None:
-                headers = response.headers['Content-Disposition']
-                filename = headers.split('; ')[1].split('=')[1].replace(
-                    '"', '')
-            tools.download_file(filename, url, overwrite=overwrite)
-            return filename
-        else:
-            raise ValueError("URL not valid: {0}".format(url))
-    elif url is not None and test_only:
-        response = requests.get(url, stream=True)
-        if response.status_code == 200:
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        msg = "Downloading the coastdat2 file of {0} from {1} ..."
+        logging.info(msg.format(year, url))
+        if filename is None:
             headers = response.headers['Content-Disposition']
-            filename = headers.split('; ')[1].split('=')[1].replace('"', '')
-        else:
-            filename = None
+            filename = headers.split('; ')[1].split('=')[1].replace(
+                '"', '')
+        tools.download_file(filename, url, overwrite=overwrite)
         return filename
     else:
-        raise ValueError("No URL found for {0}".format(year))
+        raise ValueError("URL not valid: {0}".format(url))
 
 
 def fetch_id_by_coordinates(latitude, longitude):
@@ -725,10 +709,11 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
             set_name = file[:-3].replace(replace_str, '')
             set_names.append(set_name)
             pwr[set_name] = pd.HDFStore(os.path.join(coastdat_path, file))
-            columns[set_name] = pwr[set_name]['/A1129087'].columns
+            key = list(pwr[set_name].keys())[0]
+            columns[set_name] = pwr[set_name][key].columns
 
     # Create DataFrame with MultiColumns to take the results
-    my_index = pwr[set_name]['/A1129087'].index
+    my_index = pwr[set_name][key].index
     my_cols = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []],
                             names=[u'region', u'set', u'subset'])
     feed_in = pd.DataFrame(index=my_index, columns=my_cols)
@@ -748,7 +733,11 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
 
         # Loop over all sets that have been found in the coastdat path
         if number_of_coastdat_ids > 0:
+            logging.warning(coastdat_ids)
+
             for name in set_names:
+                logging.warning(name)
+                logging.warning(list(pwr[name].keys()))
                 # Loop over all sub-sets that have been found within each file.
                 for col in columns[name]:
                     temp = pd.DataFrame(index=my_index)
@@ -756,13 +745,14 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
                     # Loop over all coastdat ids, that intersect with the
                     # actual region.
                     for coastdat_id in coastdat_ids:
-                        # Create a tmp table for each coastdat id.
-                        coastdat_key = '/A{0}'.format(int(coastdat_id))
-                        pp_inst = float(pp.loc[(category, region, coastdat_id),
-                                               'capacity_{0}'.format(year)])
-                        temp[coastdat_key] = (
-                            pwr[name][coastdat_key][col][:8760].multiply(
-                                pp_inst))
+                        if coastdat_id in list(pwr[name].keys()):
+                            # Create a tmp table for each coastdat id.
+                            coastdat_key = '/A{0}'.format(int(coastdat_id))
+                            pp_inst = float(pp.loc[(category, region, coastdat_id),
+                                                   'capacity_{0}'.format(year)])
+                            temp[coastdat_key] = (
+                                pwr[name][coastdat_key][col][:8760].multiply(
+                                    pp_inst))
                     # Sum up all coastdat columns to one region column
                     colname = '_'.join(col.split('_')[-3:])
                     feed_in[region, name, colname] = (
@@ -1235,12 +1225,83 @@ def federal_states_feedin_example():
 
 if __name__ == "__main__":
     logger.define_logging()
-    powerplants.pp_opsd2reegis()
-    for my_year in [2014, 2013, 2012, 2011, 2010]:
-        my_federal_states = geometries.get_federal_states_polygon()
-        get_feedin_per_region(my_year, my_federal_states, 'federal_states',
-                              reset_pp=False)
-        my_path = os.path.join(cfg.get('paths', 'feedin'), 'federal_states')
-        os.makedirs(my_path, exist_ok=True)
-        my_fn = os.path.join(my_path, 'federal_states_{0}'.format(my_year))
-        scenario_feedin(my_year, 'federal_states').to_csv(my_fn)
+
+    # fn = "/home/uwe/reegis/data/coastdat/coastDat2_de_2014.h5"
+    # fn2 = "/home/uwe/reegis/data/coastdat/coastDat2_de_2014_2.h5"
+    # hd_file = pd.HDFStore(fn, mode='r')
+    # hd_file2 = pd.HDFStore(fn2, mode='w')
+    # n = 0
+    # for key in hd_file.keys():
+    #     n += 1
+    #     if divmod(n, 100)[1] == 0:
+    #         hd_file2[key] = hd_file[key]
+    # hd_file.close()
+    # hd_file2.close()
+    # os.remove(fn)
+    # shutil.copy(fn2, fn)
+    # exit(0)
+    # powerplants.pp_opsd2reegis()
+    # for my_year in [2014, 2013, 2012, 2011, 2010]:
+    #     my_federal_states = geometries.get_federal_states_polygon()
+    #     get_feedin_per_region(my_year, my_federal_states, 'federal_states',
+    #                           reset_pp=False)
+    #     my_path = os.path.join(cfg.get('paths', 'feedin'), 'federal_states')
+    #     os.makedirs(my_path, exist_ok=True)
+    #     my_fn = os.path.join(my_path, 'federal_states_{0}'.format(my_year))
+    #     scenario_feedin(my_year, 'federal_states').to_csv(my_fn)
+    from reegis import opsd
+    from reegis import geometries as geo
+    from nose.tools import eq_
+    from shutil import rmtree, copy
+
+    path = os.path.join(os.path.dirname(__file__), os.pardir, 'tests', 'data')
+    cfg.tmp_set('paths_pattern', 'opsd', path)
+    cfg.tmp_set('paths', 'powerplants', path)
+
+    fn_opsd = opsd.opsd_power_plants()
+    fn_reegis = powerplants.pp_opsd2reegis()
+    os.remove(fn_opsd)
+    filename = str(fn_reegis.split(os.sep)[-1])
+
+    gdf1 = geo.get_federal_states_polygon()
+    powerplants.add_regions_to_powerplants(
+        gdf1, 'fed_states', filename=filename, path=path, dump=True)
+
+    geo_path = cfg.get('paths', 'geometry')
+    geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
+    gdf2 = geo.load(path=geo_path, filename=geo_file)
+    pp = powerplants.add_regions_to_powerplants(
+        gdf2, 'coastdat2', filename=filename, path=path, dump=False)
+
+    year = 2014
+    pp2 = powerplants.get_powerplants_by_region(gdf1, year, 'my_states')
+
+    pp2['efficiency_{0}'.format(year)] = pp2['capacity_{0}'.format(year)].div(
+        pp2['capacity_in_{0}'.format(year)])
+
+    pp2.drop(['capacity', 'capacity_in', 'thermal_capacity'],
+             axis=1, inplace=True)
+
+    fn_reegis2 = fn_reegis.replace('.h5', '_my_states.h5')
+    os.remove(fn_reegis2)
+    os.remove(fn_reegis)
+    rmtree(os.path.join(path, 'messages'))
+
+    eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity']), 2427)
+
+    eq_(round(pp2.loc[('BE', 'Hard coal'), 'efficiency_2014'], 3), 0.386)
+
+    year = 2000
+
+    pp = powerplants.get_reegis_powerplants(year, pp=pp)
+    eq_(int(pp.groupby('fed_states').sum().loc['BE', 'capacity_2000']), 2391)
+
+    eq_(windzone_region_fraction(
+        pp, name='fed_states', year=year).round(2).loc['NI', 3], 0.24)
+
+    fn_coastdat_2014 = 'coastDat2_de_2014.h5'
+    fn_from = os.path.join(path, fn_coastdat_2014)
+    fn_to = os.path.join(cfg.get('paths', 'coastdat'), fn_coastdat_2014)
+    copy(fn_from, fn_to)
+    a = get_feedin_per_region(2014, gdf1, 'fed_states', pp=pp)
+    eq_(a, 5)
