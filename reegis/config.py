@@ -33,6 +33,7 @@ except AttributeError:
 
 
 def get_ini_filenames(additional_paths=None, use_importer=True, local=True):
+    """Returns a list of ini files to use."""
     paths = []
     files = []
 
@@ -57,7 +58,7 @@ def init(files=None, paths=None, **kwargs):
 
     Parameters
     ----------
-    files : str or list or None
+    files : list or None
         Absolute path to config file (incl. filename)
     paths : list
         List of paths where it is searched for .ini files.
@@ -73,10 +74,12 @@ def init(files=None, paths=None, **kwargs):
 
 
 def has_option(section, option):
+    """Returns True if the given option exists in the given section."""
     return cfg.has_option(section, option)
 
 
 def has_section(section):
+    """Returns True if the given section exists."""
     return cfg.has_section(section)
 
 
@@ -134,7 +137,9 @@ def get_dict(section):
 
 
 def get_dict_list(section, string=False):
-    """Returns the values of a section as dictionary
+    """
+    Returns the values of a section as dictionary. The values will be
+    interpreted as list.
     """
     if not _loaded:
         init(FILE)
@@ -145,12 +150,16 @@ def get_dict_list(section, string=False):
 
 
 def tmp_set(section, key, value):
+    """
+    Set/Overwrite a value temporarily for the actual section.
+    """
     if not _loaded:
         init(FILE)
     return cfg.set(section, key, value)
 
 
 def set_reegis_paths(paths=None):
+    """Create directories according to the values given in the config files."""
     # initialise de21 configuration
     logging.info('Loading reegis configuration....')
 
