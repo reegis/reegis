@@ -41,17 +41,22 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
 
     Examples
     --------
-    >>> fs = geometries.get_federal_states_polygon()  # doctest: +SKIP
-    >>> ep_fs = get_entsoe_profile_by_region(
-    ...     fs, 2014, 'federal_statees')  # doctest: +SKIP
-    11249139
+    >>> fs = geometries.get_federal_states_polygon()
+    >>> int(get_entsoe_profile_by_region(fs, 2014, 'test').sum().sum())
+    519757349
+    >>> int(get_entsoe_profile_by_region(fs, 2014, 'test', 'bmwi').sum().sum())
+    523
+    >>> round(get_entsoe_profile_by_region(fs, 2014, 'test', 200).sum().sum())
+    200.0
+
     """
     logging.debug("Get entsoe profile {0} for {1}".format(name, year))
     de_load_profile = entsoe.get_entsoe_load(2014).DE_load_
 
     load_profile = pd.DataFrame()
 
-    annual_region = openego.get_ego_demand_by_region(year, region, name)
+    annual_region = openego.get_ego_demand_by_region(
+        region, name, grouped=True)
 
     share = annual_region.div(annual_region.sum())
 
@@ -66,32 +71,9 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
     if annual_demand is not None:
         load_profile = load_profile.div(load_profile.sum().sum()).multiply(
             annual_demand)
+
     return load_profile
 
 
-def get_electricity_profile_by_federal_states(year):
-    """
-
-    Parameters
-    ----------
-    year
-
-    Returns
-    -------
-
-        Examples
-    --------
-    >>> ep_fs = get_electricity_profile_by_federal_states(2014)# doctest: +SKIP
-    >>> int(ep_fs['BE'].sum())  # doctest: +SKIP
-    11249139
-
-    """
-    federal_states = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('geometry', 'federalstates_polygon'))
-    federal_states.set_index('iso', drop=True, inplace=True)
-    return get_entsoe_profile_by_region(federal_states, 'federal_states', year)
-
-
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    pass
