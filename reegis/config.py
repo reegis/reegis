@@ -19,7 +19,6 @@ import configparser as cp
 import sys
 
 
-FILE = None
 cfg = cp.RawConfigParser()
 cfg.optionxform = str
 _loaded = False
@@ -87,7 +86,7 @@ def get(section, key):
     """Returns the value of a given key in a given section.
     """
     if not _loaded:
-        init(FILE)
+        init()
     try:
         return cfg.getint(section, key)
     except ValueError:
@@ -97,16 +96,10 @@ def get(section, key):
             try:
                 return cfg.getboolean(section, key)
             except ValueError:
-                try:
-                    value = cfg.get(section, key)
-                    if value == 'None':
-                        value = None
-                    return value
-                except ValueError:
-                    logging.error(
-                        "section {0} with key {1} not found in {2}".format(
-                            section, key, FILE))
-                    return cfg.get(section, key)
+                value = cfg.get(section, key)
+                if value == 'None':
+                    value = None
+                return value
 
 
 def get_list(section, parameter, sep=',', string=False):
@@ -129,7 +122,7 @@ def get_dict(section):
     """Returns the values of a section as dictionary
     """
     if not _loaded:
-        init(FILE)
+        init()
     dc = {}
     for key, value in cfg.items(section):
         dc[key] = get(section, key)
@@ -142,7 +135,7 @@ def get_dict_list(section, string=False):
     interpreted as list.
     """
     if not _loaded:
-        init(FILE)
+        init()
     dc = {}
     for key, value in cfg.items(section):
         dc[key] = get_list(section, key, string=string)
@@ -154,7 +147,7 @@ def tmp_set(section, key, value):
     Set/Overwrite a value temporarily for the actual section.
     """
     if not _loaded:
-        init(FILE)
+        init()
     return cfg.set(section, key, value)
 
 
@@ -205,4 +198,4 @@ def set_reegis_paths(paths=None):
 
 
 if __name__ == "__main__":
-    print(get('paths', 'package_data'))
+    pass
