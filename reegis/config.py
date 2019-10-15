@@ -52,34 +52,6 @@ def get_ini_filenames(additional_paths=None, use_importer=True, local=True):
     return files
 
 
-def add_config_files(files=None, paths=None):
-    """
-
-    Parameters
-    ----------
-    files : list
-        A list of .ini files.
-    paths : list
-        A list of paths where ini files can be found.
-
-    """
-    if files is None:
-        files = []
-    if paths is not None:
-        for p in paths:
-            for f in os.listdir(p):
-                if f[-4:] == '.ini':
-                    files.append(os.path.join(p, f))
-    global FILES
-    FILES.extend(files)
-    cfg.read(files)
-    set_reegis_paths(paths)
-
-
-def main():
-    pass
-
-
 def init(files=None, paths=None, **kwargs):
     """Read config file(s).
 
@@ -176,13 +148,6 @@ def tmp_set(section, key, value):
     if not _loaded:
         init(FILE)
     return cfg.set(section, key, value)
-
-
-def extend_path(basic_path, new_dir):
-    pathname = os.path.join(basic_path, new_dir)
-    if not os.path.isdir(pathname):
-        os.makedirs(pathname)
-    return pathname
 
 
 def set_reegis_paths(paths=None):
