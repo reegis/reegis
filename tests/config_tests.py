@@ -42,7 +42,6 @@ def test_ini_filenames_additional_path():
 
 
 def test_init_basic():
-    eq_(config.FILES, [])
     config.init()
     fn = sorted([f.split(os.sep)[-1] for f in config.FILES])
     eq_(fn, ['de_dictionary.ini', 'reegis.ini', 'solar.ini', 'wind.ini'])
@@ -128,3 +127,7 @@ def test_set_temp_value():
     eq_(config.get('type_tester', 'blubb'), None)
     config.tmp_set('type_tester', 'blubb', '5.5')
     eq_(config.get('type_tester', 'blubb'), 5.5)
+
+
+def test_set_temp_without_init():
+    config.tmp_set('type_tester', 'blubb', 'None')
