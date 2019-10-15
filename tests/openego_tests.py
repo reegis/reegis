@@ -18,6 +18,7 @@ import os
 from reegis import openego
 from reegis import geometries
 from reegis import config as cfg
+from reegis import demand_elec
 
 
 def test_ego_demand_and_download():
@@ -36,3 +37,9 @@ def test_ego_demand_and_download():
         geo, 'test', infile=fn).groupby('test').sum()
     eq_(int(region_demand.loc['BB', 'consumption']), 279)
     eq_(int(region_demand.loc['BY', 'consumption']), 7290)
+    d1 = demand_elec.get_entsoe_profile_by_region(geo, 2014, 'test')
+    eq_(int(d1.sum().sum()), 519757349)
+    d2 = demand_elec.get_entsoe_profile_by_region(geo, 2014, 'test', 'bmwi')
+    eq_(int(d2.sum().sum()), 523)
+    d3 = demand_elec.get_entsoe_profile_by_region(geo, 2014, 'test', 200)
+    eq_(round(d3.sum().sum()), 200.0)

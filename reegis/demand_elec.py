@@ -42,11 +42,17 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
     Examples
     --------
     >>> fs = geometries.get_federal_states_polygon()
-    >>> int(get_entsoe_profile_by_region(fs, 2014, 'test').sum().sum())
+    >>> d1 = get_entsoe_profile_by_region(fs, 2014, 'federal_states'
+    ...     )  # doctest: +SKIP
+    >>> int(d1.sum().sum())  # doctest: +SKIP
     519757349
-    >>> int(get_entsoe_profile_by_region(fs, 2014, 'test', 'bmwi').sum().sum())
+    >>> d2 = get_entsoe_profile_by_region(fs, 2014, 'federal_states', 'bmwi'
+    ...     )  # doctest: +SKIP
+    >>> int(d2.sum().sum())  # doctest: +SKIP
     523
-    >>> round(get_entsoe_profile_by_region(fs, 2014, 'test', 200).sum().sum())
+    >>> d3 = get_entsoe_profile_by_region(fs, 2014, 'federal_states', 200
+    ...     )  # doctest: +SKIP
+    >>> round(d3.sum().sum())
     200.0
 
     """
