@@ -17,9 +17,6 @@ import logging
 # External libraries
 import pandas as pd
 
-# oemof libraries
-from oemof.tools import logger
-
 # internal modules
 import reegis.config as cfg
 import reegis.bmwi
@@ -112,6 +109,4 @@ def get_commodity_sources():
 
 
 if __name__ == "__main__":
-    logger.define_logging()
-    logging.info("Commodity Sources.")
-    print(get_commodity_sources())
+    pass
