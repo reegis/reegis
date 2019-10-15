@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
-"""Reegis geometry tools.
+"""
+Reegis config reader.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Based on Steffen (https://github.com/steffenGit)
+Copyright (c) 2016-2018 Uwe Krien <uvchik.git@posteo.eu>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
 __copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__license__ = "MIT"
 
 
 # Python libraries
