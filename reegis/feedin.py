@@ -31,8 +31,6 @@ import logging
 
 
 if not os.environ.get('READTHEDOCS') == 'True':
-    # oemof libraries
-    from oemof import tools
 
     # Internal modules
     import reegis.config as cfg
@@ -258,6 +256,7 @@ def feedin_wind_sets(weather, wind_parameter_set):
 
     Examples
     --------
+    >>> from reegis import coastdat
     >>> fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
     ...                   'data', 'test_coastdat_weather.csv')
     >>> wind_parameter_set = create_windpowerlib_sets()
@@ -299,6 +298,7 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
 
     Examples
     --------
+    >>> from reegis import coastdat
     >>> fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
     ...                  'data', 'test_coastdat_weather.csv')
     >>> weather = pd.read_csv(fn, header=[0, 1])['1126088']
@@ -324,20 +324,4 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
 
 
 if __name__ == "__main__":
-    tools.logger.define_logging()
-    import os
-    import windpowerlib
-    my_df = windpowerlib.wind_turbine.get_turbine_types()
-    print(my_df.to_excel('/home/uwe/shp/windtypes.xls'))
-    # df = WindTurbine.get_turbine_types(print_out=False)
-    y = 2012
-    my_set_name = 'M_LG290G3__I_ABB_MICRO_025_US208'
-    hd_file = pd.HDFStore(os.path.join(
-        cfg.get('paths', 'feedin'), 'coastdat', str(y), 'solar',
-        cfg.get('feedin', 'file_pattern').format(year=y, type='solar',
-                                                 set_name=my_set_name)),
-        mode='r')
-    print(hd_file['/A1113109'].sum())
-    hd_file.close()
-    # cfg = config.get_configuration()
-    # normalised_feedin_by_region(cfg, overwrite=True)
+    pass
