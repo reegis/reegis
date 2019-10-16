@@ -2,12 +2,12 @@
 
 """Processing a list of power plants in Germany.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -69,8 +69,8 @@ def pumped_hydroelectric_storage(regions, name=None):
     phes['energy'] = phes_raw['ZFES', 'energy']
     phes['name'] = phes_raw['ZFES', 'name']
 
-    # TODO: 0.75 should come from config file
-    phes['efficiency'] = phes['efficiency'].fillna(0.75)
+    phes['efficiency'] = phes['efficiency'].fillna(
+        cfg.get('storages', 'default_efficiency'))
 
     # remove storages that do not have an entry for energy capacity
     phes = phes[phes.energy.notnull()]

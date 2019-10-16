@@ -2,12 +2,12 @@
 
 """Code snippets without context.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -20,13 +20,9 @@ import geopandas as gpd
 from matplotlib import pyplot as plt
 from shapely.geometry import Point
 
-# oemof packages
-from oemof.tools import logger
 
 # internal modules
 import reegis.config as cfg
-import reegis.geometries as geo
-from reegis import opsd
 
 
 def lat_lon2point(df):
@@ -262,7 +258,6 @@ if __name__ == "__main__":
     #             idx_col='iso',
     #             coord_file='data_basic/label_federal_state.csv')
     # plot_geocsv('/home/uwe/geo.csv', idx_col='gid')
-    logger.define_logging()
     # create_small_data_sets()
     # exit(0)
     p = '/home/uwe/chiba/Promotion/reegis_geometries/windregionen'

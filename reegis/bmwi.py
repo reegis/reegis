@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" This module is designed to download and prepare BMWI data.
+""" This module is designed to download and prepare BMWi data.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -24,6 +24,7 @@ if not os.environ.get('READTHEDOCS') == 'True':
 
 
 def get_bmwi_energiedaten_file(overwrite=False):
+    """Download BMWi energy data table."""
     filename = os.path.join(cfg.get('paths', 'general'),
                             cfg.get('bmwi', 'energiedaten'))
     logging.debug("Return status from energiedaten file: {0}".format(

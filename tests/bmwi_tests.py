@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 
-""" This module is designed for the use with the coastdat2 weather data set
-of the Helmholtz-Zentrum Geesthacht.
-
-A description of the coastdat2 data set can be found here:
-https://www.earth-syst-sci-data.net/6/147/2014/
-
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
-
-SPDX-License-Identifier: GPL-3.0-or-later
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+Tests for the bmwi module.
+
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+
+SPDX-License-Identifier: MIT
+"""
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 from nose.tools import eq_, assert_raises_regexp

@@ -7,12 +7,12 @@ A description of the coastdat2 data set can be found here:
 
 https://www.earth-syst-sci-data.net/6/147/2014/
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -29,9 +29,6 @@ if not os.environ.get('READTHEDOCS') == 'True':
     import pvlib
     from shapely.geometry import Point
     from windpowerlib.wind_turbine import WindTurbine
-
-    # oemof libraries
-    from oemof.tools import logger
 
     # Internal modules
     import reegis.tools as tools
@@ -234,7 +231,7 @@ def adapt_coastdat_weather_to_pvlib(weather, loc):
     w['dni'] = pvlib.irradiance.dni(
         w['ghi'], w['dhi'], pvlib.solarposition.get_solarposition(
             w.index, loc.latitude, loc.longitude).zenith,
-        clearsky_dni=clearskydni, clearsky_tolerance=1.1)
+        clearsky_dni=clearskydni)
     return w
 
 
@@ -910,7 +907,7 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
     points = geometries.spatial_join_with_buffer(coastdat_geo, gdf, 'windzone')
 
     wz = pd.DataFrame(points['windzone'])
-    pp = pd.merge(pp, wz, how='inner', left_on='coastdat2', right_index=True)
+    pp = pd.merge(pp, wz, left_on='coastdat2', right_index=True)
     pp['windzone'].fillna(0, inplace=True)
     pp = pp.groupby([name, 'windzone']).sum()[capacity_col]
     wz_regions = pp.groupby(level=0).apply(lambda x: x / float(x.sum()))
@@ -942,7 +939,8 @@ def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
         feedin_ts[region, 'hydro'] = hydro[region]
 
     geothermal = load_feedin_by_region(
-        year, 'geothermal', name, weather_year=weather_year).reset_index(drop=True)
+        year, 'geothermal', name, weather_year=weather_year).reset_index(
+        drop=True)
     for region in geothermal.columns:
         feedin_ts[region, 'geothermal'] = geothermal[region]
 
@@ -1064,7 +1062,7 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
     return feedin_ts.sort_index(1)
 
 
-def get_feedin_per_region(year, region, name, weather_year=None, reset_pp=True,
+def get_feedin_per_region(year, region, name, weather_year=None,
                           windzones=True, subregion=False, pp=None):
     """
     Aggregate feed-in time series for the given geometry set.
@@ -1075,7 +1073,6 @@ def get_feedin_per_region(year, region, name, weather_year=None, reset_pp=True,
     region : geopandas.geoDataFrame
     name : str
     weather_year : int
-    reset_pp
     windzones : bool
     pp : pd.DataFrame or None
     subregion : bool
@@ -1104,13 +1101,12 @@ def get_feedin_per_region(year, region, name, weather_year=None, reset_pp=True,
     gdf = geometries.load(path=geo_path, filename=geo_file)
 
     pp = powerplants.add_regions_to_powerplants(
-        gdf, 'coastdat2', filename=filename, path=path, dump=True, pp=pp)
+        gdf, 'coastdat2', filename=filename, path=path, pp=pp)
 
     # Add a column named with the name parameter, adding the region id to
     # each power plant
     pp = powerplants.add_regions_to_powerplants(
-        region, name, filename=filename, path=path, dump=True, pp=pp,
-        subregion=subregion)
+        region, name, filename=filename, path=path, pp=pp, subregion=subregion)
 
     # Get only the power plants that are online in the given year.
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
@@ -1234,13 +1230,4 @@ def federal_states_feedin_example():
 
 
 if __name__ == "__main__":
-    logger.define_logging()
-    powerplants.pp_opsd2reegis()
-    for my_year in [2014, 2013, 2012, 2011, 2010]:
-        my_federal_states = geometries.get_federal_states_polygon()
-        get_feedin_per_region(my_year, my_federal_states, 'federal_states',
-                              reset_pp=False)
-        my_path = os.path.join(cfg.get('paths', 'feedin'), 'federal_states')
-        os.makedirs(my_path, exist_ok=True)
-        my_fn = os.path.join(my_path, 'federal_states_{0}'.format(my_year))
-        scenario_feedin(my_year, 'federal_states').to_csv(my_fn)
+    pass

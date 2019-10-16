@@ -2,12 +2,12 @@
 
 """Processing a list of power plants in Germany.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -27,6 +27,9 @@ if not os.environ.get('READTHEDOCS') == 'True':
 
 
 def patch_offshore_wind(orig_df, columns=None):
+    """
+    Patch the power plants table with additional data of offshore wind parks.
+    """
     if columns is None:
         df = pd.DataFrame()
     else:
@@ -130,7 +133,7 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
         complete = True
         for cat in ['renewable', 'conventional']:
             try:
-                pd.read_hdf(filename_in, cat, mode='r')
+                pd.read_hdf(filename_in, cat)
             except KeyError:
                 msg = "File '{0}' exists but key '{1}' is not present."
                 logging.debug(msg.format(filename_in, cat))
@@ -142,7 +145,7 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
     pp = {}
     for cat in ['conventional', 'renewable']:
         # Read opsd power plant tables
-        pp[cat] = pd.DataFrame(pd.read_hdf(filename_in, cat, mode='r'))
+        pp[cat] = pd.DataFrame(pd.read_hdf(filename_in, cat))
 
         # Patch offshore wind energy with investigated data.
         if cat == 'renewable' and offshore_patch:
@@ -216,7 +219,7 @@ def add_capacity_in(pp):
 
 
 def add_model_region_pp(pp, region_polygons, col_name, subregion=False):
-    """
+    """ Add a region column to the powerplant table
     """
     # Create a geoDataFrame from power plant DataFrame.
     pp = geo.create_geo_df(pp)
@@ -296,7 +299,7 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
         logging.debug(msg.format(fn))
         fn = pp_opsd2reegis()
     if pp is None:
-        pp = pd.DataFrame(pd.read_hdf(fn, 'pp', mode='r'))
+        pp = pd.DataFrame(pd.read_hdf(fn, 'pp'))
 
     filter_columns = ['capacity_{0}']
 
@@ -455,6 +458,7 @@ def calculate_chp_share_and_efficiency(eb):
 
 
 def get_chp_share_and_efficiency_states(year):
+    """Get chp share from conversion balance."""
     conversion_blnc = energy_balance.get_conversion_balance(year)
     return calculate_chp_share_and_efficiency(conversion_blnc)
 

@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 
-# -*- coding: utf-8 -*-
-
 """ Download and prepare entsoe load profile from opsd data portal.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -19,7 +17,6 @@ import logging
 import pandas as pd
 
 # internal modules
-import reegis.config as cfg
 from reegis import entsoe
 from reegis import geometries
 from reegis import openego

@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
-"""Work with the scenario data.
+"""Work with the scenario data. This module will be moved to deflex in the
+future.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -25,7 +26,6 @@ import networkx as nx
 from matplotlib import pyplot as plt
 
 # oemof libraries
-import oemof.tools.logger as logger
 import oemof.tools.helpers as helpers
 import oemof.solph as solph
 import oemof.outputlib as outputlib
@@ -336,7 +336,4 @@ def draw_graph(grph, edge_labels=True, node_color='#AFAFAF',
 
 
 if __name__ == "__main__":
-    logger.define_logging()
-    v = logger.get_version()
-    print(v)
     pass

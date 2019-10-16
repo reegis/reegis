@@ -1,3 +1,9 @@
+"""
+This module might be removed in future versions, because it is not an
+elementary part of reegis.
+"""
+
+
 import sys
 import os
 try:

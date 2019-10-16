@@ -2,18 +2,17 @@
 
 """Reegis geometry tools.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
 import os
 import logging
-import warnings
 
 # External libraries
 import pandas as pd
@@ -26,13 +25,15 @@ from reegis import config as cfg
 
 
 def get_federal_states_polygon():
+    """Get a region set for the federal states of Germany."""
     federal_states = load(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
-    return federal_states.set_index('iso', drop=True)
+    return federal_states.set_index('iso')
 
 
 def get_germany_awz_polygon():
+    """Get the polygon of the exclusive economic zone of Germany."""
     return load(
         cfg.get('paths', 'geometry'),
         'germany_awz_polygon.geojson')
@@ -62,15 +63,17 @@ def load(path=None, filename=None, fullname=None, hdf_key=None,
 
 
 def load_shp(path=None, filename=None, fullname=None):
+    """Load an `shp` file as GeoDataFrame."""
     if fullname is None:
         fullname = os.path.join(path, filename)
     return gpd.read_file(fullname)
 
 
 def load_hdf(path=None, filename=None, fullname=None, key=None):
+    """Load a `hdf` file."""
     if fullname is None:
         fullname = os.path.join(path, filename)
-    return pd.read_hdf(fullname, key, mode='r')
+    return pd.read_hdf(fullname, key)
 
 
 def load_csv(path=None, filename=None, fullname=None,
@@ -141,16 +144,8 @@ def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
     return gdf
 
 
-def gdf2df(gdf, remove_geo=False):
-    df = pd.DataFrame(gdf)
-    if not remove_geo:
-        df['geometry'] = df['geometry'].astype(str)
-    else:
-        del df['geometry']
-    return df
-
-
 def remove_invalid_geometries(gdf):
+    """Remove rows that do not have a valid geometry."""
     logging.warning("Invalid geometries have been removed.")
     invalid = gdf.loc[~gdf.is_valid].copy()
     if float(invalid['capacity'].sum()) > 0:
@@ -222,7 +217,7 @@ def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,
         tmp = tmp.set_geometry('buffer')
 
         # Try spatial join with "intersects" with buffered geometries.
-        newj = gpd.sjoin(tmp, geo2, how='left', op='intersects')
+        newj = gpd.sjoin(tmp, geo2, how='left')
 
         # If new matches were found they were written to the original GeoDF.
         if len(newj.loc[newj[jcol].notnull() > 0]):

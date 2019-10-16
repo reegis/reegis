@@ -2,12 +2,12 @@
 
 """Aggregate the number of inhabitants for a regions/polygons within Germany.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -62,7 +62,7 @@ def get_ew_shp_file(year):
             tools.download_file(
                 filename_zip, url.format('ebenen'), overwrite=True)
 
-        zip_ref = zipfile.ZipFile(filename_zip, 'r')
+        zip_ref = zipfile.ZipFile(filename_zip)
         zip_ref.extractall(cfg.get('paths', 'inhabitants'))
         zip_ref.close()
         subs = next(os.walk(cfg.get('paths', 'inhabitants')))[1]
@@ -99,6 +99,7 @@ def get_ew_shp_file(year):
 
 
 def get_ew_geometry(year, polygon=False):
+    """Get a map with the number of inhabitants."""
     filename_shp = os.path.join(cfg.get('paths', 'inhabitants'),
                                 'VG250_VWG_' + str(year) + '.shp')
 
@@ -221,6 +222,7 @@ def get_share_of_federal_states_by_region(year, regions, name):
 
 
 def get_ew_by_federal_states(year):
+    """Get the inhabitants per federal state for a given year."""
     geo = geometries.load(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))

@@ -4,11 +4,11 @@
 Reegis config reader.
 
 Based on Steffen (https://github.com/steffenGit)
-Copyright (c) 2016-2018 Uwe Krien <uvchik.git@posteo.eu>
+Copyright (c) 2016-2018 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
 

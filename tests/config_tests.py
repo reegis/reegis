@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
 """
-Tests for config module.
+Tests for the config module.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 from nose.tools import eq_, ok_, assert_raises_regexp
 from configparser import NoOptionError, NoSectionError

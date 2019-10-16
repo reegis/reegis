@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
-"""Reegis geometry tools.
-
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
-
-SPDX-License-Identifier: GPL-3.0-or-later
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+Reegis commodity sources tools. This tool reads ZNES data for 2014. For some
+fuels it is possible to use BMWi data. It is necessary to revise the module
+in the future.
+
+
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+
+SPDX-License-Identifier: MIT
+"""
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -23,12 +27,14 @@ import reegis.bmwi
 
 
 def initialise_commodity_sources():
+    """Create the results DataFrame."""
     cols = pd.MultiIndex(levels=[[], []], codes=[[], []], names=['', ''])
     src = pd.DataFrame(columns=cols, index=range(1990, 2017))
     return src
 
 
 def prices_from_bmwi_energiedaten(src):
+    """Load prices from BMWi"""
     fuels = {
         '  - Rohöl': 'Oil',
         '  - Erdgas': 'Natural gas',
@@ -52,7 +58,7 @@ def prices_from_bmwi_energiedaten(src):
     # convert the following columns to EUR / Joule using uc (unit conversion)
     fs['Oil'] = (fs['Oil'] /
                  uc.loc['1 Mio. t Rohöleinheit (RÖE)', 'PJ'] / 1.0e15 * 1.0e6)
-    fs['Natural gas'] = fs['Natural gas'] / 1.0e+12
+    fs['Natural gas'] /= 1.0e+12
     fs['Hard coal'] = (fs['Hard coal'] /
                        uc.loc['1 Mio. t  Steinkohleeinheit (SKE)', 'PJ'] /
                        1.0e15 * 1.0e6)
@@ -63,7 +69,7 @@ def prices_from_bmwi_energiedaten(src):
 
 
 def emissions_from_znes(src):
-
+    """"Load emissions from ZNES."""
     znes = pd.read_csv(
             os.path.join(cfg.get('paths', 'static_sources'),
                          cfg.get('static_sources', 'znes_flens_data')),
@@ -75,6 +81,7 @@ def emissions_from_znes(src):
 
 
 def prices_2014_from_znes(src, force_znes=False):
+    """Load prices from ZNES."""
     znes = pd.read_csv(
             os.path.join(cfg.get('paths', 'static_sources'),
                          cfg.get('static_sources', 'znes_flens_data')),
@@ -89,9 +96,11 @@ def prices_2014_from_znes(src, force_znes=False):
 
 def get_commodity_sources():
     """
+    Get a table with prices and emissions manly for 2014.
 
     Returns
     -------
+    pd.DataFrame
 
     Examples
     --------

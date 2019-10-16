@@ -4,12 +4,12 @@
 
 """ Download and prepare entsoe load profile from opsd data portal.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -26,17 +26,17 @@ import pandas as pd
 
 # internal modules
 import reegis.config as cfg
-from oemof.tools import logger
 
 
-def read_original_timeseries_file(filename=None, overwrite=False):
+def read_original_timeseries_file(orig_csv_file=None, overwrite=False):
     """Read timeseries file if it exists. Otherwise download it from opsd.
     """
     version = cfg.get('entsoe', 'timeseries_version')
 
-    orig_csv_file = os.path.join(
-        cfg.get('paths', 'entsoe'),
-        cfg.get('entsoe', 'original_file')).format(version=version)
+    if orig_csv_file is None:
+        orig_csv_file = os.path.join(
+            cfg.get('paths', 'entsoe'),
+            cfg.get('entsoe', 'original_file')).format(version=version)
     readme = os.path.join(
         cfg.get('paths', 'entsoe'),
         cfg.get('entsoe', 'readme_file')).format(version=version)
@@ -92,6 +92,7 @@ def prepare_de_file(filename=None, overwrite=False):
 
 
 def split_timeseries_file(filename=None, overwrite=False):
+    """Split table into load and renewables."""
     entsoe_ts = namedtuple('entsoe', ['load', 'renewables'])
     logging.info("Splitting time series.")
     version = cfg.get('entsoe', 'timeseries_version')

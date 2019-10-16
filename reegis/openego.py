@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" This module is designed to download and prepare BMWI data.
+"""Processing the openego map for the electricity demand.
 
-Copyright (c) 2016-2018 Uwe Krien <uwe.krien@rl-institut.de>
+Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
-SPDX-License-Identifier: GPL-3.0-or-later
+SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <uwe.krien@rl-institut.de>"
-__license__ = "GPLv3"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -44,7 +44,22 @@ def download_oedb(oep_url, schema, table, query, fn, overwrite=False):
 
 
 def get_ego_data(osf=False, query='?where=version=v0.4.5'):
+    """
 
+    Parameters
+    ----------
+    osf : bool
+        If True the file will be downloaded from the osf page instead of of
+        selected from the database. You may not get the latest version.
+        (default: False)
+    query : str
+        Database query to filter the data set.
+        (default: '?where=version=v0.4.5')
+
+    Returns
+    -------
+
+    """
     oep_url = 'http://oep.iks.cs.ovgu.de/api/v0'
     local_path = cfg.get('paths', 'ego')
     fn_large_consumer = os.path.join(
@@ -81,6 +96,19 @@ def get_ego_data(osf=False, query='?where=version=v0.4.5'):
 
 
 def get_ego_demand(filename=None, fn=None, overwrite=False):
+    """
+
+    Parameters
+    ----------
+    filename : str
+    fn  : str
+    overwrite : bool
+
+    Returns
+    -------
+    pandas.DataFrame
+
+    """
     if filename is None:
         filename = cfg.get('open_ego', 'ego_file')
     if fn is None:
@@ -97,6 +125,43 @@ def get_ego_demand(filename=None, fn=None, overwrite=False):
 
 def get_ego_demand_by_region(regions, name, outfile=None, infile=None,
                              dump=False, grouped=False, overwrite=False):
+    """
+    Add the region id from a given region set to the openego demand table. This
+    can be used to calculate the demand or the share of each region.
+
+    Parameters
+    ----------
+    regions : geopandas.GeoDataFrame
+        A region set.
+    name : str
+        The name of the region set will be used as the name of the column in
+        the openego GeoDataFrame and to distinguish result files.
+    outfile : str (optional)
+        It is possible to pass a filename (with path) where the results should
+        be stored. Only valid if `dump` is True.
+    infile : str (optional)
+        It is possible to use a specific infile (with path) where the openego
+        map is stored.
+    dump : bool
+        If dump is True the result will be returned and stored into a file.
+        Otherwise the result is just returned. (default: False)
+    grouped : bool
+        If grouped is False the openego table with a region column is returned.
+        Otherwise the map is grouped by the region column and the consumption
+        column is summed up. (default: False)
+    overwrite : bool
+
+    Returns
+    -------
+    pandas.DataFrame or pandas.Series : A Series is returned if grouped is
+        True.
+
+    Notes
+    -----
+    The openego map may not be updated in the future so it might be necessary
+    to scale the results to an overall demand.
+
+    """
     if outfile is None:
         path = cfg.get('paths', 'demand')
         outfile = os.path.join(path, 'open_ego_demand_{0}.h5')
@@ -128,13 +193,27 @@ def get_ego_demand_by_region(regions, name, outfile=None, infile=None,
         return ego_demand
 
 
-def get_ego_demand_by_federal_states(year=None, grouped=True):
-    """CHANGE NAME OF FUNCTION BECAUSE OF SCALING"""
+def get_bmwi_scaled_ego_demand_by_federal_states(year):
+    """
+    This is an example function to show how to use openego to get the demand
+    for a given region and scale it with the nation wide electricity demand.
+    For the german electricity demand the BMWi data set is used.
+
+    Parameters
+    ----------
+    year : int
+        The year for of the BMWI data set.
+
+    Returns
+    -------
+    pandas.Series
+
+    """
     federal_states = geometries.get_federal_states_polygon()
     bmwi_annual = bmwi_data.get_annual_electricity_demand_bmwi(year)
 
     ego_demand = get_ego_demand_by_region(
-        federal_states, 'federal_states', grouped=grouped)
+        federal_states, 'federal_states', grouped=True)
 
     return ego_demand.div(ego_demand.sum()).mul(bmwi_annual)
 
