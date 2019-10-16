@@ -28,10 +28,23 @@ else:
     requirements = ['cycler']
 
 
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+
 setup(name='reegis',
       version=reegis.__version__,
       author='Uwe Krien',
       author_email='krien@uni-bremen.de',
       description='Open geospatial data model',
+      long_description=read('README.rst'),
       package_dir={'reegis': 'reegis'},
-      install_requires=requirements)
+      url='https://github.com/reegis/reegis',
+      install_requires=requirements,
+      package_data={
+          'reegis': [os.path.join('data', 'static', '*.csv'),
+                     os.path.join('data', 'static', '*.txt'),
+                     os.path.join('data', 'geometries', '*.csv'),
+                     os.path.join('data', 'geometries', '*.geojson')]
+        },
+      )
