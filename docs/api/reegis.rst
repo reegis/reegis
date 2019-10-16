@@ -28,10 +28,26 @@ reegis.energy_balance module
     :undoc-members:
     :show-inheritance:
 
+reegis.entsoe module
+----------------------
+
+.. automodule:: reegis.entsoe
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 reegis.feedin module
 --------------------
 
 .. automodule:: reegis.feedin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+reegis.geometries module
+--------------------
+
+.. automodule:: reegis.geometries
     :members:
     :undoc-members:
     :show-inheritance:
@@ -48,6 +64,22 @@ reegis.oedb module
 ------------------
 
 .. automodule:: reegis.oedb
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+reegis.openego module
+------------------
+
+.. automodule:: reegis.openego
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+reegis.opsd module
+------------------
+
+.. automodule:: reegis.opsd
     :members:
     :undoc-members:
     :show-inheritance:
