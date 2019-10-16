@@ -83,7 +83,7 @@ def prepare_de_file(filename=None, overwrite=False):
             cfg.get('paths', 'entsoe'),
             cfg.get('entsoe', 'de_file').format(version=version))
     if not os.path.isfile(filename) or overwrite:
-        ts = read_original_timeseries_file(overwrite)
+        ts = read_original_timeseries_file(overwrite=overwrite)
         for col in ts.columns:
             if 'DE' not in col:
                 ts.drop(col, 1, inplace=True)
