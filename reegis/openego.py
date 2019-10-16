@@ -131,7 +131,7 @@ def get_ego_demand_by_region(regions, name, outfile=None, infile=None,
 
     Parameters
     ----------
-    regions : geopandas.GeoDataFrame
+    regions : GeoDataFrame
         A region set.
     name : str
         The name of the region set will be used as the name of the column in

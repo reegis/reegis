@@ -15,16 +15,17 @@ import os
 import logging
 import datetime
 
-# External libraries
-import numpy as np
-import pandas as pd
-import pyproj
-import requests
-from shapely.wkt import loads as wkt_loads
-
 # Internal modules
 import reegis.config as cfg
 import reegis.geometries as geo
+
+# External libraries
+import numpy as np
+import pandas as pd
+if not os.environ.get('READTHEDOCS') == 'True':
+    import pyproj
+    import requests
+    from shapely.wkt import loads as wkt_loads
 
 
 def convert_utm_code_opsd(df):

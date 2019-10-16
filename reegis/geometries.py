@@ -14,14 +14,16 @@ __license__ = "MIT"
 import os
 import logging
 
+# Internal libraries
+from reegis import config as cfg
+
 # External libraries
 import pandas as pd
-import geopandas as gpd
-from shapely.wkt import loads as wkt_loads
-from shapely.geometry import Point
-from shapely.geometry.base import BaseGeometry
-
-from reegis import config as cfg
+if not os.environ.get('READTHEDOCS') == 'True':
+    import geopandas as gpd
+    from shapely.wkt import loads as wkt_loads
+    from shapely.geometry import Point
+    from shapely.geometry.base import BaseGeometry
 
 
 def get_federal_states_polygon():

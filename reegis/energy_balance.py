@@ -14,14 +14,15 @@ __license__ = "MIT"
 import os
 import logging
 
-# External packages
-import pandas as pd
-import requests
-
-# internal modules
+# Internal modules
 import reegis.config as cfg
 from reegis import inhabitants
 from reegis import geometries
+
+# External packages
+import pandas as pd
+if not os.environ.get('READTHEDOCS') == 'True':
+    import requests
 
 
 def get_de_balance(year):
