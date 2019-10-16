@@ -17,11 +17,10 @@ __license__ = "MIT"
 from nose.tools import eq_
 import os
 from shutil import rmtree
-from reegis import powerplants
-from reegis import coastdat
-from reegis import opsd
-from reegis import config as cfg
-from reegis import geometries as geo
+from reegis import powerplants, geometries as geo, coastdat, opsd, \
+    config as cfg
+
+
 # import unittest
 
 

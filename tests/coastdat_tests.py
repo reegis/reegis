@@ -14,7 +14,7 @@ __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
 
-from nose.tools import eq_, raises, assert_raises_regexp
+from nose.tools import eq_, assert_raises_regexp
 from reegis import coastdat
 import unittest
 

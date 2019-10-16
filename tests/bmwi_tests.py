@@ -13,8 +13,7 @@ __license__ = "MIT"
 
 from nose.tools import eq_, assert_raises_regexp
 import os
-from reegis import config as cfg
-from reegis import bmwi
+from reegis import config as cfg, bmwi
 
 
 def read_bmwi_sheet_7_test():

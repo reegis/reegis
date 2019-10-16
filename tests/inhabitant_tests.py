@@ -12,8 +12,7 @@ __license__ = "MIT"
 
 from nose.tools import eq_
 import os
-from reegis import inhabitants
-from reegis import config as cfg
+from reegis import inhabitants, config as cfg
 
 
 def inhabitant_tests():

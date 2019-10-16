@@ -12,10 +12,7 @@ __license__ = "MIT"
 
 from nose.tools import eq_
 import os
-from reegis import openego
-from reegis import geometries
-from reegis import config as cfg
-from reegis import demand_elec
+from reegis import openego, demand_elec, geometries, config as cfg
 
 
 def test_ego_demand_and_download():
