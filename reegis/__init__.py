@@ -1,4 +1,1 @@
-import os
-
-if not os.environ.get('READTHEDOCS') == 'True':
-    from reegis.scenario_tools import Scenario
+__version__ = '0.1.0rc'

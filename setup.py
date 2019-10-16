@@ -4,6 +4,7 @@
 
 from setuptools import setup
 import os
+import reegis
 
 if not os.environ.get('READTHEDOCS') == 'True':
     requirements = [
@@ -27,7 +28,7 @@ else:
 
 
 setup(name='reegis',
-      version='0.1.0rc',
+      version=reegis.__version__,
       author='Uwe Krien',
       author_email='krien@uni-bremen.de',
       description='Open geospatial data model',
