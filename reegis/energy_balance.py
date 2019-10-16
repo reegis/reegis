@@ -16,12 +16,12 @@ import logging
 
 # External packages
 import pandas as pd
+import requests
 
 # internal modules
 import reegis.config as cfg
 from reegis import inhabitants
 from reegis import geometries
-import requests
 
 
 def get_de_balance(year):
@@ -466,7 +466,7 @@ def get_conversion_balance_by_region(year, regions, name='region', fix=False):
     Parameters
     ----------
     year : int
-    regions : geopandas.geoDataFrame
+    regions : GeoDataFrame
     name : str
     fix : bool
 
