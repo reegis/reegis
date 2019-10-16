@@ -19,7 +19,6 @@ import logging
 
 if not os.environ.get('READTHEDOCS') == 'True':
     # External libraries
-    import pandas as pd
     import geopandas as gpd
 
     # Internal modules

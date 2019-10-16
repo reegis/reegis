@@ -62,9 +62,7 @@ def get_choice(items, title='Your choice', text=None):
     selection, ok_button = Widgets.QInputDialog.getItem(
         None, title, text, items, 0, False)
 
-    if ok_button and selection:
-        selection = selection
-    else:
+    if not (ok_button and selection):
         selection = None
 
     app.quit()

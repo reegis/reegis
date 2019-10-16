@@ -345,8 +345,6 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                 type='solar', year=year, set_name=pv_key)
             if not os.path.isfile(filename) or overwrite:
                 hdf['solar'][pv_key] = pd.HDFStore(filename, mode='w')
-    else:
-        pv_sets = {}
 
     if wind:
         logging.info(txt_create.format('wind', year))
@@ -364,8 +362,6 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                 type='wind', year=year, set_name=wind_key)
             if not os.path.isfile(filename) or overwrite:
                 hdf['wind'][wind_key] = pd.HDFStore(filename, mode='w')
-    else:
-        wind_sets = {}
 
     # Define basic variables for time logging
     remain = len(coastdat_keys)
