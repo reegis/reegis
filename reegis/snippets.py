@@ -17,7 +17,10 @@ import calendar
 # External libraries
 import pandas as pd
 import geopandas as gpd
-from matplotlib import pyplot as plt
+try:
+    from matplotlib import pyplot as plt
+except ImportError:
+    plt = None
 from shapely.geometry import Point
 
 
@@ -120,9 +123,8 @@ def plz2ireg():
     plzireg = plzireg.groupby(plzireg.index).first()
     ireggeo = pd.DataFrame(pd.concat([plzgeo, plzireg], axis=1))
     ireggeo.to_csv(os.path.join(iregpath, 'ireg_geo.csv'))
-    import geoplot
     ireggeo = ireggeo[ireggeo['geom'].notnull()]
-    ireggeo['geom'] = geoplot.postgis2shapely(ireggeo.geom)
+    # ireggeo['geom'] = geoplot.postgis2shapely(ireggeo.geom)
     geoireg = gpd.GeoDataFrame(ireggeo, crs='epsg:4326', geometry='geom')
     geoireg.to_file(os.path.join(iregpath, 'ireg_geo.shp'))
     # import plots
@@ -254,21 +256,22 @@ def create_small_data_sets():
 
 
 if __name__ == "__main__":
+    pass
     # plot_geocsv(os.path.join('geometries', 'federal_states.csv'),
     #             idx_col='iso',
     #             coord_file='data_basic/label_federal_state.csv')
     # plot_geocsv('/home/uwe/geo.csv', idx_col='gid')
     # create_small_data_sets()
     # exit(0)
-    p = '/home/uwe/chiba/Promotion/reegis_geometries/windregionen'
-    shp = os.path.join(p, 'windzonen_deutschland_mit_AWZ.shp')
-    geo_csv_from_shp(shp, 'windzones_germany.csv', 'zone', tmp_file='tmp.csv')
+    # p = '/home/uwe/chiba/Promotion/reegis_geometries/windregionen'
+    # shp = os.path.join(p, 'windzonen_deutschland_mit_AWZ.shp')
+    # geo_csv_from_shp(shp, 'windzones_germany.csv', 'zone', tmp_file='tmp.csv')
     # energy_balance2repo()
     # offshore()
     # load_energiebilanzen()
     # create_intersection_table()
     # prices()
-    exit(0)
-    plz2ireg()
+    # exit(0)
+    # plz2ireg()
     # sorter()
     # fetch_coastdat2_year_from_db()

@@ -22,7 +22,8 @@ if not os.environ.get('READTHEDOCS') == 'True':
         'windpowerlib < 0.3',
         'python-dateutil',
         'cython',
-        'Rtree']
+        'Rtree',
+        'xlrd']
 else:
     requirements = ['cycler']
 
