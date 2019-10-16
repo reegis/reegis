@@ -73,8 +73,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
+my_copyleft = u'CC BY 4.0 - Uwe Krien'
 project = u'reegis'
-copyright = u'2017-2018, Uwe Krien'
+copyright = my_copyleft
 author = u'Uwe Krien'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -236,7 +237,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'reegis.tex', u'reegis Documentation',
-   u'Uwe Krien', 'manual'),
+   my_copyleft, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -303,7 +304,7 @@ texinfo_documents = [
 epub_title = u'reegis'
 epub_author = u'Uwe Krien'
 epub_publisher = u'Uwe Krien'
-epub_copyright = u'2017, Uwe Krien'
+epub_copyright = my_copyleft
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = u'pahesmf'

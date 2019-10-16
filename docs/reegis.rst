@@ -1,8 +1,6 @@
-reegis package
-==============
+API
+~~~
 
-Submodules
-----------
 
 reegis.bmwi module
 ------------------
@@ -21,7 +19,7 @@ reegis.coastdat module
     :show-inheritance:
 
 reegis.energy_balance module
-----------------------
+----------------------------
 
 .. automodule:: reegis.energy_balance
     :members:
@@ -45,7 +43,7 @@ reegis.feedin module
     :show-inheritance:
 
 reegis.geometries module
---------------------
+------------------------
 
 .. automodule:: reegis.geometries
     :members:
@@ -69,7 +67,7 @@ reegis.oedb module
     :show-inheritance:
 
 reegis.openego module
-------------------
+---------------------
 
 .. automodule:: reegis.openego
     :members:
