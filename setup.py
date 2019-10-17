@@ -2,7 +2,7 @@
 
 """Setup module of reegis."""
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 import reegis
 
@@ -40,6 +40,8 @@ setup(name='reegis',
       long_description=read('README.rst'),
       package_dir={'reegis': 'reegis'},
       url='https://github.com/reegis/reegis',
+      packages=find_packages(),
+      namespace_package=['reegis'],
       install_requires=requirements,
       package_data={
           'reegis': [os.path.join('data', 'static', '*.csv'),
