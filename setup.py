@@ -48,6 +48,7 @@ setup(name='reegis',
           'reegis': [os.path.join('data', 'static', '*.csv'),
                      os.path.join('data', 'static', '*.txt'),
                      os.path.join('data', 'geometries', '*.csv'),
-                     os.path.join('data', 'geometries', '*.geojson')]
+                     os.path.join('data', 'geometries', '*.geojson'),
+                     '*.ini']
         },
       )
