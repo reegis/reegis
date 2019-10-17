@@ -27,11 +27,8 @@ if not os.environ.get('READTHEDOCS') == 'True':
 
 def get_de_balance(year):
     """Download and return energy balance of germany for a given year."""
-    base_url = "https://ag-energiebilanzen.de/index.php?"
-    url_xls = "article_id=29&fileName=bilanz{0}d.xls".format(str(year)[-2:])
-    url_xlsx = "article_id=29&fileName=bilanz{0}d.xlsx".format(str(year)[-2:])
-    url = base_url + url_xls
-    req = requests.get(url)
+    url = cfg.get('energy_balance', 'url_energy_balance_germany')
+    req = requests.get(url.format(year=str(year)[-2:], suffix='xls'))
 
     if int(req.headers['Content-length']) > 0:
         fn_de = os.path.join(
@@ -41,8 +38,7 @@ def get_de_balance(year):
         with open(fn_de, 'wb') as fout:
             fout.write(req.content)
     else:
-        url = base_url + url_xlsx
-        req = requests.get(url)
+        req = requests.get(url.format(year=str(year)[-2:], suffix='xlsx'))
         if int(req.headers['Content-length']) > 0:
             fn_de = os.path.join(
                 cfg.get('paths', 'energy_balance'),
