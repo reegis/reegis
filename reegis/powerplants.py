@@ -413,15 +413,23 @@ def add_regions_to_powerplants(region, column, filename=None,
     return pp
 
 
-def calculate_chp_share_and_efficiency(eb):
+def calculate_chp_share_and_efficiency(eb, fix_total=True):
     """Efficiency and fuel share of combined heat and power plants (chp) and
     heat plants (hp) from conversion balance.
 
     Examples
     --------
     >>> cb = energy_balance.get_conversion_balance(2014)
-    >>> round(calculate_chp_share_and_efficiency(cb)['NI']['hp'], 4)
+    >>> efficiency = calculate_chp_share_and_efficiency(cb, fix_total=False)
+    >>> round(efficiency['NI']['hp'], 4)
     0.9888
+    >>> round(efficiency['BB']['hp'], 4)
+    inf
+    >>> efficiency = calculate_chp_share_and_efficiency(cb)
+    >>> round(efficiency['NI']['hp'], 4)
+    0.9888
+    >>> round(efficiency['BB']['hp'], 4)
+    0.8885
     """
     row_chp = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
     row_hp = 'Heizwerke'
@@ -431,6 +439,9 @@ def calculate_chp_share_and_efficiency(eb):
     eta = {}
     rows = ['Heizkraftwerke der allgemeinen Versorgung (nur KWK)',
             'Heizwerke']
+
+    if fix_total:
+        eb.loc[eb.total == 0, 'total'] = eb.loc[eb.total == 0].sum(axis=1)
 
     for region in regions:
         eta[region] = {}
