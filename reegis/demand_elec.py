@@ -54,7 +54,7 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
 
     """
     logging.debug("Get entsoe profile {0} for {1}".format(name, year))
-    de_load_profile = entsoe.get_entsoe_load(2014).DE_load_
+    de_load_profile = entsoe.get_entsoe_load(year).DE_load_
 
     load_profile = pd.DataFrame()
 
