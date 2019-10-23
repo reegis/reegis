@@ -8,14 +8,14 @@ import reegis
 
 if not os.environ.get('READTHEDOCS') == 'True':
     requirements = [
-        'pandas >= 0.21.0, < 0.25',
+        'pandas >= 0.21.0, < 0.26',
         'demandlib',
         'tables',
         'shapely',
         'pvlib < 0.7',
-        'geopandas < 0.5',
+        'geopandas < 0.7',
         'requests',
-        'numpy < 1.16',
+        'numpy < 1.18',
         'workalendar',
         'pyproj',
         'pytz',
