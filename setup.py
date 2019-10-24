@@ -21,7 +21,6 @@ if not os.environ.get('READTHEDOCS') == 'True':
         'pytz',
         'windpowerlib < 0.3',
         'python-dateutil < 3.0',
-        'cython',
         'Rtree < 0.9',
         'xlrd < 2.0']
 else:
@@ -44,6 +43,7 @@ setup(name='reegis',
       packages=find_packages(),
       namespace_package=['reegis'],
       install_requires=requirements,
+      extras_require={'dev': ['nose', 'cython']},
       package_data={
           'reegis': [os.path.join('data', 'static', '*.csv'),
                      os.path.join('data', 'static', '*.txt'),
