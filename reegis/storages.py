@@ -19,7 +19,7 @@ import numpy as np
 from shapely.geometry import Point
 
 # internal modules
-import reegis.config as cfg
+from reegis import config as cfg
 from reegis import geometries
 
 

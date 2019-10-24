@@ -15,7 +15,7 @@ import os
 import logging
 
 # Internal modules
-import reegis.config as cfg
+from reegis import config as cfg
 from reegis import inhabitants
 from reegis import geometries
 

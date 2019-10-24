@@ -22,13 +22,11 @@ from workalendar.europe import Germany
 import demandlib.bdew as bdew
 
 # internal modules
-import reegis.config as cfg
-import reegis.entsoe
-import reegis.bmwi
-import reegis.geometries
-import reegis.energy_balance
-import reegis.coastdat
-import reegis.openego
+from reegis import config as cfg
+from reegis import bmwi
+from reegis import geometries
+from reegis import energy_balance
+from reegis import coastdat
 from reegis import inhabitants
 
 
@@ -54,11 +52,11 @@ def heat_demand(year):
     >>> hd.loc[('MV', 'domestic'), 'district heating']
     5151.5
     """
-    eb = reegis.energy_balance.get_usage_balance(year)
+    eb = energy_balance.get_usage_balance(year)
     eb.sort_index(inplace=True)
 
     # get fraction of domestic and retail from the german energy balance
-    share = reegis.energy_balance.get_domestic_retail_share(year)
+    share = energy_balance.get_domestic_retail_share(year)
 
     # Use 0.5 for both sectors if no value is given
     share.fillna(0.5, inplace=True)
@@ -142,7 +140,7 @@ def share_of_mechanical_energy_bmwi(year):
 
     """
     mech = pd.DataFrame()
-    fs = reegis.bmwi.read_bmwi_sheet_7('a')
+    fs = bmwi.read_bmwi_sheet_7('a')
     fs.sort_index(inplace=True)
     sector = 'Industrie'
 
@@ -150,7 +148,7 @@ def share_of_mechanical_energy_bmwi(year):
     mech[sector] = fs.loc[(sector, 'mechanische Energie'), year].div(
         total).round(3)
 
-    fs = reegis.bmwi.read_bmwi_sheet_7('b')
+    fs = bmwi.read_bmwi_sheet_7('b')
     fs.sort_index(inplace=True)
     for sector in fs.index.get_level_values(0).unique():
         total = float(fs.loc[(sector, 'gesamt'), year])
@@ -276,7 +274,7 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
 
     demand_state = heat_demand(year).sort_index()
 
-    temperatures = reegis.coastdat.federal_state_average_weather(
+    temperatures = coastdat.federal_state_average_weather(
         weather_year, 'temp_air')
 
     temperatures = temperatures.tz_convert('Europe/Berlin')
@@ -340,8 +338,9 @@ def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
 
     Examples
     --------
+    >>> from reegis import geometries
     >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
-    >>> regions = reegis.geometries.load(
+    >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     'region_polygons_de21_vg.csv')
     >>> hp1 = get_heat_profiles_by_region(2014, regions, from_csv=fn)

@@ -30,7 +30,7 @@ import os
 import logging
 
 # Internal modules
-import reegis.config as cfg
+from reegis import config as cfg
 
 # External libraries
 import pandas as pd

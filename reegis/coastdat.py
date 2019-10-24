@@ -30,12 +30,12 @@ from shapely.geometry import Point
 from windpowerlib.wind_turbine import WindTurbine
 
 # Internal modules
-import reegis.tools as tools
-import reegis.feedin as feedin
-import reegis.config as cfg
-import reegis.powerplants as powerplants
+from reegis import tools
+from reegis import feedin
+from reegis import config as cfg
+from reegis import powerplants as powerplants
 from reegis import geometries
-import reegis.bmwi
+from reegis import bmwi
 
 
 def download_coastdat_data(filename=None, year=None, url=None,
@@ -344,6 +344,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                 type='solar', year=year, set_name=pv_key)
             if not os.path.isfile(filename) or overwrite:
                 hdf['solar'][pv_key] = pd.HDFStore(filename, mode='w')
+    else:
+        pv_sets = None
 
     if wind:
         logging.info(txt_create.format('wind', year))
@@ -361,6 +363,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                 type='wind', year=year, set_name=wind_key)
             if not os.path.isfile(filename) or overwrite:
                 hdf['wind'][wind_key] = pd.HDFStore(filename, mode='w')
+    else:
+        wind_sets = None
 
     # Define basic variables for time logging
     remain = len(coastdat_keys)
@@ -770,7 +774,7 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
 def aggregate_by_region_hydro(pp, regions, year, outfile_name):
     """Aggregate hydro power plants by region."""
 
-    hydro = reegis.bmwi.bmwi_re_energy_capacity()['water']
+    hydro = bmwi.bmwi_re_energy_capacity()['water']
 
     hydro_capacity = (pp.loc['Hydro', 'capacity_{0}'.format(year)].sum())
 

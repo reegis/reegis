@@ -16,8 +16,8 @@ import logging
 import datetime
 
 # Internal modules
-import reegis.config as cfg
-import reegis.geometries as geo
+from reegis import config as cfg
+from reegis import geometries as geo
 
 # External libraries
 import numpy as np

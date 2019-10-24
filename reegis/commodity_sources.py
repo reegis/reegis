@@ -22,8 +22,8 @@ import logging
 import pandas as pd
 
 # internal modules
-import reegis.config as cfg
-import reegis.bmwi
+from reegis import config as cfg
+from reegis import bmwi
 
 
 def initialise_commodity_sources():
@@ -41,7 +41,7 @@ def prices_from_bmwi_energiedaten(src):
         '  - Steinkohlen': 'Hard coal'
     }
 
-    filename = reegis.bmwi.get_bmwi_energiedaten_file()
+    filename = bmwi.get_bmwi_energiedaten_file()
 
     # get prices for commodity source from sheet 26
     fs = pd.read_excel(filename, '26', skiprows=6, index_col=[0]).iloc[4:7]

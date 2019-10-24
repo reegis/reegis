@@ -21,9 +21,9 @@ import logging
 import geopandas as gpd
 
 # Internal modules
-import reegis.config as cfg
+from reegis import config as cfg
 from reegis import geometries
-import reegis.tools as tools
+from reegis import tools
 
 
 def get_ew_shp_file(year):

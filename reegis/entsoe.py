@@ -19,7 +19,7 @@ import datetime
 from collections import namedtuple
 
 # internal modules
-import reegis.config as cfg
+from reegis import config as cfg
 
 # External packages
 import pandas as pd

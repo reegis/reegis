@@ -19,10 +19,10 @@ import pandas as pd
 import numpy as np
 
 # Internal modules
-import reegis.config as cfg
-import reegis.opsd as opsd
-import reegis.energy_balance as energy_balance
-import reegis.geometries as geo
+from reegis import config as cfg
+from reegis import opsd
+from reegis import energy_balance
+from reegis import geometries as geo
 
 
 def patch_offshore_wind(orig_df, columns=None):

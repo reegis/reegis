@@ -19,8 +19,8 @@ from shapely import wkb
 import pandas as pd
 
 # Internal modules
-import reegis.config as cfg
-import reegis.geometries as geometries
+from reegis import config as cfg
+from reegis import geometries
 from reegis import bmwi as bmwi_data
 from reegis import oedb
 from reegis import tools
