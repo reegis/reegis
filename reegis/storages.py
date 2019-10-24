@@ -13,15 +13,14 @@ __license__ = "MIT"
 # Python libraries
 import os
 
-if not os.environ.get('READTHEDOCS') == 'True':
-    # External libraries
-    import pandas as pd
-    import numpy as np
-    from shapely.geometry import Point
+# External libraries
+import pandas as pd
+import numpy as np
+from shapely.geometry import Point
 
-    # internal modules
-    import reegis.config as cfg
-    from reegis import geometries
+# internal modules
+import reegis.config as cfg
+from reegis import geometries
 
 
 def lat_lon2point(df):

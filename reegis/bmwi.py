@@ -14,13 +14,12 @@ __license__ = "MIT"
 import os
 import logging
 
-if not os.environ.get('READTHEDOCS') == 'True':
-    # External libraries
-    import pandas as pd
+# External libraries
+import pandas as pd
 
-    # Internal modules
-    import reegis.config as cfg
-    import reegis.tools as tools
+# Internal modules
+import reegis.config as cfg
+import reegis.tools as tools
 
 
 def get_bmwi_energiedaten_file(overwrite=False):

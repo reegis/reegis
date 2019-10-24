@@ -29,17 +29,14 @@ __license__ = "MIT"
 import os
 import logging
 
+# Internal modules
+import reegis.config as cfg
 
-if not os.environ.get('READTHEDOCS') == 'True':
-
-    # Internal modules
-    import reegis.config as cfg
-
-    # External libraries
-    import pandas as pd
-    from windpowerlib.modelchain import ModelChain
-    from windpowerlib.wind_turbine import WindTurbine
-    import pvlib
+# External libraries
+import pandas as pd
+from windpowerlib.modelchain import ModelChain
+from windpowerlib.wind_turbine import WindTurbine
+import pvlib
 
 
 def get_optimal_pv_angle(lat):

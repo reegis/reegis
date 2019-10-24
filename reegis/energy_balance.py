@@ -21,8 +21,7 @@ from reegis import geometries
 
 # External packages
 import pandas as pd
-if not os.environ.get('READTHEDOCS') == 'True':
-    import requests
+import requests
 
 
 def get_de_balance(year):

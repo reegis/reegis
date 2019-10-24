@@ -9,14 +9,12 @@ SPDX-License-Identifier: MIT
 __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
-import os
 import logging
 
-if not os.environ.get('READTHEDOCS') == 'True':
-    import requests
-    from shapely import wkb
-    import pandas as pd
-    import geopandas as gpd
+import requests
+from shapely import wkb
+import pandas as pd
+import geopandas as gpd
 
 
 def wkb2wkt(x):

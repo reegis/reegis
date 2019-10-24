@@ -14,10 +14,8 @@ __license__ = "MIT"
 import os
 import logging
 
-
-if not os.environ.get('READTHEDOCS') == 'True':
-    # External libraries
-    import requests
+# External libraries
+import requests
 
 
 def download_file(filename, url, overwrite=False):

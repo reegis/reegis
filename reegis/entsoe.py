@@ -23,10 +23,9 @@ import reegis.config as cfg
 
 # External packages
 import pandas as pd
-if not os.environ.get('READTHEDOCS') == 'True':
-    import requests
-    import pytz
-    import dateutil
+import requests
+import pytz
+import dateutil
 
 
 def read_original_timeseries_file(orig_csv_file=None, overwrite=False):

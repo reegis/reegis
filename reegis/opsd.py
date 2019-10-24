@@ -22,10 +22,9 @@ import reegis.geometries as geo
 # External libraries
 import numpy as np
 import pandas as pd
-if not os.environ.get('READTHEDOCS') == 'True':
-    import pyproj
-    import requests
-    from shapely.wkt import loads as wkt_loads
+import pyproj
+import requests
+from shapely.wkt import loads as wkt_loads
 
 
 def convert_utm_code_opsd(df):

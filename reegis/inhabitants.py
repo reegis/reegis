@@ -17,14 +17,13 @@ import shutil
 import glob
 import logging
 
-if not os.environ.get('READTHEDOCS') == 'True':
-    # External libraries
-    import geopandas as gpd
+# External libraries
+import geopandas as gpd
 
-    # Internal modules
-    import reegis.config as cfg
-    from reegis import geometries
-    import reegis.tools as tools
+# Internal modules
+import reegis.config as cfg
+from reegis import geometries
+import reegis.tools as tools
 
 
 def get_ew_shp_file(year):

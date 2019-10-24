@@ -23,20 +23,19 @@ from collections import namedtuple
 import calendar
 
 # External libraries
-if not os.environ.get('READTHEDOCS') == 'True':
-    import requests
-    import pandas as pd
-    import pvlib
-    from shapely.geometry import Point
-    from windpowerlib.wind_turbine import WindTurbine
+import requests
+import pandas as pd
+import pvlib
+from shapely.geometry import Point
+from windpowerlib.wind_turbine import WindTurbine
 
-    # Internal modules
-    import reegis.tools as tools
-    import reegis.feedin as feedin
-    import reegis.config as cfg
-    import reegis.powerplants as powerplants
-    from reegis import geometries
-    import reegis.bmwi
+# Internal modules
+import reegis.tools as tools
+import reegis.feedin as feedin
+import reegis.config as cfg
+import reegis.powerplants as powerplants
+from reegis import geometries
+import reegis.bmwi
 
 
 def download_coastdat_data(filename=None, year=None, url=None,

@@ -14,16 +14,15 @@ __license__ = "MIT"
 import os
 import logging
 
-if not os.environ.get('READTHEDOCS') == 'True':
-    # External libraries
-    import pandas as pd
-    import numpy as np
+# External libraries
+import pandas as pd
+import numpy as np
 
-    # Internal modules
-    import reegis.config as cfg
-    import reegis.opsd as opsd
-    import reegis.energy_balance as energy_balance
-    import reegis.geometries as geo
+# Internal modules
+import reegis.config as cfg
+import reegis.opsd as opsd
+import reegis.energy_balance as energy_balance
+import reegis.geometries as geo
 
 
 def patch_offshore_wind(orig_df, columns=None):
