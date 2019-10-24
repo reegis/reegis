@@ -197,7 +197,7 @@ def get_heat_profile_from_demandlib(temperature, annual_demand, sector, year,
     >>> hp = get_heat_profile_from_demandlib(
     ...     temperature, 5345, 'retail', 2014)
     >>> round(hp.sum())
-    5276.0
+    5302.0
     """
     cal = Germany()
     holidays = dict(cal.holidays(year))
