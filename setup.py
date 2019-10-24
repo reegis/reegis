@@ -9,21 +9,21 @@ import reegis
 if not os.environ.get('READTHEDOCS') == 'True':
     requirements = [
         'pandas >= 0.21.0, < 0.26',
-        'demandlib',
-        'tables',
-        'shapely',
+        'demandlib < 0.2',
+        'tables < 3.7',
+        'shapely < 2.0',
         'pvlib < 0.7',
         'geopandas < 0.7',
-        'requests',
+        'requests < 3.0',
         'numpy < 1.18',
-        'workalendar',
-        'pyproj',
+        'workalendar < 8.0',
+        'pyproj < 3.0',
         'pytz',
         'windpowerlib < 0.3',
-        'python-dateutil',
+        'python-dateutil < 3.0',
         'cython',
-        'Rtree',
-        'xlrd']
+        'Rtree < 0.9',
+        'xlrd < 2.0']
 else:
     requirements = ['cycler']
 
