@@ -12,7 +12,7 @@ __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
 __all__ = ['has_option', 'has_section', 'get', 'get_list', 'get_dict',
-           'get_dict_list', 'tmp_set']
+           'get_dict_list', 'tmp_set', 'init']
 
 
 # Python libraries
