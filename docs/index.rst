@@ -33,6 +33,7 @@ Most tools use spatial data and can be used for arbitrary regions.
    :glob:
 
    getting_started
+   usage
    reegis
 
 

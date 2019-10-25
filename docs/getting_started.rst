@@ -1,5 +1,5 @@
-Documentation
-~~~~~~~~~~~~~
+Overview
+~~~~~~~~
 
 Full documentation can be found at `readthedocs <https://reegis.readthedocs.io/en/latest/>`_.
 

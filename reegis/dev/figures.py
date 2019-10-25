@@ -31,7 +31,7 @@ def fig_deflex_de22_polygons():
     ax.set_axis_off()
     fn = os.path.join(os.path.dirname(__file__),
                       os.pardir, os.pardir, 'docs', '_files',
-                      'federal_states_region_plot.png')
+                      'federal_states_region_plot.svg')
     plt.savefig(fn)
     plt.show()
 
