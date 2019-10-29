@@ -391,7 +391,7 @@ def add_regions_to_powerplants(region, column, filename=None,
 
     fn = os.path.join(path, filename)
 
-    if default and not os.path.isfile(fn):
+    if default and pp is None and not os.path.isfile(fn):
         msg = "File '{0}' does not exist. Will create it from reegis file."
         logging.debug(msg.format(fn))
         fn = pp_opsd2reegis()
