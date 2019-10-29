@@ -297,6 +297,9 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                      cfg.get('coastdat', 'coastdatgrid_centroid')),
         index_col='gid')
 
+    pv_sets = None
+    wind_sets = None
+
     # Open coastdat-weather data hdf5 file for the given year or try to
     # download it if the file is not found.
     weather_file_name = os.path.join(
@@ -344,8 +347,6 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                 type='solar', year=year, set_name=pv_key)
             if not os.path.isfile(filename) or overwrite:
                 hdf['solar'][pv_key] = pd.HDFStore(filename, mode='w')
-    else:
-        pv_sets = None
 
     if wind:
         logging.info(txt_create.format('wind', year))
@@ -363,8 +364,6 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
                 type='wind', year=year, set_name=wind_key)
             if not os.path.isfile(filename) or overwrite:
                 hdf['wind'][wind_key] = pd.HDFStore(filename, mode='w')
-    else:
-        wind_sets = None
 
     # Define basic variables for time logging
     remain = len(coastdat_keys)
