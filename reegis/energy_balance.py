@@ -218,7 +218,7 @@ def fix_usage_balance(eb, year):
     Fixes the energy balances after analysing them. This is done manually.
     """
     if year not in [2012, 2013, 2014]:
-        raise ValueError("You cannot edit the balance for year {0}".format(
+        raise ValueError("You cannot edit the balance for year {0}.".format(
             year))
     # ******************************************************************
     # Bavaria (Bayern) - Missing coal values
@@ -386,10 +386,18 @@ def check_conversion_balance(years=None, balance=None, path=None):
     2014 - NI: 705997
     2014 - SH: 377561
     2014 - ST: 51495
-
+    >>> ub = get_conversion_balance(2014)
+    >>> ub = check_conversion_balance(balance=ub)
+    nn - BB: 460589
+    nn - BW: 706972
+    nn - BY: 2288252
+    nn - MV: 19242
+    nn - NI: 705997
+    nn - SH: 377561
+    nn - ST: 51495
     """
     if balance is not None:
-        years = ['none']
+        years = ['nn']
         cb = balance
         cb_orig = cb.copy()
     else:
