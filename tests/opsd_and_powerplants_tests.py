@@ -16,12 +16,9 @@ __license__ = "MIT"
 
 from nose.tools import ok_, eq_, assert_raises_regexp
 import os
-from shutil import rmtree
+from shutil import rmtree, copyfile
 from reegis import (powerplants, geometries as geo, coastdat, opsd,
                     config as cfg)
-
-
-# import unittest
 
 
 def test_01_opsd2reegis():
@@ -29,6 +26,11 @@ def test_01_opsd2reegis():
     cfg.tmp_set('paths_pattern', 'opsd', path)
     cfg.tmp_set('paths', 'powerplants', path)
     fn_opsd = opsd.opsd_power_plants()
+    os.remove(fn_opsd)
+    fn_opsd = os.path.join(
+        cfg.get('paths_pattern', 'opsd'), cfg.get('opsd', 'opsd_prepared'))
+    fn_test = fn_opsd.replace('.h5', '_test.h5')
+    copyfile(fn_test, fn_opsd)
     fn_reegis = powerplants.pp_opsd2reegis()
     os.remove(fn_opsd)
     filename = str(fn_reegis.split(os.sep)[-1])
@@ -82,5 +84,4 @@ def test_99_read_conv_pp():
               'conventional_power_plants_DE.csv']:
         ok_(os.path.isfile(os.path.join(my_dir, f)))
     rmtree(my_dir)
-    print(df.columns)
     eq_(int(df['capacity_net_bnetza'].sum()), 118684)

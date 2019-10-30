@@ -28,6 +28,12 @@ from reegis import geometries as geo
 def patch_offshore_wind(orig_df, columns=None):
     """
     Patch the power plants table with additional data of offshore wind parks.
+
+    Examples
+    --------
+    >>> df = pd.DataFrame()
+    >>> int(patch_offshore_wind(df)['capacity'].sum())
+    5332
     """
     if columns is None:
         df = pd.DataFrame()
@@ -129,17 +135,15 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
         logging.debug(msg.format(filename_in))
         filename_in = opsd.opsd_power_plants()
     else:
-        complete = True
         for cat in ['renewable', 'conventional']:
             try:
                 pd.read_hdf(filename_in, cat)
             except KeyError:
                 msg = "File '{0}' exists but key '{1}' is not present."
                 logging.debug(msg.format(filename_in, cat))
-                complete = False
-        if not complete:
-            logging.debug("Will re-create file with all keys.")
-            filename_in = opsd.opsd_power_plants(overwrite=True)
+                logging.debug("Will re-create file with all keys.")
+                os.remove(filename_in)
+                filename_in = opsd.opsd_power_plants()
 
     pp = {}
     for cat in ['conventional', 'renewable']:
@@ -531,4 +535,8 @@ def get_powerplants_by_region(region, year, name, grouped=True):
 
 
 if __name__ == "__main__":
-    pass
+    store = pd.HDFStore('/home/uwe/opsd_power_plants_DE_prepared.h5')
+    print(store.keys())
+    del store['renewable']
+    print(store.keys())
+    store.close()
