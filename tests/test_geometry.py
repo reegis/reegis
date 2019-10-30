@@ -10,7 +10,7 @@ __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
 
-from nose.tools import eq_, ok_, assert_raises_regexp
+from nose.tools import ok_, assert_raises_regexp
 import os
 import pandas as pd
 from reegis import geometries
@@ -36,7 +36,7 @@ def test_load_wrong_csv():
     filename = 'csv_without_geometry.csv'
     with assert_raises_regexp(
             ValueError, 'Could not create GeoDataFrame. Missing geometries.'):
-        gdf = geometries.load(path, filename)
+        geometries.load(path, filename)
 
 
 def test_load_error():

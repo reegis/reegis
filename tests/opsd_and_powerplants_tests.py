@@ -14,17 +14,17 @@ __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
 
-from nose.tools import eq_
+from nose.tools import ok_, eq_, assert_raises_regexp
 import os
 from shutil import rmtree
-from reegis import powerplants, geometries as geo, coastdat, opsd, \
-    config as cfg
+from reegis import (powerplants, geometries as geo, coastdat, opsd,
+                    config as cfg)
 
 
 # import unittest
 
 
-def test_opsd2reegis():
+def test_01_opsd2reegis():
     path = os.path.join(os.path.dirname(__file__), 'data')
     cfg.tmp_set('paths_pattern', 'opsd', path)
     cfg.tmp_set('paths', 'powerplants', path)
@@ -68,3 +68,19 @@ def test_opsd2reegis():
 
     eq_(coastdat.windzone_region_fraction(
         pp, name='fed_states', year=year).round(2).loc['NI', 3], 0.24)
+
+
+def test_99_read_conv_pp():
+    my_dir = os.path.join(os.path.expanduser('~'), 'reegis_opsd_test')
+    os.makedirs(my_dir, exist_ok=True)
+    cfg.tmp_set('paths_pattern', 'opsd', my_dir)
+    cfg.tmp_set('paths', 'powerplants', my_dir)
+    with assert_raises_regexp(ValueError, "Category 'conv' is not valid."):
+        opsd.load_original_opsd_file('conv', True)
+    df = opsd.load_original_opsd_file('conventional', True)
+    for f in ['conventional_readme.md', 'conventional_datapackage.json',
+              'conventional_power_plants_DE.csv']:
+        ok_(os.path.isfile(os.path.join(my_dir, f)))
+    rmtree(my_dir)
+    print(df.columns)
+    eq_(int(df['capacity_net_bnetza'].sum()), 118684)

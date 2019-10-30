@@ -228,10 +228,15 @@ def remove_cols(df, cols):
 
 
 def load_original_opsd_file(category, overwrite):
-    """Read file if exists."""
+    """
+    Read file if exists or download it from source.
+    """
     version_name = cfg.get('opsd', 'version_name')
     opsd_path = cfg.get('paths_pattern', 'opsd').format(version=version_name)
     os.makedirs(opsd_path, exist_ok=True)
+
+    if category not in ['renewable', 'conventional']:
+        raise ValueError("Category '{0}' is not valid.".format(category))
 
     v = {
         'conventional': cfg.get('opsd', 'version_conventional'),
@@ -276,11 +281,9 @@ def load_original_opsd_file(category, overwrite):
 
     if category == 'renewable':
         df = pd.read_csv(orig_csv_file)
-    elif category == 'conventional':
-        df = pd.read_csv(orig_csv_file, index_col=[0])
     else:
-        logging.error("Unknown category! Allowed: 'conventional, 'renewable'")
-        df = None
+        df = pd.read_csv(orig_csv_file, index_col=[0])
+
     return df
 
 
@@ -381,7 +384,7 @@ def load_opsd_file(category, overwrite, prepared=True):
     return df
 
 
-def opsd_power_plants(overwrite=False, csv=False):
+def opsd_power_plants(overwrite=False):
     """
 
     Parameters
@@ -412,17 +415,12 @@ def opsd_power_plants(overwrite=False, csv=False):
     opsd_path = cfg.get('paths_pattern', 'opsd').format(version=version_name)
     os.makedirs(opsd_path, exist_ok=True)
 
-    if csv:
-        opsd_file_name = os.path.join(
-            opsd_path, cfg.get('opsd', 'opsd_prepared_csv_pattern'))
+    opsd_file_name = os.path.join(
+        opsd_path, cfg.get('opsd', 'opsd_prepared'))
+    if os.path.isfile(opsd_file_name) and not overwrite:
         hdf = None
     else:
-        opsd_file_name = os.path.join(
-            opsd_path, cfg.get('opsd', 'opsd_prepared'))
-        if os.path.isfile(opsd_file_name) and not overwrite:
-            hdf = None
-        else:
-            hdf = pd.HDFStore(opsd_file_name, mode='w')
+        hdf = pd.HDFStore(opsd_file_name, mode='w')
 
     # If the power plant file does not exist, download and prepare it.
     for category in ['conventional', 'renewable']:
@@ -430,10 +428,8 @@ def opsd_power_plants(overwrite=False, csv=False):
         cleaned_file_name = os.path.join(
             opsd_path, cfg.get('opsd', 'cleaned_csv_file_pattern').format(
                 cat=category))
-        if csv:
-            exist = os.path.isfile(opsd_file_name) and not overwrite
-        else:
-            exist = hdf is None
+
+        exist = hdf is None
 
         if not exist:
             logging.info("Preparing {0} opsd power plants".format(category))
@@ -441,12 +437,9 @@ def opsd_power_plants(overwrite=False, csv=False):
             pp = geo.create_geo_df(df, lon_column='lon', lat_column='lat')
             pp = geo.remove_invalid_geometries(pp)
 
-            if csv:
-                pp.to_csv(opsd_file_name.format(cat=category))
-            else:
-                df = pd.DataFrame(pp)
-                df[strcols[category]] = df[strcols[category]].astype(str)
-                hdf.put(category, df)
+            df = pd.DataFrame(pp)
+            df[strcols[category]] = df[strcols[category]].astype(str)
+            hdf.put(category, df)
             logging.info("Opsd {0} power plants stored to {1}".format(
                 category, opsd_file_name))
 
