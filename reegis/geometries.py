@@ -26,15 +26,30 @@ from shapely.geometry.base import BaseGeometry
 
 
 def get_federal_states_polygon():
-    """Get a region set for the federal states of Germany."""
+    """
+    Get a region set for the federal states of Germany.
+
+    Examples
+    --------
+    >>> list(get_federal_states_polygon().iloc[0:4].index)
+    ['HH', 'NI', 'MV', 'SH']
+    """
     federal_states = load(
         cfg.get('paths', 'geometry'),
         cfg.get('geometry', 'federalstates_polygon'))
     return federal_states.set_index('iso')
 
 
-def get_germany_awz_polygon():
-    """Get the polygon of the exclusive economic zone of Germany."""
+def get_germany_with_awz_polygon():
+    """
+    Get the polygon of Germany with the exclusive economic zone of Germany in
+    one polygon.
+
+    Examples
+    --------
+    >>> get_germany_with_awz_polygon()['GEN'][0]
+    'Deutschland mit AWZ'
+    """
     return load(
         cfg.get('paths', 'geometry'),
         'germany_awz_polygon.geojson')
@@ -42,23 +57,30 @@ def get_germany_awz_polygon():
 
 def load(path=None, filename=None, fullname=None, hdf_key=None,
          index_col=None, crs=None):
-    """Load csv-file into a DataFrame and a GeoDataFrame."""
+    """
+    Load files with geographic information into a GeoDataFrame.
+
+    Allowed types are csv, hdf, shp and geojson.
+    """
     if fullname is None:
         fullname = os.path.join(path, filename)
 
-    if fullname[-4:] == '.csv':
+    suffix = fullname.split('.')[-1]
+
+    if suffix == 'csv':
         df = load_csv(fullname=fullname, index_col=index_col)
         gdf = create_geo_df(df, crs=crs)
 
-    elif fullname[-4:] == '.hdf':
+    elif suffix == 'hdf' or suffix == 'h5':
         df = pd.DataFrame(load_hdf(fullname=fullname, key=hdf_key))
         gdf = create_geo_df(df, crs=crs)
 
-    elif fullname[-4:] == '.shp' or fullname[-8:] == '.geojson':
+    elif suffix == 'shp' or suffix == 'geojson':
         gdf = load_shp(fullname=fullname)
 
     else:
-        raise ValueError("Cannot load file with a '{0}' extension.")
+        raise ValueError("Cannot load file with a '{0}' extension.".format(
+            suffix))
 
     return gdf
 
@@ -107,14 +129,14 @@ def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
 
     if lon_column is not None:
         if lon_column not in df:
-            logging.error("Cannot find column for longitude: {0}".format(
+            raise ValueError("Cannot find column for longitude: {0}".format(
                 lon_column))
         else:
             df.rename(columns={lon_column: 'longitude'}, inplace=True)
 
     if lat_column is not None:
         if lat_column not in df:
-            logging.error("Cannot find column for latitude: {0}".format(
+            raise ValueError("Cannot find column for latitude: {0}".format(
                 lat_column))
         else:
             df.rename(columns={lat_column: 'latitude'}, inplace=True)
@@ -126,14 +148,13 @@ def create_geo_df(df, wkt_column=None, lon_column=None, lat_column=None,
 
         df['geometry'] = df.apply(lat_lon2point, axis=1)
 
+    elif 'geometry' not in df:
+        msg = "Could not create GeoDataFrame. Missing geometries."
+        raise ValueError(msg)
     elif isinstance(df.iloc[0]['geometry'], str):
         df['geometry'] = df['geometry'].apply(wkt_loads)
     elif isinstance(df.iloc[0]['geometry'], BaseGeometry):
         pass
-    else:
-        msg = "Could not create GeoDataFrame. Missing geometries."
-        logging.error(msg)
-        return None
 
     if crs is None:
         crs = {'init': 'epsg:4326'}
