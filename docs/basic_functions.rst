@@ -80,3 +80,12 @@ careful with most recent data sets and check them before use.
 
 If you frequently work with energy balances please contact the author and give
 your feedback or help to improve and maintain the API.
+
+General energy data from the energy ministry
+============================================
+
+The ministry of energy
+`BMWI <http://www.bmwi.de/Navigation/EN/Home/home.html>`_ provides an excel
+sheet which is not optimised for automatic data processing. Nevertheless, it
+is possible to get some basic data from there. Be careful with updates, because
+the structure of the sheets may vary in the future.

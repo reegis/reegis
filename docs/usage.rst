@@ -1,18 +1,29 @@
-.. toctree::
-   :maxdepth: 4
-   :glob:
+Basic Information
+~~~~~~~~~~~~~~~~~
 
-Important Note
-~~~~~~~~~~~~~~
+There are two types of data functions in reegis. The high level functions
+contain `by_region` functions, that make it possible to get data for a
+specific region set.
+Basic functions provide useful functions to get a pandas.DataFrame from
+a specific data source. These functions may return more or less raw data.
+Using pandas.DataFrame it is still pretty easy to process these tables to your
+own needs.
 
-Some functions may take some minutes even hours on the first run. Calculations
-that need a lot of time will store the result on your hard disc so that the
-next run will be a lot shorter on the same computer.
+The region set used in the following examples is the
+federal state set. This set contains 17 regions (16 federal states plus one
+offshore region).
 
-Use a logger to see the progress:
+.. highlight:: python
 
-.. code-block:: python
+.. code-block::
 
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
+    from reegis import geometries
+    geometries.get_federal_states_polygon()
 
+See the :py:func:`~reegis.dev.figures.fig_federal_states_polygons` to get the
+full code of this figure.
+
+.. image:: _files/federal_states_region_plot.svg
+  :width: 400
+  :alt: Federal states regions
+  :align: center
