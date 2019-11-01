@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
-import matplotlib.patches as patches
+from matplotlib import patches
 from reegis import geometries, powerplants, energy_balance
 
 
@@ -188,4 +188,4 @@ def plot(names=None, save=True, show=False):
 
 
 if __name__ == "__main__":
-    plot(names=[fig_energy_balance_lignite], show=True)
+    plot(show=True)

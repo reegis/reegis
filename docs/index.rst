@@ -29,12 +29,16 @@ Most tools use spatial data and can be used for arbitrary regions.
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :glob:
 
    getting_started
+   basic
    usage
+   high_level
+   basic_functions
    reegis
+   figures
 
 
 Indices and tables

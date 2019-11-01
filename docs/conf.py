@@ -27,7 +27,7 @@ MOCK_MODULES = ['pygtk', 'gtk', 'gobject', 'argparse', 'numpy', 'pandas',
                 'pvlib', 'shapely', 'pytz', 'windpowerlib', 'geopandas',
                 'pyproj', 'shapely.geometry', 'shapely.geometry.base',
                 'shapely.wkt', 'dateutil', 'windpowerlib.wind_turbine',
-                'windpowerlib.modelchain']
+                'windpowerlib.modelchain', 'matplotlib', 'matplotlib.colors']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 # If extensions (or modules to document with autodoc) are in another directory,
