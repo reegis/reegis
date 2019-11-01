@@ -11,6 +11,8 @@
     :target: https://lgtm.com/projects/g/reegis/reegis/alerts/
 
 
+The reegis repository provides tools to fetch, prepare and organise input data for heat and power models. At the moment the focus is on the territory of Germany but some tools can be used for european models as well.
+
 Installation
 ============
 
