@@ -399,7 +399,7 @@ def get_transformation_balance(year):
         elif 'transformation output:' in i[0][1]:
             cb.loc[i[0][0], 'output', i[0][1].replace(
                 'transformation output: ', '')] = i[1]
-        elif 'primary' in i[0][1]:
+        elif 'Primär' in i[0][1]:
             cb.loc[i[0][0], 'primary', i[0][1]] = i[1]
         elif 'Energieangebot' in i[0][1]:
             cb.loc[i[0][0], 'tender', i[0][1]] = i[1]
@@ -429,18 +429,20 @@ def check_transformation_balance(years=None, balance=None, path=None):
     --------
     >>> check_transformation_balance([2014])
     2014 - BB: 460589
-    2014 - BW: 471315
-    2014 - BY: 1825511
-    2014 - NI: 470665
-    2014 - SH: 251707
+    2014 - BW: 706972
+    2014 - BY: 2288252
+    2014 - MV: 19242
+    2014 - NI: 705997
+    2014 - SH: 377561
     2014 - ST: 51495
     >>> ub = get_transformation_balance(2014)
     >>> ub = check_transformation_balance(balance=ub)
     nn - BB: 460589
-    nn - BW: 471315
-    nn - BY: 1825511
-    nn - NI: 470665
-    nn - SH: 251707
+    nn - BW: 706972
+    nn - BY: 2288252
+    nn - MV: 19242
+    nn - NI: 705997
+    nn - SH: 377561
     nn - ST: 51495
     """
     if balance is not None:
