@@ -31,4 +31,4 @@ def test_state_balance():
                       'data', 'static', 'energy_balance_federal_states.csv')
     config.tmp_set('energy_balance', 'energy_balance_states', fn)
     eb = energy_balance.get_states_energy_balance(2000)
-    eq_(int(eb.loc[('BB', 'Gewinnung'), 'lignite (raw)']), 356092)
+    eq_(int(eb.loc[('BB', 'extraction'), 'lignite (raw)']), 356092)
