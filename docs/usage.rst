@@ -1,4 +1,4 @@
-Basic Information
+Basic information
 ~~~~~~~~~~~~~~~~~
 
 There are two types of data functions in reegis. The high level functions

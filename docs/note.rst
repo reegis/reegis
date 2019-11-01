@@ -2,7 +2,7 @@
    :maxdepth: 4
    :glob:
 
-Important Note
+Important note
 ~~~~~~~~~~~~~~
 
 Some functions may take some minutes even hours on the first run. Calculations
