@@ -7,7 +7,9 @@ from reegis import geometries, powerplants, energy_balance
 
 
 def fig_federal_states_polygons():
-    """Plot federal states as map."""
+    """
+    Plot federal states and the exclusive economic zone of Germany as map.
+    """
     ax = plt.figure(figsize=(9, 7)).add_subplot(1, 1, 1)
 
     # change for a better/worse resolution (
@@ -47,6 +49,10 @@ def fig_federal_states_polygons():
 
 
 def fig_powerplants():
+    """
+    Figure compares the results of the reegis 'get_powerplants_by_region' with
+    statistical data of the Federal Network Agency (BNetzA).
+    """
     plt.rcParams.update({'font.size': 14})
     geo = geometries.get_federal_states_polygon()
 
@@ -95,8 +101,6 @@ def fig_powerplants():
 
     my_colors = ['#6c3012', '#555555', '#db0b0b', '#501209', '#163e16',
                  '#ffde32', '#335a8a']
-
-    # pp_reegis.capacity_2015.unstack().to_excel('/home/uwe/shp/wasser.xls')
 
     pp_reegis = pp_reegis.capacity_2015.unstack().groupby(
         my_dict, axis=1).sum()
@@ -153,6 +157,10 @@ def fig_powerplants():
 
 
 def fig_energy_balance_lignite():
+    """
+    Extraction of raw lignite in Germany over the years using the
+    `energy_balance` module.
+    """
     fuel = 'lignite (raw)'
     eb = energy_balance.get_states_energy_balance()
     ax = plt.figure(figsize=(10, 5)).add_subplot(1, 1, 1)

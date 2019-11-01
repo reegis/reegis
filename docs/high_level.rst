@@ -28,5 +28,8 @@ on the left and the data from the BNetzA on the right.
   :width: 700
   :align: center
 
+See the :py:func:`~reegis.dev.figures.fig_powerplants` function for the
+full code of the function above.
+
 Inhabitants
 +++++++++++

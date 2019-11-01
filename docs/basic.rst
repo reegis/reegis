@@ -20,6 +20,9 @@ offshore region).
     from reegis import geometries
     geometries.get_federal_states_polygon()
 
+See the :py:func:`~reegis.dev.figures.fig_federal_states_polygons` to get the
+full code of this figure.
+
 .. image:: _files/federal_states_region_plot.svg
   :width: 400
   :alt: Federal states regions
