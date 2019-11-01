@@ -24,6 +24,24 @@ import pandas as pd
 import requests
 
 
+def get_eb_index_translation_dict():
+    dic = cfg.get_dict('EB_INDEX_TRANSLATION')
+    dic_keys = list(dic.keys())
+    for key in dic_keys:
+        for keyword in ['Umw-Einsatz', 'Umw-Ausstoß', 'Umw-Verbrauch']:
+            if keyword in key:
+                value = dic.pop(key)
+                key = key.replace(keyword, keyword + ':')
+                dic[key] = value
+        if dic[key] == '':
+            value = key
+            value = value.replace('Umw-Einsatz', 'transformation input')
+            value = value.replace('Umw-Ausstoß', 'transformation output')
+            value = value.replace('Umw-Verbrauch', 'transformation demand')
+            dic[key] = value
+    return dic
+
+
 def get_de_balance(year):
     """Download and return energy balance of germany for a given year."""
     url = cfg.get('energy_balance', 'url_energy_balance_germany')
@@ -117,7 +135,7 @@ def get_domestic_retail_share(year, grouped=False):
     return share
 
 
-def get_states_energy_balance(year):
+def get_states_energy_balance(year=None):
     """
     Get the energy balance for a given year. The input file is the csv-file
     downloaded from:
@@ -125,18 +143,44 @@ def get_states_energy_balance(year):
 
     Parameters
     ----------
-    year : int
+    year : int or None
+        If year is None all possible years will be returned.
 
     Returns
     -------
     pandas.DataFrame
 
+    Notes
+    -----
+    Translation of the index is incomplete.
+
+    Examples
+    --------
+    >>> eb = get_states_energy_balance(2012)
+    >>> eb.loc[(['BB', 'NW'], 'extraction'), 'lignite (raw)'].round(1)
+    BB  extraction    316931.2
+    NW  extraction    927025.0
+    Name: lignite (raw), dtype: float64
+    >>> eb = get_states_energy_balance()
+    >>> eb.loc[([2012, 2013], ['BB', 'NW'], 'extraction'), 'lignite (raw)'
+    ...     ].round(1).sort_index()
+    2012  BB  extraction    316931.2
+          NW  extraction    927025.0
+    2013  BB  extraction    318703.2
+          NW  extraction    894546.0
+    Name: lignite (raw), dtype: float64
     """
-    header_fn = os.path.join(cfg.get('paths', 'static_sources'),
-                             'energy_balance_header.csv')
+    header_fn = os.path.join(
+        cfg.get('paths', 'static_sources'),
+        cfg.get('energy_balance', 'energy_balance_header'))
     header = pd.read_csv(header_fn)
-    fn = os.path.join(cfg.get('paths', 'static_sources'),
-                      'energy_balance_federal_states.csv')
+
+    if os.path.sep not in cfg.get('energy_balance', 'energy_balance_states'):
+        fn = os.path.join(cfg.get('paths', 'static_sources'),
+                          cfg.get('energy_balance', 'energy_balance_states'))
+    else:
+        fn = cfg.get('energy_balance', 'energy_balance_states')
+
     eb = pd.read_csv(fn, sep=';', skiprows=4, index_col=[0, 1, 2],
                      skipfooter=10, engine='python')
     eb.columns = header.columns
@@ -163,13 +207,17 @@ def get_states_energy_balance(year):
     eb = eb.fillna(0)
     eb.drop(['Anmerkung', 'Stand'], axis=1, inplace=True)
     eb = eb.swaplevel(0, 1)
-    eb = eb.loc[year]
-    return eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'))
+    eb.index = eb.index.rename(['', '', ''])
+    eb = eb.rename(columns=cfg.get_dict('COLUMN_TRANSLATION'))
+    eb = eb.rename(index=get_eb_index_translation_dict(), level=2)
+    if year is not None:
+        eb = eb.loc[year]
+    return eb
 
 
 def get_usage_balance(year, grouped=False):
     """
-    GEt the usage part of the energy balance.
+    Get the usage part of the energy balance.
 
     Parameters
     ----------
@@ -315,9 +363,10 @@ def fix_usage_balance(eb, year):
     return eb
 
 
-def get_conversion_balance(year):
+def get_transformation_balance(year):
     """
-    Reshape the energy balance and return the conversion part as a MultiIndex
+    Reshape the energy balance and return the transformation part as a
+    MultiIndex
     DataFrame.
 
     Parameters
@@ -331,10 +380,10 @@ def get_conversion_balance(year):
     Examples
     --------
     >>> year = 2014
-    >>> ub = get_conversion_balance(year)
+    >>> ub = get_transformation_balance(year)
     >>> int(ub.loc[('BB', 'input', 'Heizwerke'), 'total'])
     0
-    >>> ub = fix_conversion_balance(ub)
+    >>> ub = fix_transformation_balance(ub)
     >>> int(ub.loc[('BB', 'input', 'Heizwerke'), 'total'])
     5347
     """
@@ -344,13 +393,13 @@ def get_conversion_balance(year):
     cb = pd.DataFrame(index=my_index, columns=eb.columns)
 
     for i in eb.iterrows():
-        if 'Umw-Einsatz:' in i[0][1]:
-            cb.loc[
-                i[0][0], 'input', i[0][1].replace('Umw-Einsatz: ', '')] = i[1]
-        elif 'Umw-Ausstoß:' in i[0][1]:
-            cb.loc[
-                i[0][0], 'output', i[0][1].replace('Umw-Ausstoß: ', '')] = i[1]
-        elif 'Primär' in i[0][1]:
+        if 'transformation input:' in i[0][1]:
+            cb.loc[i[0][0], 'input', i[0][1].replace(
+                'transformation input: ', '')] = i[1]
+        elif 'transformation output:' in i[0][1]:
+            cb.loc[i[0][0], 'output', i[0][1].replace(
+                'transformation output: ', '')] = i[1]
+        elif 'primary' in i[0][1]:
             cb.loc[i[0][0], 'primary', i[0][1]] = i[1]
         elif 'Energieangebot' in i[0][1]:
             cb.loc[i[0][0], 'tender', i[0][1]] = i[1]
@@ -360,40 +409,38 @@ def get_conversion_balance(year):
     return cb
 
 
-def check_conversion_balance(years=None, balance=None, path=None):
+def check_transformation_balance(years=None, balance=None, path=None):
     """
-    Checks the balance of the conversion balance. If the difference is greater
-    than 5 the name of the region and the difference will be printed. If a path
-    is given wrong balances will be stored as an excel sheet in this path. One
-    excel table for each year will be created.
+    Checks the balance of the transformation balance. If the difference is
+    greater than 5 the name of the region and the difference will be printed.
+    If a path is given wrong balances will be stored as an excel sheet in this
+    path. One excel table for each year will be created.
 
     Parameters
     ----------
     years : list
         List of years to check.
     balance : pandas.DataFrame (optional)
-        A valid conversion balance to check.
+        A valid transformation balance to check.
     path : str
         A directory where the regions
 
     Examples
     --------
-    >>> check_conversion_balance([2014])
+    >>> check_transformation_balance([2014])
     2014 - BB: 460589
-    2014 - BW: 706972
-    2014 - BY: 2288252
-    2014 - MV: 19242
-    2014 - NI: 705997
-    2014 - SH: 377561
+    2014 - BW: 471315
+    2014 - BY: 1825511
+    2014 - NI: 470665
+    2014 - SH: 251707
     2014 - ST: 51495
-    >>> ub = get_conversion_balance(2014)
-    >>> ub = check_conversion_balance(balance=ub)
+    >>> ub = get_transformation_balance(2014)
+    >>> ub = check_transformation_balance(balance=ub)
     nn - BB: 460589
-    nn - BW: 706972
-    nn - BY: 2288252
-    nn - MV: 19242
-    nn - NI: 705997
-    nn - SH: 377561
+    nn - BW: 471315
+    nn - BY: 1825511
+    nn - NI: 470665
+    nn - SH: 251707
     nn - ST: 51495
     """
     if balance is not None:
@@ -409,7 +456,7 @@ def check_conversion_balance(years=None, balance=None, path=None):
 
     for year in years:
         if balance is None:
-            cb = get_conversion_balance(int(year))
+            cb = get_transformation_balance(int(year))
             cb_orig = cb.copy()
         if path is not None:
             fn = os.path.join(path, 'check_{0}.xls'.format(year))
@@ -432,7 +479,7 @@ def check_conversion_balance(years=None, balance=None, path=None):
         return None
 
 
-def fix_conversion_balance(eb):
+def fix_transformation_balance(eb):
     """
     This is a fix after a manual analysis of the energy balances.
 
@@ -462,10 +509,11 @@ def fix_conversion_balance(eb):
     return eb
 
 
-def get_conversion_balance_by_region(year, regions, name='region', fix=False):
+def get_transformation_balance_by_region(
+        year, regions, name='region', fix=False):
     """
-    Get the conversion part of the energy balance for a given region set. The
-    values will be recalculated by the number of inhabitants.
+    Get the transformation part of the energy balance for a given region set.
+    The values will be recalculated by the number of inhabitants.
 
     Parameters
     ----------
@@ -480,24 +528,24 @@ def get_conversion_balance_by_region(year, regions, name='region', fix=False):
 
     Examples
     --------
-    >>> cb_orig = get_conversion_balance(2014)
+    >>> cb_orig = get_transformation_balance(2014)
     >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     'region_polygons_de21_vg.csv')
-    >>> cb = get_conversion_balance_by_region(2014, regions, 'de21')
+    >>> cb = get_transformation_balance_by_region(2014, regions, 'de21')
     >>> int(cb.sum()['electricity']) == int(cb_orig.sum()['electricity'])
     True
     """
-    cb = get_conversion_balance(year)
+    cb = get_transformation_balance(year)
     if fix is True:
-        cb = fix_conversion_balance(cb)
-    # create empty DataFrame to take the conversion balance for the regions
+        cb = fix_transformation_balance(cb)
+    # create empty DataFrame to take the transformation balance for the regions
     my_index = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []])
     cb_new = pd.DataFrame(index=my_index, columns=cb.columns)
 
     # Use the number of inhabitants to reshape the balance to the new regions
     logging.debug(
-        "Fetching inhabitants table to reshape the conversion balance.")
+        "Fetching inhabitants table to reshape the transformation balance.")
     ew = inhabitants.get_share_of_federal_states_by_region(year, regions, name)
 
     # Loop over the deflex regions
@@ -517,4 +565,14 @@ def get_conversion_balance_by_region(year, regions, name='region', fix=False):
 
 
 if __name__ == "__main__":
-    pass
+    from matplotlib import pyplot as plt
+    fuel = 'lignite (raw)'
+    eb = get_states_energy_balance()
+    ax = plt.figure(figsize=(9, 5)).add_subplot(1, 1, 1)
+    eb.loc[(slice(None), slice(None), 'extraction'), fuel].groupby(
+        level=0).sum().plot(ax=ax)
+    plt.title("Extraction of raw lignite in Germany")
+    plt.xlabel('year')
+    plt.ylabel('energy [TJ]')
+    plt.ylim(bottom=0)
+    plt.show()

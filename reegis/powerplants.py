@@ -422,7 +422,7 @@ def calculate_chp_share_and_efficiency(eb, fix_total=True):
 
     Examples
     --------
-    >>> cb = energy_balance.get_conversion_balance(2014)
+    >>> cb = energy_balance.get_transformation_balance(2014)
     >>> efficiency = calculate_chp_share_and_efficiency(cb, fix_total=False)
     >>> round(efficiency['NI']['hp'], 4)
     0.9888
@@ -495,7 +495,7 @@ def get_chp_share_and_efficiency_states(year):
     >>> round(df['BB']['fuel_share']['gas'].sum(), 2)
     0.29
     """
-    conversion_blnc = energy_balance.get_conversion_balance(year)
+    conversion_blnc = energy_balance.get_transformation_balance(year)
     return calculate_chp_share_and_efficiency(conversion_blnc)
 
 
