@@ -567,14 +567,4 @@ def get_transformation_balance_by_region(
 
 
 if __name__ == "__main__":
-    from matplotlib import pyplot as plt
-    fuel = 'lignite (raw)'
-    eb = get_states_energy_balance()
-    ax = plt.figure(figsize=(9, 5)).add_subplot(1, 1, 1)
-    eb.loc[(slice(None), slice(None), 'extraction'), fuel].groupby(
-        level=0).sum().plot(ax=ax)
-    plt.title("Extraction of raw lignite in Germany")
-    plt.xlabel('year')
-    plt.ylabel('energy [TJ]')
-    plt.ylim(bottom=0)
-    plt.show()
+    pass
