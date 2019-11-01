@@ -25,6 +25,9 @@ from reegis import energy_balance
 from reegis import geometries as geo
 
 
+MSG = "File '{0}' does not exist. Will create it from source files."
+
+
 def patch_offshore_wind(orig_df, columns=None):
     """
     Patch the power plants table with additional data of offshore wind parks.
@@ -131,8 +134,7 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
 
     # Create opsd power plant tables if they do not exist.
     if not os.path.isfile(filename_in):
-        msg = "File '{0}' does not exist. Will create it from source files."
-        logging.debug(msg.format(filename_in))
+        logging.debug(MSG.format(filename_in))
         filename_in = opsd.opsd_power_plants()
     else:
         for cat in ['renewable', 'conventional']:
@@ -298,8 +300,7 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
 
     logging.info("Get reegis power plants for {0}.".format(year))
     if default is True and not os.path.isfile(fn) and pp is None:
-        msg = "File '{0}' does not exist. Will create it from reegis file."
-        logging.debug(msg.format(fn))
+        logging.debug(MSG.format(fn))
         fn = pp_opsd2reegis()
     if pp is None:
         pp = pd.DataFrame(pd.read_hdf(fn, 'pp'))
@@ -396,8 +397,7 @@ def add_regions_to_powerplants(region, column, filename=None,
     fn = os.path.join(path, filename)
 
     if default and pp is None and not os.path.isfile(fn):
-        msg = "File '{0}' does not exist. Will create it from reegis file."
-        logging.debug(msg.format(fn))
+        logging.debug(MSG.format(fn))
         fn = pp_opsd2reegis()
 
     if pp is None:
@@ -472,7 +472,29 @@ def calculate_chp_share_and_efficiency(eb, fix_total=True):
 
 
 def get_chp_share_and_efficiency_states(year):
-    """Get chp share from conversion balance."""
+    """
+    Get the efficiency for chp and heat plants from the conversion balance for
+    a specific year (keys: heat_chp, elec_chp, hp).
+
+    Get the share of the heat producing plant from the conversion balance
+    (key: fuel_share)
+
+    Examples
+    --------
+    >>> df = get_chp_share_and_efficiency_states(2014)
+    >>> round(df['BB']['heat_chp'], 2)
+    0.52
+    >>> round(df['BB']['elec_chp'], 2)
+    0.26
+    >>> round(df['BB']['hp'], 2)
+    0.89
+    >>> round(df['BB']['fuel_share'].loc[('BB', 'input'), 'total'], 2)
+    Heizkraftwerke der allgemeinen Versorgung (nur KWK)    0.85
+    Heizwerke                                              0.15
+    Name: total, dtype: float64
+    >>> round(df['BB']['fuel_share']['gas'].sum(), 2)
+    0.29
+    """
     conversion_blnc = energy_balance.get_conversion_balance(year)
     return calculate_chp_share_and_efficiency(conversion_blnc)
 
@@ -535,8 +557,4 @@ def get_powerplants_by_region(region, year, name, grouped=True):
 
 
 if __name__ == "__main__":
-    store = pd.HDFStore('/home/uwe/opsd_power_plants_DE_prepared.h5')
-    print(store.keys())
-    del store['renewable']
-    print(store.keys())
-    store.close()
+    pass
