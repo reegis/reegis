@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 
-""" This module is designed for the use with the coastdat2 weather data set
+"""
+This module is EXPERIMENTAL, that means that tests are missing. The reason is
+that the coastdat2 dataset is deprecated and will be replaced with the
+OpenFred dataset from Helmholtz-Zentrum Geesthacht. It should work though.
+
+This module is designed for the use with the coastdat2 weather data set
 of the Helmholtz-Zentrum Geesthacht.
 
 A description of the coastdat2 data set can be found here:

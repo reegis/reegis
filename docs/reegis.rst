@@ -10,14 +10,6 @@ reegis.bmwi module
     :undoc-members:
     :show-inheritance:
 
-reegis.coastdat module
-----------------------
-
-.. automodule:: reegis.coastdat
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 reegis.energy_balance module
 ----------------------------
 
@@ -106,6 +98,13 @@ reegis.tools module
     :undoc-members:
     :show-inheritance:
 
+reegis.coastdat module (experimental)
+-------------------------------------
+
+.. automodule:: reegis.coastdat
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Module contents
 ---------------
