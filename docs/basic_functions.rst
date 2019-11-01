@@ -1,6 +1,8 @@
 Basic functions
 ~~~~~~~~~~~~~~~
 
+.. highlight:: python
+
 Energy Balance
 ==============
 

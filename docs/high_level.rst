@@ -1,6 +1,8 @@
 High level functions
 ~~~~~~~~~~~~~~~~~~~~
 
+.. highlight:: python
+
 Power plants
 ============
 
@@ -8,7 +10,7 @@ Get the capacity of powerplants for given regions and a specific year. Use
 the pandas functions to process the result. The code below will show a typical
 plot with the capacity for every federal state by fuel for the year 2014.
 
-.. code-block:: python
+.. code-block::
 
     from matplotlib import pyplot as plt
     geometries = geo.get_federal_states_polygon()
