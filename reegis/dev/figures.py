@@ -153,6 +153,8 @@ def fig_powerplants():
     b = patches.Rectangle((-0.2, 31.8), 5.7, 12, color='#cccccc')
     ax.add_patch(b)
     ax.add_patch(patches.Shadow(b, -0.05, -0.2))
+    plt.title('Capacity of power plants in 2014')
+    plt.subplots_adjust(right=0.96, left=0.08, bottom=0.17, top=0.93)
     return 'compare_power_plants_reegis_bnetza'
 
 
