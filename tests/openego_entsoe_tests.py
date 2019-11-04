@@ -19,10 +19,10 @@ class TestEgoEntsoeDemandAndDownload:
     @classmethod
     def setUpClass(cls):
         cfg.tmp_set('open_ego', 'ego_load_areas', 'ego_load_areas_db_test.csv')
-        openego.get_ego_data(query='?where=un_id<10')
+        openego.get_ego_data(osf=False, query='?where=un_id<10')
         cfg.tmp_set('open_ego', 'ego_load_areas', 'ego_load_areas_test.csv')
         cfg.tmp_set('open_ego', 'osf_url', 'https://osf.io/w9pv6/download')
-        cls.load = openego.get_ego_data(osf=True)
+        cls.load = openego.get_ego_data()
         cls.geo = geometries.get_federal_states_polygon()
         filename = 'oep_ego_demand_combined_test.h5'
         path = cfg.get('paths', 'demand')

@@ -177,6 +177,18 @@ def get_ego_demand_by_region(regions, name, outfile=None, infile=None,
     The openego map may not be updated in the future so it might be necessary
     to scale the results to an overall demand.
 
+    Examples
+    --------
+    >>> federal_states = geometries.get_federal_states_polygon()
+    >>> bmwi_annual = bmwi_data.get_annual_electricity_demand_bmwi(
+    ...    2015)  # doctest: +SKIP
+
+    >>> ego_demand = get_ego_demand_by_region(
+    ...     federal_states, 'federal_states', grouped=True)  # doctest: +SKIP
+
+    >>> ego_demand.div(ego_demand.sum()).mul(bmwi_annual)  # doctest: +SKIP
+
+
     """
     if outfile is None:
         path = cfg.get('paths', 'demand')
@@ -207,31 +219,6 @@ def get_ego_demand_by_region(regions, name, outfile=None, infile=None,
         return ego_demand.groupby(name)['consumption'].sum()
     else:
         return ego_demand
-
-
-def get_bmwi_scaled_ego_demand_by_federal_states(year):
-    """
-    This is an example function to show how to use openego to get the demand
-    for a given region and scale it with the nation wide electricity demand.
-    For the german electricity demand the BMWi data set is used.
-
-    Parameters
-    ----------
-    year : int
-        The year for of the BMWI data set.
-
-    Returns
-    -------
-    pandas.Series
-
-    """
-    federal_states = geometries.get_federal_states_polygon()
-    bmwi_annual = bmwi_data.get_annual_electricity_demand_bmwi(year)
-
-    ego_demand = get_ego_demand_by_region(
-        federal_states, 'federal_states', grouped=True)
-
-    return ego_demand.div(ego_demand.sum()).mul(bmwi_annual)
 
 
 if __name__ == "__main__":
