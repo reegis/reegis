@@ -334,11 +334,6 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
         remove_list = None
         date_cols = ('commissioned', 'shutdown')
         month = False
-    else:
-        logging.error("Unknown category!")
-        return None
-        # This function is adapted to the OPSD data set structure and might not
-        # work with other data sets. Set opsd=False to skip it.
 
     df = df.rename(columns={'electrical_capacity': 'capacity',
                             'capacity_net_bnetza': 'capacity',
