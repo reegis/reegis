@@ -14,6 +14,7 @@ __license__ = "MIT"
 import os
 import logging
 from shapely import wkb
+import warnings
 
 # External libraries
 import pandas as pd
@@ -43,7 +44,7 @@ def download_oedb(oep_url, schema, table, query, fn, overwrite=False):
     return fn
 
 
-def get_ego_data(osf=False, query='?where=version=v0.4.5'):
+def get_ego_data(osf=True, query='?where=version=v0.4.5'):
     """
 
     Parameters
@@ -59,6 +60,13 @@ def get_ego_data(osf=False, query='?where=version=v0.4.5'):
     Returns
     -------
 
+    Examples
+    --------
+    >>> from reegis import openego
+    >>> # download from file (faster)
+    >>> openego.get_ego_data()  # doctest: +SKIP
+    >>> # download from oedb database (get latest updates, very slow)
+    >>> openego.get_ego_data(osf=False)  # doctest: +SKIP
     """
     oep_url = 'http://oep.iks.cs.ovgu.de/api/v0'
     local_path = cfg.get('paths', 'ego')
@@ -74,8 +82,16 @@ def get_ego_data(osf=False, query='?where=version=v0.4.5'):
     download_oedb(oep_url, schema, table, query_lsc, fn_large_consumer)
     large_consumer = pd.read_csv(fn_large_consumer, index_col=[0])
 
+    msg = ("\nYou are going to download the load areas from file created "
+           "2019-10-09.\nThis is much faster and useful for most users but you"
+           " may find more actual data on the oedb database.\n"
+           "Please check: https://openenergy-platform.org/dataedit/view/demand"
+           "/ego_dp_loadarea \n"
+           "Use 'openego.get_ego_data(osf=False)' to fetch data from oedb.\n")
+
     # Load areas
     if osf is True:
+        warnings.warn(msg)
         url = cfg.get('open_ego', 'osf_url')
         tools.download_file(fn_load_areas, url)
         load_areas = pd.DataFrame(pd.read_csv(fn_load_areas, index_col=[0]))
@@ -118,7 +134,7 @@ def get_ego_demand(filename=None, fn=None, overwrite=False):
     if os.path.isfile(fn) and not overwrite:
         return pd.DataFrame(pd.read_hdf(fn, 'demand'))
     else:
-        load = get_ego_data()
+        load = get_ego_data(osf=True)
         load.to_hdf(fn, 'demand')
         return load
 
