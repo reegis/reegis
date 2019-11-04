@@ -1,8 +1,6 @@
 Basic functions
 ~~~~~~~~~~~~~~~
 
-.. highlight:: python
-
 Energy Balance
 ==============
 
@@ -21,7 +19,7 @@ ne path.
 
 Usage with file in the default directory:
 
-.. code-block::
+.. code-block:: python
 
     from reegis import energy_balance as eb
 
@@ -35,7 +33,7 @@ Usage with file in the default directory:
 
 Usage with alternative file:
 
-.. code-block::
+.. code-block:: python
 
     from reegis import energy_balance as eb, config as cfg
 
@@ -52,7 +50,7 @@ Usage with alternative file:
 If no year is passed to the function the whole table will be returned. This can
 be used to show changes over the time.
 
-.. code-block::
+.. code-block:: python
 
     from matplotlib import pyplot as plt
     from reegis import energy_balance as eb

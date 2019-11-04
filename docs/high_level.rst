@@ -1,8 +1,6 @@
 High level functions
 ~~~~~~~~~~~~~~~~~~~~
 
-.. highlight:: python
-
 Power plants
 ++++++++++++
 
@@ -13,7 +11,7 @@ Get the capacity of powerplants for given regions and a specific year. Use
 the pandas functions to process the result. The code below will show a typical
 plot with the capacity for every federal state by fuel for the year 2014.
 
-.. code-block::
+.. code-block:: python
 
     from matplotlib import pyplot as plt
     from reegis import powerplant
@@ -27,7 +25,14 @@ plot with the capacity for every federal state by fuel for the year 2014.
 
 To validate the function the results have been compared to data from the
 Federal Network Agency (BNetzA). The following plot shows the results of reegis
-on the left and the data from the BNetzA on the right.
+on the left and the data from the BNetzA on the right. Some of the differences
+between reegis and BNetzA are caused by the different methods. Power plants
+that were put into operation in the given year are taken only partly into
+account, proportional to the running time in the given year. Typically
+renewable power plants are mainly build in the second have of the year. The
+BNetzA take all powerplants into account that were build until a specific
+dead line. For an energy model of the year 2014 the reegis method makes more
+sense.
 
 .. image:: _files/compare_power_plants_reegis_bnetza.svg
   :width: 700

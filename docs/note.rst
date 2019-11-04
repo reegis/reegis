@@ -2,8 +2,8 @@
    :maxdepth: 4
    :glob:
 
-Important note
-~~~~~~~~~~~~~~
+Important usage note
+~~~~~~~~~~~~~~~~~~~~
 
 Some functions may take some minutes even hours on the first run. Calculations
 that need a lot of time will store the result on your hard disc so that the
