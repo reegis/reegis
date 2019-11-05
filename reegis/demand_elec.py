@@ -23,7 +23,7 @@ from reegis import openego
 from reegis import bmwi as bmwi_data
 
 
-def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
+def get_entsoe_profile_by_region(region, year, name, annual_demand):
     """
 
     Parameters
@@ -31,15 +31,19 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
     region
     year
     name
-    annual_demand
+    annual_demand : str or numeric
+        A numeric annual value or a method to fetch the annual value.
+        Valid methods are: bmwi, entsoe, openego
 
     Returns
     -------
-
+    pandas.DataFrame : A table with a time series for each region. The unit
+        will be GW/GWh for the internal methods or the same unit as the input
+        of the annual_demand parameter.
     Examples
     --------
     >>> fs = geometries.get_federal_states_polygon()
-    >>> d1 = get_entsoe_profile_by_region(fs, 2014, 'federal_states'
+    >>> d1 = get_entsoe_profile_by_region(fs, 2014, 'federal_states', 'entsoe'
     ...     )  # doctest: +SKIP
     >>> int(d1.sum().sum())  # doctest: +SKIP
     519757349
@@ -54,28 +58,29 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand=None):
 
     """
     logging.debug("Get entsoe profile {0} for {1}".format(name, year))
-    de_load_profile = entsoe.get_entsoe_load(year).DE_load_
 
-    load_profile = pd.DataFrame()
-
-    annual_region = openego.get_ego_demand_by_region(
-        region, name, grouped=True)
-
-    share = annual_region.div(annual_region.sum())
-
-    for region in region.index:
-        if region not in share:
-            share[region] = 0
-        load_profile[region] = de_load_profile.multiply(float(share[region]))
+    profile = entsoe.get_entsoe_load(year).reset_index(drop=True)['DE_load_']
+    norm_profile = profile.div(profile.sum())
+    ego_demand = openego.get_ego_demand_by_region(region, name, grouped=True)
 
     if annual_demand == 'bmwi':
-        annual_demand = bmwi_data.get_annual_electricity_demand_bmwi(year)
+        annual_demand = (bmwi_data.get_annual_electricity_demand_bmwi(year) *
+                         1000)
+    elif annual_demand == 'entsoe':
+        annual_demand = profile.sum() / 1000
+    elif annual_demand == 'openego':
+        annual_demand = ego_demand.sum()
+    elif isinstance(annual_demand, (int, float)):
+        pass
+    else:
+        msg = ("{0} of type {1} is not a valid input for 'annual_demand'.\n"
+               "Use 'bmwi', 'entsoe' or a float/int value.")
+        raise ValueError(msg.format(annual_demand, type(annual_demand)))
 
-    if annual_demand is not None:
-        load_profile = load_profile.div(load_profile.sum().sum()).multiply(
-            annual_demand)
+    demand_fs = ego_demand.div(ego_demand.sum()).mul(annual_demand)
 
-    return load_profile
+    return pd.DataFrame([demand_fs.values] * len(norm_profile),
+                        columns=demand_fs.index).mul(norm_profile, axis=0)
 
 
 if __name__ == "__main__":
