@@ -10,7 +10,7 @@ SPDX-License-Identifier: MIT
 __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
-from nose.tools import eq_
+from nose.tools import eq_, assert_raises_regexp
 import os
 from reegis import openego, demand_elec, geometries, config as cfg
 
@@ -38,16 +38,29 @@ class TestEgoEntsoeDemandAndDownload:
         eq_(int(region_demand.loc['BB', 'consumption']), 279)
         eq_(int(region_demand.loc['BY', 'consumption']), 7290)
 
-    def test_profile_by_region_without_annual_values(self):
-        d1 = demand_elec.get_entsoe_profile_by_region(self.geo, 2014, 'test')
-        eq_(int(d1.sum().sum()), 519757349)
-        d1 = demand_elec.get_entsoe_profile_by_region(self.geo, 2012, 'test')
-        eq_(int(d1.sum().sum()), 516020478)
+    def test_profile_by_region_with_entsoe_annual_values(self):
+        d1 = demand_elec.get_entsoe_profile_by_region(self.geo, 2014, 'test',
+                                                      'entsoe')
+        eq_(int(d1.sum().sum()), 519757)
 
-    def test_profile_by_region_with_annual_values(self):
+    def test_profile_by_region_with_bmwi_annual_values(self):
         d2 = demand_elec.get_entsoe_profile_by_region(
             self.geo, 2013, 'test', 'bmwi')
-        eq_(int(d2.sum().sum()), 535)
+        eq_(int(d2.sum().sum()), 535685)
+
+    def test_profile_by_region_with_openego_annual_values(self):
         d3 = demand_elec.get_entsoe_profile_by_region(
+            self.geo, 2013, 'test', 'openego')
+        eq_(int(d3.sum().sum()), 501288)
+
+    def test_profile_by_region_with_user_annual_values(self):
+        d4 = demand_elec.get_entsoe_profile_by_region(
             self.geo, 2011, 'test', 200)
-        eq_(round(d3.sum().sum()), 200.0)
+        eq_(int(round(d4.sum().sum(), 0)), 200)
+
+    def test_profile_by_region_with_wrong_annual_values(self):
+        msg = ("200 of type <class 'str'> is not a valid input for "
+               "'annual_demand'")
+        with assert_raises_regexp(ValueError, msg):
+            demand_elec.get_entsoe_profile_by_region(
+                self.geo, 2011, 'test', '200')
