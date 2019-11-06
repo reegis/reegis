@@ -22,6 +22,7 @@ class TestEgoEntsoeDemandAndDownload:
         openego.get_ego_data(osf=False, query='?where=un_id<10')
         cfg.tmp_set('open_ego', 'ego_load_areas', 'ego_load_areas_test.csv')
         cfg.tmp_set('open_ego', 'osf_url', 'https://osf.io/w9pv6/download')
+        cfg.tmp_set('open_ego', 'ego_file', 'oep_ego_demand_combined_test1.h5')
         cls.load = openego.get_ego_data()
         cls.geo = geometries.get_federal_states_polygon()
         filename = 'oep_ego_demand_combined_test.h5'
@@ -51,7 +52,7 @@ class TestEgoEntsoeDemandAndDownload:
     def test_profile_by_region_with_openego_annual_values(self):
         d3 = demand_elec.get_entsoe_profile_by_region(
             self.geo, 2013, 'test', 'openego')
-        eq_(int(d3.sum().sum()), 501288)
+        eq_(int(d3.sum().sum()), 31726)
 
     def test_profile_by_region_with_user_annual_values(self):
         d4 = demand_elec.get_entsoe_profile_by_region(
