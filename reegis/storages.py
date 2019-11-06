@@ -28,8 +28,10 @@ def lat_lon2point(df):
     return Point(df['Wikipedia', 'longitude'], df['Wikipedia', 'latitude'])
 
 
-def pumped_hydroelectric_storage(regions, name=None):
+def pumped_hydroelectric_storage_by_region(regions, year, name=None):
     """
+    Fetch pumped hydroelectric storage by region. This function is based on
+    static data. Please adapt the source file for years > 2018.
 
     Parameters
     ----------
@@ -42,11 +44,13 @@ def pumped_hydroelectric_storage(regions, name=None):
 
     Examples
     --------
-    >>> federal_states = geometries.load(
-    ...     cfg.get('paths', 'geometry'),
-    ...     cfg.get('geometry', 'federalstates_polygon'))
-    >>> federal_states.set_index('iso', drop=True, inplace=True)
-    >>> phes = pumped_hydroelectric_storage(federal_states, 'federal_states')
+    >>> federal_states = geometries.get_federal_states_polygon()
+    >>> phes = pumped_hydroelectric_storage_by_region(
+    ...     federal_states, 2002, 'federal_states')
+    >>> int(phes.turbine.sum())
+    5533
+    >>> phes = pumped_hydroelectric_storage_by_region(
+    ...     federal_states, 2018, 'federal_states')
     >>> int(phes.turbine.sum())
     6593
     >>> int(phes.energy.sum())
@@ -57,6 +61,9 @@ def pumped_hydroelectric_storage(regions, name=None):
     phes_raw = pd.read_csv(os.path.join(cfg.get('paths', 'static_sources'),
                                         cfg.get('storages', 'hydro_storages')),
                            header=[0, 1]).sort_index(1)
+
+    phes_raw = phes_raw.loc[phes_raw['Wikipedia', 'commissioning'] < year]
+    phes_raw = phes_raw.loc[phes_raw['Wikipedia', 'ensured_operation'] >= year]
 
     phes = phes_raw['dena'].copy()
 
