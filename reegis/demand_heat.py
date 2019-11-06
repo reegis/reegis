@@ -307,7 +307,7 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
     return heat_profiles
 
 
-def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
+def get_heat_profiles_by_region(regions, year, name='region', from_csv=None,
                                 to_csv=None, weather_year=None):
     """
     Get heat profiles for any region divided by sector and fuel. Use the
@@ -343,7 +343,7 @@ def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
     >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     'region_polygons_de21_vg.csv')
-    >>> hp1 = get_heat_profiles_by_region(2014, regions, from_csv=fn)
+    >>> hp1 = get_heat_profiles_by_region(regions, 2014, from_csv=fn)
     >>> round(hp1.sum().sum(), 1)
     272750.6
     """

@@ -512,7 +512,7 @@ def fix_transformation_balance(eb):
 
 
 def get_transformation_balance_by_region(
-        year, regions, name='region', fix=False):
+        regions, year, name='region', fix=False):
     """
     Get the transformation part of the energy balance for a given region set.
     The values will be recalculated by the number of inhabitants.
@@ -534,7 +534,7 @@ def get_transformation_balance_by_region(
     >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     'region_polygons_de21_vg.csv')
-    >>> cb = get_transformation_balance_by_region(2014, regions, 'de21')
+    >>> cb = get_transformation_balance_by_region(regions, 2014, 'de21')
     >>> int(cb.sum()['electricity']) == int(cb_orig.sum()['electricity'])
     True
     """
