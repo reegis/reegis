@@ -317,6 +317,10 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
     # Load original opsd file
     df = load_original_opsd_file(category, overwrite)
 
+    remove_list = None
+    date_cols = None
+    month = False
+
     # Load original file and set differences between conventional and
     # renewable power plants.
     if category == 'renewable':
@@ -331,9 +335,7 @@ def prepare_opsd_file(category, prepared_file_name, overwrite):
 
     elif category == 'conventional':
         # capacity_column = 'capacity_net_bnetza'
-        remove_list = None
         date_cols = ('commissioned', 'shutdown')
-        month = False
 
     df = df.rename(columns={'electrical_capacity': 'capacity',
                             'capacity_net_bnetza': 'capacity',
