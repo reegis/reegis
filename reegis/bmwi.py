@@ -145,6 +145,7 @@ def get_annual_electricity_demand_bmwi(year):
     infile = get_bmwi_energiedaten_file()
 
     table = pd.read_excel(infile, '21', skiprows=7, index_col=[0])
+
     try:
         value = table.loc['   zusammen', year]
         if math.isnan(value):

@@ -129,11 +129,8 @@ def get_inhabitants_by_region(year, geo, name):
 
     Examples
     --------
-    >>> geo = geometries.load(
-    ...     cfg.get('paths', 'geometry'),
-    ...     cfg.get('geometry', 'federalstates_polygon'))
-    >>> name = 'federal_states'
-    >>> get_inhabitants_by_region(2014, geo, name=name).sum()
+    >>> geo = geometries.get_federal_states_polygon()
+    >>> get_inhabitants_by_region(2014, geo, name='federal_states').sum()
     81197537
     """
     ew = get_ew_geometry(year)

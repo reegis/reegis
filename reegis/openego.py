@@ -188,7 +188,6 @@ def get_ego_demand_by_region(regions, name, outfile=None, infile=None,
 
     >>> ego_demand.div(ego_demand.sum()).mul(bmwi_annual)  # doctest: +SKIP
 
-
     """
     if outfile is None:
         path = cfg.get('paths', 'demand')

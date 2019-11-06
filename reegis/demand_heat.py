@@ -310,7 +310,7 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
 def get_heat_profiles_by_region(year, regions, name='region', from_csv=None,
                                 to_csv=None, weather_year=None):
     """
-    Get heat profiles for any region devided by sector and fuel. Use the
+    Get heat profiles for any region divided by sector and fuel. Use the
     pandas `groupby` method to group the results.
 
     The unit of the resulting data is TJ.
