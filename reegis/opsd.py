@@ -383,15 +383,14 @@ def load_opsd_file(category, overwrite, prepared=True):
 
 def opsd_power_plants(overwrite=False):
     """
+    Prepare OPSD power plants and store table to hdf file with the categories
+    'renewable' and 'conventional'.
 
-    Parameters
-    ----------
-    csv
-    overwrite
-
-    Returns
-    -------
-
+    Examples
+    --------
+    >>> filename = opsd_power_plants()
+    >>> re = pd.read_hdf(filename, 'renewable')  # doctest: +SKIP
+    >>> cv = pd.read_hdf(filename, 'conventional')  # doctest: +SKIP
     """
     strcols = {
         'conventional': [
