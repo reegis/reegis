@@ -250,18 +250,33 @@ def get_heat_profiles_by_federal_state(year, to_csv=None, state=None,
 
     Examples
     --------
-    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> fn = os.path.join(os.path.expanduser('~'),
+    ...     'heat_profile.reegis_doctest.csv')
     >>> hp = get_heat_profiles_by_federal_state(2014, state=['BE', 'BB'],
     ...                                         to_csv=fn)
-    >>> round(hp.groupby(level=[0], axis=1).sum().sum().loc['BE'], 1)
-    112945.1
-    >>> round(hp.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
-    6017.1
+    >>> hp.groupby(level=[0, 1], axis=1).sum().sum().round(1)
+    BB  domestic      66822.4
+        industrial    69668.0
+        retail        23299.5
+    BE  domestic      67382.1
+        industrial     6162.8
+        retail        39364.9
+    dtype: float64
+    >>> round(hp.groupby(level=[0, 2], axis=1).sum().sum().loc['BB'], 1)
+    district heating    17646.9
+    gas                  3916.3
+    hard coal           21378.4
+    lignite              5630.5
+    natural gas         63840.8
+    oil                 16257.4
+    other                1112.1
+    re                  30007.4
+    dtype: float64
     >>> hp_MWh = hp.div(0.0036)
     >>> round(hp_MWh.groupby(level=[2], axis=1).sum().sum().loc['lignite'], 1)
     1671427.4
     >>> round(hp.sum().sum(), 1)
-    272750.6
+    272699.7
     """
 
     if weather_year is None:
@@ -339,13 +354,16 @@ def get_heat_profiles_by_region(regions, year, name='region', from_csv=None,
     Examples
     --------
     >>> from reegis import geometries
-    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
+    >>> fn = os.path.join(os.path.expanduser('~'),
+    ...                   'heat_profile.reegis_doctest.csv')
     >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
-    ...     'region_polygons_de21_vg.csv')
+    ...     cfg.get('geometry', 'de21_polygons'))
     >>> hp1 = get_heat_profiles_by_region(regions, 2014, from_csv=fn)
     >>> round(hp1.sum().sum(), 1)
-    272750.6
+    272699.7
+    >>> os.remove(fn)
+
     """
     if weather_year is None:
         weather_year = year

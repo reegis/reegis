@@ -533,7 +533,7 @@ def get_transformation_balance_by_region(
     >>> cb_orig = get_transformation_balance(2014)
     >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
-    ...     'region_polygons_de21_vg.csv')
+    ...     cfg.get('geometry', 'de21_polygons'))
     >>> cb = get_transformation_balance_by_region(regions, 2014, 'de21')
     >>> int(cb.sum()['electricity']) == int(cb_orig.sum()['electricity'])
     True

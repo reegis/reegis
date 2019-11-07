@@ -17,9 +17,14 @@ __license__ = "MIT"
 from nose.tools import ok_, eq_, assert_raises_regexp
 from unittest.mock import MagicMock
 import os
+import warnings
 from shutil import rmtree, copyfile
+
+import pandas as pd
 from reegis import (powerplants, geometries as geo, coastdat, opsd,
                     config as cfg)
+
+warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 
 
 class TestOpsd2reegis:

@@ -12,7 +12,10 @@ __license__ = "MIT"
 
 from nose.tools import eq_, assert_raises_regexp
 import os
+import warnings
 from reegis import openego, demand_elec, geometries, config as cfg
+
+warnings.filterwarnings('ignore', category=UserWarning)
 
 
 class TestEgoEntsoeDemandAndDownload:

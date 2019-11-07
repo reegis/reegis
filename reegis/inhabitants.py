@@ -155,15 +155,14 @@ def get_inhabitants_by_multi_regions(year, geo, name):
 
     Examples
     --------
-    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
     >>> geo1 = geometries.load(
     ...     cfg.get('paths', 'geometry'),
-    ...     'region_polygons_de21_vg.csv')
+    ...     cfg.get('geometry', 'de21_polygons'), index_col='region')
     >>> geo2 = geometries.get_federal_states_polygon()
     >>> inh = get_inhabitants_by_multi_regions(
     ...     2014, [geo1, geo2], ['de21', 'fs'])
     >>> inh.loc['DE01']['BB']
-    2022458
+    1811137
     >>> inh.loc['DE01']['BE']
     3469849
 
@@ -192,13 +191,12 @@ def get_share_of_federal_states_by_region(year, regions, name):
 
     Examples
     --------
-    >>> fn = os.path.join(os.path.expanduser('~'), 'fsh.csv')
     >>> regions = geometries.load(
     ...     cfg.get('paths', 'geometry'),
-    ...     'region_polygons_de21_vg.csv')
+    ...     cfg.get('geometry', 'de21_polygons'), index_col='region')
     >>> inh = get_share_of_federal_states_by_region(2014, regions, 'de21')
     >>> round(inh.loc['DE01']['BB'], 2)
-    0.82
+    0.74
     >>> round(inh.loc['DE01']['BE'], 2)
     1.0
     """

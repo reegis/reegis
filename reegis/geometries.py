@@ -77,6 +77,8 @@ def load(path=None, filename=None, fullname=None, hdf_key=None,
 
     elif suffix == 'shp' or suffix == 'geojson':
         gdf = load_shp(fullname=fullname)
+        if index_col is not None:
+            gdf.set_index(index_col, inplace=True)
 
     else:
         raise ValueError("Cannot load file with a '{0}' extension.".format(
