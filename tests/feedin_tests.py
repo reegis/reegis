@@ -23,6 +23,9 @@ from nose.tools import eq_
 from windpowerlib.wind_turbine import WindTurbine
 
 from reegis import coastdat, feedin, config as cfg
+import warnings
+
+warnings.filterwarnings('ignore', category=RuntimeWarning)
 
 
 def feedin_wind_sets_tests():

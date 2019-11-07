@@ -26,6 +26,10 @@ import pyproj
 import requests
 from shapely.wkt import loads as wkt_loads
 
+import warnings
+
+warnings.filterwarnings('ignore', category=pd.errors.DtypeWarning)
+
 
 def convert_utm_code_opsd(df):
     # *** Convert utm if present ***
