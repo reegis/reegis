@@ -45,7 +45,7 @@ setup(name='reegis',
       install_requires=requirements,
       extras_require={
           'dev': ['nose', 'cython', 'sphinx', 'sphinx_rtd_theme',
-                  'matplotlib', 'descartes']},
+                  'matplotlib', 'descartes', 'request']},
       package_data={
           'reegis': [os.path.join('data', 'static', '*.csv'),
                      os.path.join('data', 'static', '*.txt'),
