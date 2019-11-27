@@ -202,7 +202,7 @@ def spatial_join_with_buffer(geo1, geo2, name, jcol='index', step=0.05,
     if jcol == 'index':
         jcol = 'index_right'
 
-    logging.info("Doing spatial join...")
+    logging.debug("Doing spatial join...")
 
     # Spatial (left) join with the "within" operation.
     jgdf = gpd.sjoin(geo1, geo2, how='left', op='within')
