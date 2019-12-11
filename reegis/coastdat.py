@@ -961,7 +961,7 @@ def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
 
 
 def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
-                         weather_year=None):
+                         weather_year=None, use_windzones=True):
     """
 
     Parameters
@@ -971,15 +971,20 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     regions
     feedin_ts
     weather_year
+    use_windzones : bool
+        If True, the DIBt wind zones are used to determine WEC type (one type
+        per wind zone). Types are defined in reegis_tools.ini, section
+        [windzones]. The feedin time series is weighted according to the
+        capacity share of WEC installed per wind zone.
+        If False, the custom weighting from wind.ini, section
+        [wind_sets_weights] is used to produce a weighted feedin time series
+        (for each region, if applicable).
+        (default: True)
 
     Returns
     -------
 
     """
-    # Get fraction of windzone per region
-    wz = pd.read_csv(os.path.join(cfg.get('paths', 'powerplants'),
-                                  'windzone_{0}.csv'.format(name)),
-                     index_col=[0, 1], header=None)
 
     # Get normalised feedin time series
     wind = load_feedin_by_region(
@@ -996,10 +1001,6 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     wind.rename(columns=rn, level=1, inplace=True)
     wind.sort_index(1, inplace=True)
 
-    # Get wind turbines by wind zone
-    wind_types = {float(k): v for (k, v) in cfg.get_dict('windzones').items()}
-    wind_types = pd.Series(wind_types).sort_index()
-
     if regions is None:
         regions = wind.columns.get_level_values(0).unique()
 
@@ -1007,11 +1008,60 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
         cols = pd.MultiIndex(levels=[[], []], codes=[[], []])
         feedin_ts = pd.DataFrame(index=wind.index, columns=cols)
 
-    for region in regions:
-        frac = pd.merge(wz.loc[region], pd.DataFrame(wind_types), how='right',
-                        right_index=True, left_index=True).set_index(
-                            0, drop=True).fillna(0).sort_index()
-        feedin_ts[region, 'wind'] = wind[region].multiply(frac[2]).sum(1)
+    if use_windzones is True:
+        # Get fraction of windzone per region
+        wz = pd.read_csv(os.path.join(cfg.get('paths', 'powerplants'),
+                                      'windzone_{0}.csv'.format(name)),
+                         index_col=[0, 1], header=None)
+
+        # Get wind turbines by wind zone
+        wind_types = {float(k): v for (k, v) in cfg.get_dict('windzones').items()}
+        wind_types = pd.Series(wind_types).sort_index()
+
+        # Insert data
+        for region in regions:
+            frac = pd.merge(wz.loc[region], pd.DataFrame(wind_types), how='right',
+                            right_index=True, left_index=True).set_index(
+                                0, drop=True).fillna(0).sort_index()
+
+            # Check if WEC (defined for windzones) do exist in the loaded time
+            # series
+            if not all([wec_name in wind.columns.get_level_values(1).unique()
+                        for wec_name in frac[frac[2] > 0].index.values]):
+                logging.warning("At least one WEC type with weight>0 was not "
+                                "found in the wind time series. This may "
+                                "lead to unexpected or erroneous results.")
+
+            # Weight time series and write back to time series DF
+            feedin_ts[region, 'wind'] = wind[region].multiply(frac[2]).sum(1)
+    else:
+        # Load and check weighting data
+        wind_sets = cfg.get_list('wind', 'set_list')
+        wind_sets_names = dict()
+        for wind_set in wind_sets:
+            wind_sets_names[wind_set] = cfg.get(wind_set, 'set_name')
+        wind_sets_weights = {wind_sets_names[k]: float(v) for (k, v) in
+                             cfg.get_dict('wind_sets_weights').items()}
+        if round(sum(wind_sets_weights.values()), 1) != 1.0:
+            logging.warning("The sum of WEC type weights is not 1.")
+        wind_sets_weights = pd.DataFrame.from_dict(wind_sets_weights,
+                                                   orient='index',
+                                                   columns=['weight'])
+
+        # Check if WEC (defined in wind_sets_weights) do exist in
+        # the loaded time series
+        if not all([wec_name in wind.columns.get_level_values(1).unique()
+                    for wec_name in wind_sets_weights[
+                                wind_sets_weights['weight'] > 0].index.values]):
+            logging.warning("At least one WEC type with weight>0 was not "
+                            "found in the wind time series. This may "
+                            "lead to unexpected or incorrect results.")
+
+        # Weight time series and write back to time series DF
+        for region in regions:
+            feedin_ts[region, 'wind'] = wind[region].multiply(
+                wind_sets_weights['weight']).sum(1)
+
     return feedin_ts.sort_index(1)
 
 
