@@ -64,8 +64,7 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand):
     ego_demand = openego.get_ego_demand_by_region(region, name, grouped=True)
 
     if annual_demand == 'bmwi':
-        annual_demand = (bmwi_data.get_annual_electricity_demand_bmwi(year) *
-                         1000)
+        annual_demand = (bmwi_data.get_annual_electricity_demand_bmwi(year) * 1000)
     elif annual_demand == 'entsoe':
         annual_demand = profile.sum() / 1000
     elif annual_demand == 'openego':
