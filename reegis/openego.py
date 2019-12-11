@@ -199,6 +199,9 @@ def get_ego_demand_by_region(regions, name, outfile=None, infile=None,
         ego_demand = geometries.create_geo_df(ego_data)
 
         # Add column with regions
+        logging.debug(
+            "OpenEgo spatial join: Demand polygon centroids with "
+            "{0}".format(name))
         ego_demand = geometries.spatial_join_with_buffer(
             ego_demand, regions, name)
 
