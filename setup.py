@@ -45,6 +45,7 @@ setup(
     packages=find_packages(),
     namespace_package=["reegis"],
     install_requires=requirements,
+    license='MIT',
     extras_require={
         "dev": [
             "nose",
