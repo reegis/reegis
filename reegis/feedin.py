@@ -17,7 +17,7 @@ windpowerlib:
  * v_wind - horizontal wind speed [m/s]
  * z0 - roughness length [m]
 
-Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """

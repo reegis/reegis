@@ -12,7 +12,7 @@ A description of the coastdat2 data set can be found here:
 
 https://www.earth-syst-sci-data.net/6/147/2014/
 
-Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
