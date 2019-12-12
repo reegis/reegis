@@ -6,7 +6,7 @@ of the Helmholtz-Zentrum Geesthacht.
 A description of the coastdat2 data set can be found here:
 https://www.earth-syst-sci-data.net/6/147/2014/
 
-Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
@@ -23,7 +23,7 @@ import unittest
 def test_coastdat_file_url():
     check = True
     for year in range(1998, 2015):
-        f1 = 'coastDat2_de_{0}.h5'.format(year)
+        f1 = "coastDat2_de_{0}.h5".format(year)
         f2 = coastdat.download_coastdat_data(year=year, test_only=True)
         if f1 != f2:
             check = year
@@ -38,7 +38,7 @@ def test_coastdat_file_url_2014():
     """
     check = True
     for year in [2014]:
-        f1 = 'coastDat2_de_{0}.h5'.format(year)
+        f1 = "coastDat2_de_{0}.h5".format(year)
         f2 = coastdat.download_coastdat_data(year=year, test_only=True)
         if f1 != f2:
             check = year
@@ -46,11 +46,15 @@ def test_coastdat_file_url_2014():
 
 
 def test_wrong_url():
-    assert_raises_regexp(ValueError, "No URL found",
-                         coastdat.download_coastdat_data, year=2018)
-    assert_raises_regexp(ValueError, "URL not valid",
-                         coastdat.download_coastdat_data,
-                         url='https://osf.io/url_id/download')
+    assert_raises_regexp(
+        ValueError, "No URL found", coastdat.download_coastdat_data, year=2018
+    )
+    assert_raises_regexp(
+        ValueError,
+        "URL not valid",
+        coastdat.download_coastdat_data,
+        url="https://osf.io/url_id/download",
+    )
 
 
 def test_coordinates_out_of_bound():

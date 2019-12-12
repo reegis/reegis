@@ -12,7 +12,7 @@ A description of the coastdat2 data set can be found here:
 
 https://www.earth-syst-sci-data.net/6/147/2014/
 
-Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
@@ -79,10 +79,10 @@ def download_coastdat_data(filename=None, year=None, url=None,
 
     """
     if url is None:
-        url_ids = cfg.get_dict('coastdat_url_id')
+        url_ids = cfg.get_dict("coastdat_url_id")
         url_id = url_ids.get(str(year), None)
         if url_id is not None:
-            url = cfg.get('coastdat', 'basic_url').format(url_id=url_id)
+            url = cfg.get("coastdat", "basic_url").format(url_id=url_id)
 
     if url is not None and not test_only:
         response = requests.get(url, stream=True)
@@ -90,9 +90,10 @@ def download_coastdat_data(filename=None, year=None, url=None,
             msg = "Downloading the coastdat2 file of {0} from {1} ..."
             logging.info(msg.format(year, url))
             if filename is None:
-                headers = response.headers['Content-Disposition']
-                filename = headers.split('; ')[1].split('=')[1].replace(
-                    '"', '')
+                headers = response.headers["Content-Disposition"]
+                filename = (
+                    headers.split("; ")[1].split("=")[1].replace('"', "")
+                )
             tools.download_file(filename, url, overwrite=overwrite)
             return filename
         else:
@@ -100,8 +101,8 @@ def download_coastdat_data(filename=None, year=None, url=None,
     elif url is not None and test_only:
         response = requests.get(url, stream=True)
         if response.status_code == 200:
-            headers = response.headers['Content-Disposition']
-            filename = headers.split('; ')[1].split('=')[1].replace('"', '')
+            headers = response.headers["Content-Disposition"]
+            filename = headers.split("; ")[1].split("=")[1].replace('"', "")
         else:
             filename = None
         return filename
@@ -128,8 +129,9 @@ def fetch_id_by_coordinates(latitude, longitude):
     1132101
     """
     coastdat_polygons = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('coastdat', 'coastdatgrid_polygon'))
+        cfg.get("paths", "geometry"),
+        cfg.get("coastdat", "coastdatgrid_polygon"),
+    )
     location = Point(longitude, latitude)
 
     cid = coastdat_polygons[coastdat_polygons.contains(location)].index
@@ -157,16 +159,17 @@ def fetch_data_coordinates_by_id(coastdat_id):
 
     Examples
     --------
-    >>> location = fetch_data_coordinates_by_id(1132101)
+    >>> location=fetch_data_coordinates_by_id(1132101)
     >>> round(location.latitude, 3)
     53.692
     >>> round(location.longitude, 3)
     11.351
     """
-    coord = namedtuple('weather_location', 'latitude, longitude')
+    coord = namedtuple("weather_location", "latitude, longitude")
     coastdat_polygons = geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('coastdat', 'coastdatgrid_polygon'))
+        cfg.get("paths", "geometry"),
+        cfg.get("coastdat", "coastdatgrid_polygon"),
+    )
     c = coastdat_polygons.loc[int(coastdat_id)].geometry.centroid
     return coord(latitude=c.y, longitude=c.x)
 
@@ -188,16 +191,17 @@ def fetch_coastdat_weather(year, coastdat_id):
 
     Examples
     --------
-    >>> coastdat_id = fetch_id_by_coordinates(53.655119, 11.181475)
+    >>> coastdat_id=fetch_id_by_coordinates(53.655119, 11.181475)
     >>> fetch_coastdat_weather(2014, coastdat_id)['v_wind'].mean().round(2)
     4.39
     """
     weather_file_name = os.path.join(
-        cfg.get('paths', 'coastdat'),
-        cfg.get('coastdat', 'file_pattern').format(year=year))
+        cfg.get("paths", "coastdat"),
+        cfg.get("coastdat", "file_pattern").format(year=year),
+    )
     if not os.path.isfile(weather_file_name):
         download_coastdat_data(filename=weather_file_name, year=year)
-    key = '/A{0}'.format(int(coastdat_id))
+    key = "/A{0}".format(int(coastdat_id))
     return pd.DataFrame(pd.read_hdf(weather_file_name, key))
 
 
@@ -218,24 +222,28 @@ def adapt_coastdat_weather_to_pvlib(weather, loc):
 
     Examples
     --------
-    >>> cd_id = 1132101
-    >>> cd_weather = fetch_coastdat_weather(2014, cd_id)
-    >>> c = fetch_data_coordinates_by_id(cd_id)
-    >>> location = pvlib.location.Location(**getattr(c, '_asdict')())
-    >>> pv_weather = adapt_coastdat_weather_to_pvlib(cd_weather, location)
+    >>> cd_id=1132101
+    >>> cd_weather=fetch_coastdat_weather(2014, cd_id)
+    >>> c=fetch_data_coordinates_by_id(cd_id)
+    >>> location=pvlib.location.Location(**getattr(c, '_asdict')())
+    >>> pv_weather=adapt_coastdat_weather_to_pvlib(cd_weather, location)
     >>> 'ghi' in cd_weather.columns
     False
     >>> 'ghi' in pv_weather.columns
     True
     """
     w = pd.DataFrame(weather.copy())
-    w['temp_air'] = w.temp_air - 273.15
-    w['ghi'] = w.dirhi + w.dhi
+    w["temp_air"] = w.temp_air - 273.15
+    w["ghi"] = w.dirhi + w.dhi
     clearskydni = loc.get_clearsky(w.index).dni
-    w['dni'] = pvlib.irradiance.dni(
-        w['ghi'], w['dhi'], pvlib.solarposition.get_solarposition(
-            w.index, loc.latitude, loc.longitude).zenith,
-        clearsky_dni=clearskydni)
+    w["dni"] = pvlib.irradiance.dni(
+        w["ghi"],
+        w["dhi"],
+        pvlib.solarposition.get_solarposition(
+            w.index, loc.latitude, loc.longitude
+        ).zenith,
+        clearsky_dni=clearskydni,
+    )
     return w
 
 
@@ -256,10 +264,10 @@ def adapt_coastdat_weather_to_windpowerlib(weather, data_height):
 
     Examples
     --------
-    >>> cd_id = 1132101
-    >>> cd_weather = fetch_coastdat_weather(2014, cd_id)
-    >>> data_height = cfg.get_dict('coastdat_data_height')
-    >>> wind_weather = adapt_coastdat_weather_to_windpowerlib(
+    >>> cd_id=1132101
+    >>> cd_weather=fetch_coastdat_weather(2014, cd_id)
+    >>> data_height=cfg.get_dict('coastdat_data_height')
+    >>> wind_weather=adapt_coastdat_weather_to_windpowerlib(
     ...     cd_weather, data_height)
     >>> cd_weather.columns.nlevels
     1
@@ -267,17 +275,20 @@ def adapt_coastdat_weather_to_windpowerlib(weather, data_height):
     2
     """
     weather = pd.DataFrame(weather.copy())
-    cols = {'v_wind': 'wind_speed',
-            'z0': 'roughness_length',
-            'temp_air': 'temperature'}
+    cols = {
+        "v_wind": "wind_speed",
+        "z0": "roughness_length",
+        "temp_air": "temperature",
+    }
     weather.rename(columns=cols, inplace=True)
     dh = [(key, data_height[key]) for key in weather.columns]
     weather.columns = pd.MultiIndex.from_tuples(dh)
     return weather
 
 
-def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
-                                        overwrite=False):
+def normalised_feedin_for_each_data_set(
+    year, wind=True, solar=True, overwrite=False
+):
     """
     Loop over all weather data sets (regions) and calculate a normalised time
     series for each data set with the given parameters of the power plants.
@@ -298,9 +309,12 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
     """
     # Get coordinates of the coastdat data points.
     data_points = pd.read_csv(
-        os.path.join(cfg.get('paths', 'geometry'),
-                     cfg.get('coastdat', 'coastdatgrid_centroid')),
-        index_col='gid')
+        os.path.join(
+            cfg.get("paths", "geometry"),
+            cfg.get("coastdat", "coastdatgrid_centroid"),
+        ),
+        index_col="gid",
+    )
 
     pv_sets = None
     wind_sets = None
@@ -308,67 +322,73 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
     # Open coastdat-weather data hdf5 file for the given year or try to
     # download it if the file is not found.
     weather_file_name = os.path.join(
-        cfg.get('paths', 'coastdat'),
-        cfg.get('coastdat', 'file_pattern').format(year=year))
+        cfg.get("paths", "coastdat"),
+        cfg.get("coastdat", "file_pattern").format(year=year),
+    )
     if not os.path.isfile(weather_file_name):
         download_coastdat_data(year=year, filename=weather_file_name)
 
-    weather = pd.HDFStore(weather_file_name, mode='r')
+    weather = pd.HDFStore(weather_file_name, mode="r")
 
     # Fetch coastdat data heights from ini file.
-    data_height = cfg.get_dict('coastdat_data_height')
+    data_height = cfg.get_dict("coastdat_data_height")
 
     # Create basic file and path pattern for the resulting files
-    coastdat_path = os.path.join(cfg.get('paths_pattern', 'coastdat'))
+    coastdat_path = os.path.join(cfg.get("paths_pattern", "coastdat"))
 
-    feedin_file = os.path.join(coastdat_path,
-                               cfg.get('feedin', 'file_pattern'))
+    feedin_file = os.path.join(
+        coastdat_path, cfg.get("feedin", "file_pattern")
+    )
 
     # Fetch coastdat region-keys from weather file.
-    key_file_path = coastdat_path.format(year='', type='')[:-2]
-    key_file = os.path.join(key_file_path, 'coastdat_keys.csv')
+    key_file_path = coastdat_path.format(year="", type="")[:-2]
+    key_file = os.path.join(key_file_path, "coastdat_keys.csv")
     if not os.path.isfile(key_file):
         coastdat_keys = weather.keys()
         if not os.path.isdir(key_file_path):
             os.makedirs(key_file_path)
         pd.Series(coastdat_keys).to_csv(key_file)
     else:
-        coastdat_keys = pd.read_csv(key_file, index_col=[0],
-                                    squeeze=True, header=None)
+        coastdat_keys = pd.read_csv(
+            key_file, index_col=[0], squeeze=True, header=None
+        )
 
     txt_create = "Creating normalised {0} feedin time series for {1}."
-    hdf = {'wind': {}, 'solar': {}}
+    hdf = {"wind": {}, "solar": {}}
     if solar:
-        logging.info(txt_create.format('solar', year))
+        logging.info(txt_create.format("solar", year))
         # Add directory if not present
-        os.makedirs(coastdat_path.format(year=year, type='solar'),
-                    exist_ok=True)
+        os.makedirs(
+            coastdat_path.format(year=year, type="solar"), exist_ok=True
+        )
         # Create the pv-sets defined in the solar.ini
         pv_sets = feedin.create_pvlib_sets()
 
         # Open a file for each main set (subsets are stored in columns)
         for pv_key, pv_set in pv_sets.items():
             filename = feedin_file.format(
-                type='solar', year=year, set_name=pv_key)
+                type="solar", year=year, set_name=pv_key
+            )
             if not os.path.isfile(filename) or overwrite:
-                hdf['solar'][pv_key] = pd.HDFStore(filename, mode='w')
+                hdf["solar"][pv_key] = pd.HDFStore(filename, mode="w")
 
     if wind:
-        logging.info(txt_create.format('wind', year))
+        logging.info(txt_create.format("wind", year))
         # Add directory if not present
-        os.makedirs(coastdat_path.format(year=year, type='wind'),
-                    exist_ok=True)
+        os.makedirs(
+            coastdat_path.format(year=year, type="wind"), exist_ok=True
+        )
         # Create the pv-sets defined in the wind.ini
         wind_sets = feedin.create_windpowerlib_sets()
         # Open a file for each main set (subsets are stored in columns)
         for wind_key, wind_set in wind_sets.items():
             for subset_key, subset in wind_set.items():
-                wind_sets[wind_key][subset_key] = WindTurbine(
-                    **subset)
+                wind_sets[wind_key][subset_key] = WindTurbine(**subset)
             filename = feedin_file.format(
-                type='wind', year=year, set_name=wind_key)
+                type="wind", year=year, set_name=wind_key
+            )
             if not os.path.isfile(filename) or overwrite:
-                hdf['wind'][wind_key] = pd.HDFStore(filename, mode='w')
+                hdf["wind"][wind_key] = pd.HDFStore(filename, mode="w")
 
     # Define basic variables for time logging
     remain = len(coastdat_keys)
@@ -383,33 +403,37 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
         # Adapt the coastdat weather format to the needs of pvlib.
         # The expression "len(list(hdf['solar'].keys()))" returns the number
         # of open hdf5 files. If no file is open, there is nothing to do.
-        if solar and len(list(hdf['solar'].keys())) > 0:
+        if solar and len(list(hdf["solar"].keys())) > 0:
             # Get coordinates for the weather location
             local_point = data_points.loc[int(coastdat_key[2:])]
 
             # Create a pvlib Location object
             location = pvlib.location.Location(
-                latitude=local_point['lat'], longitude=local_point['lon'])
+                latitude=local_point["lat"], longitude=local_point["lon"]
+            )
 
             # Adapt weather data to the needs of the pvlib
             local_weather_pv = adapt_coastdat_weather_to_pvlib(
-                local_weather, location)
+                local_weather, location
+            )
 
             # Create one DataFrame for each pv-set and store into the file
             for pv_key, pv_set in pv_sets.items():
-                if pv_key in hdf['solar']:
-                    hdf['solar'][pv_key][coastdat_key] = feedin.feedin_pv_sets(
-                        local_weather_pv, location, pv_set)
+                if pv_key in hdf["solar"]:
+                    hdf["solar"][pv_key][coastdat_key] = feedin.feedin_pv_sets(
+                        local_weather_pv, location, pv_set
+                    )
 
         # Create one DataFrame for each wind-set and store into the file
-        if wind and len(list(hdf['wind'].keys())) > 0:
+        if wind and len(list(hdf["wind"].keys())) > 0:
             local_weather_wind = adapt_coastdat_weather_to_windpowerlib(
-                local_weather, data_height)
+                local_weather, data_height
+            )
             for wind_key, wind_set in wind_sets.items():
-                if wind_key in hdf['wind']:
-                    hdf['wind'][wind_key][coastdat_key] = (
-                        feedin.feedin_wind_sets(
-                            local_weather_wind, wind_set))
+                if wind_key in hdf["wind"]:
+                    hdf["wind"][wind_key][
+                        coastdat_key
+                    ] = feedin.feedin_wind_sets(local_weather_wind, wind_set)
 
         # Start- time logging *******
         remain -= 1
@@ -418,7 +442,8 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
             elapsed_time = (datetime.datetime.now() - start).seconds
             remain_time = elapsed_time / done * remain
             end_time = datetime.datetime.now() + datetime.timedelta(
-                seconds=remain_time)
+                seconds=remain_time
+            )
             msg = "Actual time: {:%H:%M}, estimated end time: {:%H:%M}, "
             msg += "done: {0}, remain: {1}".format(done, remain)
             logging.info(msg.format(datetime.datetime.now(), end_time))
@@ -428,12 +453,20 @@ def normalised_feedin_for_each_data_set(year, wind=True, solar=True,
         for k2 in hdf[k1].keys():
             hdf[k1][k2].close()
     weather.close()
-    logging.info("All feedin time series for {0} are stored in {1}".format(
-        year, coastdat_path.format(year=year, type='')))
+    logging.info(
+        "All feedin time series for {0} are stored in {1}".format(
+            year, coastdat_path.format(year=year, type="")
+        )
+    )
 
 
-def store_average_weather(data_type, weather_path=None, years=None, keys=None,
-                          out_file_pattern='average_data_{data_type}.csv'):
+def store_average_weather(
+    data_type,
+    weather_path=None,
+    years=None,
+    keys=None,
+    out_file_pattern="average_data_{data_type}.csv",
+):
     """
     Get average wind speed over all years for each weather region. This can be
     used to select the appropriate wind turbine for each region
@@ -460,17 +493,17 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
     Examples
     --------
     >>> store_average_weather('temp_air', years=[2014, 2013])  # doctest: +SKIP
-    >>> v = store_average_weather('v_wind', years=[2014],
+    >>> v=store_average_weather('v_wind', years=[2014],
     ...                           out_file_pattern=None, keys=[1132101])
     >>> float(v.loc[1132101].round(2))
     4.39
     """
     logging.info("Calculating the average wind speed...")
 
-    weather_pattern = cfg.get('coastdat', 'file_pattern')
+    weather_pattern = cfg.get("coastdat", "file_pattern")
 
     if weather_path is None:
-        weather_path = cfg.get('paths', 'coastdat')
+        weather_path = cfg.get("paths", "coastdat")
 
     # Finding existing weather files.
     data_files = os.listdir(weather_path)
@@ -490,18 +523,23 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
             raise FileNotFoundError(msg)
 
     # Loading coastdat-grid as shapely geometries.
-    coastdat_polygons = pd.DataFrame(geometries.load(
-        cfg.get('paths', 'geometry'),
-        cfg.get('coastdat', 'coastdatgrid_polygon')))
-    coastdat_polygons.drop('geometry', axis=1, inplace=True)
+    coastdat_polygons = pd.DataFrame(
+        geometries.load(
+            cfg.get("paths", "geometry"),
+            cfg.get("coastdat", "coastdatgrid_polygon"),
+        )
+    )
+    coastdat_polygons.drop("geometry", axis=1, inplace=True)
 
     # Opening all weather files
     weather = dict()
 
     # open hdf files
     for year in used_years:
-        weather[year] = pd.HDFStore(os.path.join(
-            weather_path, weather_pattern.format(year=year)), mode='r')
+        weather[year] = pd.HDFStore(
+            os.path.join(weather_path, weather_pattern.format(year=year)),
+            mode="r",
+        )
 
     if keys is None:
         keys = coastdat_polygons.index
@@ -513,15 +551,15 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
         n -= 1
         if n % 100 == 0:
             logging.info("Remaining: {0}".format(n))
-        hdf_id = '/A{0}'.format(key)
+        hdf_id = "/A{0}".format(key)
         for year in used_years:
             ws = weather[year][hdf_id][data_type]
-            data_type_avg = data_type_avg.append(
-                ws, verify_integrity=True)
+            data_type_avg = data_type_avg.append(ws, verify_integrity=True)
 
         # calculate the average wind speed for one grid item
-        coastdat_polygons.loc[key, '{0}_avg'.format(data_type)] = (
-            data_type_avg.mean())
+        coastdat_polygons.loc[
+            key, "{0}_avg".format(data_type)
+        ] = data_type_avg.mean()
 
     # Close hdf files
     for year in used_years:
@@ -539,8 +577,9 @@ def store_average_weather(data_type, weather_path=None, years=None, keys=None,
     return coastdat_polygons
 
 
-def spatial_average_weather(year, geo, parameter, name,
-                            outpath=None, outfile=None):
+def spatial_average_weather(
+    year, geo, parameter, name, outpath=None, outfile=None
+):
     """
     Calculate the mean value of a parameter over all data sets within each
     region for one year.
@@ -566,49 +605,58 @@ def spatial_average_weather(year, geo, parameter, name,
 
     Example
     -------
-    >>> germany_geo = geometries.load(
+    >>> germany_geo=geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     cfg.get('geometry', 'germany_polygon'))
-    >>> fn = spatial_average_weather(2012, germany_geo, 'temp_air', 'deTemp',
+    >>> fn=spatial_average_weather(2012, germany_geo, 'temp_air', 'deTemp',
     ...                              outpath=os.path.expanduser('~')
     ...                              )# doctest: +SKIP
-    >>> temp = pd.read_csv(fn, index_col=[0], parse_dates=True, squeeze=True
+    >>> temp=pd.read_csv(fn, index_col=[0], parse_dates=True, squeeze=True
     ...                    )# doctest: +SKIP
     >>> round(temp.mean() - 273.15, 2)# doctest: +SKIP
     8.28
     >>> os.remove(fn)# doctest: +SKIP
     """
-    logging.info("Getting average {0} for {1} in {2} from coastdat2.".format(
-        parameter, name, year))
+    logging.info(
+        "Getting average {0} for {1} in {2} from coastdat2.".format(
+            parameter, name, year
+        )
+    )
 
-    name = name.replace(' ', '_')
+    name = name.replace(" ", "_")
 
     # Create a Geometry object for the coastdat centroids.
-    coastdat_geo = geometries.load(cfg.get('paths', 'geometry'),
-                                   cfg.get('coastdat', 'coastdatgrid_polygon'))
-    coastdat_geo['geometry'] = coastdat_geo.centroid
+    coastdat_geo = geometries.load(
+        cfg.get("paths", "geometry"),
+        cfg.get("coastdat", "coastdatgrid_polygon"),
+    )
+    coastdat_geo["geometry"] = coastdat_geo.centroid
 
     # Join the tables to create a list of coastdat id's for each region.
     coastdat_geo = geometries.spatial_join_with_buffer(
-        coastdat_geo, geo, name=name, limit=0)
+        coastdat_geo, geo, name=name, limit=0
+    )
 
     # Fix regions with no matches (no matches if a region ist too small).
     fix = {}
     for reg in set(geo.index) - set(coastdat_geo[name].unique()):
         reg_point = geo.representative_point().loc[reg]
         coastdat_poly = geometries.load(
-            cfg.get('paths', 'geometry'),
-            cfg.get('coastdat', 'coastdatgrid_polygon'))
-        fix[reg] = coastdat_poly.loc[coastdat_poly.intersects(
-            reg_point)].index[0]
+            cfg.get("paths", "geometry"),
+            cfg.get("coastdat", "coastdatgrid_polygon"),
+        )
+        fix[reg] = coastdat_poly.loc[
+            coastdat_poly.intersects(reg_point)
+        ].index[0]
 
     # Open the weather file
     weather_file = os.path.join(
-        cfg.get('paths', 'coastdat'),
-        cfg.get('coastdat', 'file_pattern').format(year=year))
+        cfg.get("paths", "coastdat"),
+        cfg.get("coastdat", "file_pattern").format(year=year),
+    )
     if not os.path.isfile(weather_file):
         download_coastdat_data(year=year, filename=weather_file)
-    weather = pd.HDFStore(weather_file, mode='r')
+    weather = pd.HDFStore(weather_file, mode="r")
 
     # Calculate the average temperature for each region with more than one id.
     avg_value = pd.DataFrame()
@@ -623,12 +671,12 @@ def spatial_average_weather(year, geo, parameter, name,
             except ValueError:
                 pass
             if isinstance(cid, int):
-                key = 'A' + str(cid)
+                key = "A" + str(cid)
             else:
                 key = cid
             tmp[cid] = weather[key][parameter]
         if len(cd_ids) < 1:
-            key = 'A' + str(fix[region])
+            key = "A" + str(fix[region])
             avg_value[region] = weather[key][parameter]
         else:
             avg_value[region] = tmp.sum(1).div(number_of_sets)
@@ -637,11 +685,13 @@ def spatial_average_weather(year, geo, parameter, name,
     # Create the name an write to file
     regions = sorted(geo.index)
     if outfile is None:
-        out_name = '{0}_{1}'.format(regions[0], regions[-1])
+        out_name = "{0}_{1}".format(regions[0], regions[-1])
         outfile = os.path.join(
             outpath,
-            'average_{parameter}_{type}_{year}.csv'.format(
-                year=year, type=out_name, parameter=parameter))
+            "average_{parameter}_{type}_{year}.csv".format(
+                year=year, type=out_name, parameter=parameter
+            ),
+        )
 
     avg_value.to_csv(outfile)
     logging.info("Average temperature saved to {0}".format(outfile))
@@ -663,17 +713,24 @@ def federal_state_average_weather(year, parameter):
     """
     federal_states = geometries.get_federal_states_polygon()
     filename = os.path.join(
-        cfg.get('paths', 'coastdat'),
-        'average_{0}_BB_TH_{1}.csv'.format(parameter, year))
+        cfg.get("paths", "coastdat"),
+        "average_{0}_BB_TH_{1}.csv".format(parameter, year),
+    )
     if not os.path.isfile(filename):
-        spatial_average_weather(year, federal_states, parameter,
-                                'federal_states', outfile=filename)
-    return pd.read_csv(filename, index_col=[0], parse_dates=True,
-                       date_parser=lambda col: pd.to_datetime(col, utc=True))
+        spatial_average_weather(
+            year, federal_states, parameter, "federal_states", outfile=filename
+        )
+    return pd.read_csv(
+        filename,
+        index_col=[0],
+        parse_dates=True,
+        date_parser=lambda col: pd.to_datetime(col, utc=True),
+    )
 
 
-def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
-                                        weather_year=None):
+def aggregate_by_region_coastdat_feedin(
+    pp, regions, year, category, outfile, weather_year=None
+):
     """
     Aggregate wind and pv feedin time series for each region defined by
     a geoDataFrame with region polygons.
@@ -705,8 +762,9 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
         weather_year_str = " (weather: {0})".format(weather_year)
 
     # Define the path for the input files.
-    coastdat_path = os.path.join(cfg.get('paths_pattern', 'coastdat')).format(
-        year=weather_year, type=cat)
+    coastdat_path = os.path.join(cfg.get("paths_pattern", "coastdat")).format(
+        year=weather_year, type=cat
+    )
     # Do normalized timeseries exist? If not, create
     if os.path.isdir(coastdat_path):
         if len(os.listdir(coastdat_path)) == 0:
@@ -719,18 +777,21 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
     set_name = None
     pwr = dict()
     columns = dict()
-    replace_str = 'coastdat_{0}_{1}_'.format(weather_year, category)
+    replace_str = "coastdat_{0}_{1}_".format(weather_year, category)
     for file in os.listdir(coastdat_path):
-        if file[-2:] == 'h5':
-            set_name = file[:-3].replace(replace_str, '')
+        if file[-2:] == "h5":
+            set_name = file[:-3].replace(replace_str, "")
             set_names.append(set_name)
             pwr[set_name] = pd.HDFStore(os.path.join(coastdat_path, file))
-            columns[set_name] = pwr[set_name]['/A1129087'].columns
+            columns[set_name] = pwr[set_name]["/A1129087"].columns
 
     # Create DataFrame with MultiColumns to take the results
-    my_index = pwr[set_name]['/A1129087'].index
-    my_cols = pd.MultiIndex(levels=[[], [], []], codes=[[], [], []],
-                            names=[u'region', u'set', u'subset'])
+    my_index = pwr[set_name]["/A1129087"].index
+    my_cols = pd.MultiIndex(
+        levels=[[], [], []],
+        codes=[[], [], []],
+        names=["region", "set", "subset"],
+    )
     feed_in = pd.DataFrame(index=my_index, columns=my_cols)
 
     # Loop over all aggregation regions
@@ -742,8 +803,11 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
         except KeyError:
             coastdat_ids = []
         number_of_coastdat_ids = len(coastdat_ids)
-        logging.info("{0}{3} - {1} ({2})".format(
-            year, region, number_of_coastdat_ids, weather_year_str))
+        logging.info(
+            "{0}{3} - {1} ({2})".format(
+                year, region, number_of_coastdat_ids, weather_year_str
+            )
+        )
         logging.debug("{0}".format(coastdat_ids))
 
         # Loop over all sets that have been found in the coastdat path
@@ -757,18 +821,25 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
                     # actual region.
                     for coastdat_id in coastdat_ids:
                         # Create a tmp table for each coastdat id.
-                        coastdat_key = '/A{0}'.format(int(coastdat_id))
-                        pp_inst = float(pp.loc[(category, region, coastdat_id),
-                                               'capacity_{0}'.format(year)])
-                        temp[coastdat_key] = (
-                            pwr[name][coastdat_key][col][:8760].multiply(
-                                pp_inst))
+                        coastdat_key = "/A{0}".format(int(coastdat_id))
+                        pp_inst = float(
+                            pp.loc[
+                                (category, region, coastdat_id),
+                                "capacity_{0}".format(year),
+                            ]
+                        )
+                        temp[coastdat_key] = pwr[name][coastdat_key][col][
+                            :8760
+                        ].multiply(pp_inst)
                     # Sum up all coastdat columns to one region column
-                    colname = '_'.join(col.split('_')[-3:])
-                    feed_in[region, name, colname] = (
-                        temp.sum(axis=1).divide(float(
-                            pp.loc[(category, region), 'capacity_{0}'.format(
-                                year)].sum())))
+                    colname = "_".join(col.split("_")[-3:])
+                    feed_in[region, name, colname] = temp.sum(axis=1).divide(
+                        float(
+                            pp.loc[
+                                (category, region), "capacity_{0}".format(year)
+                            ].sum()
+                        )
+                    )
 
     feed_in.to_csv(outfile)
     for name_of_set in set_names:
@@ -778,22 +849,23 @@ def aggregate_by_region_coastdat_feedin(pp, regions, year, category, outfile,
 def aggregate_by_region_hydro(pp, regions, year, outfile_name):
     """Aggregate hydro power plants by region."""
 
-    hydro = bmwi.bmwi_re_energy_capacity()['water']
+    hydro = bmwi.bmwi_re_energy_capacity()["water"]
 
-    hydro_capacity = (pp.loc['Hydro', 'capacity_{0}'.format(year)].sum())
+    hydro_capacity = pp.loc["Hydro", "capacity_{0}".format(year)].sum()
 
-    full_load_hours = (hydro.loc[year, 'energy'] /
-                       hydro_capacity * 1000)
+    full_load_hours = hydro.loc[year, "energy"] / hydro_capacity * 1000
 
-    hydro_path = os.path.abspath(os.path.join(
-        *outfile_name.split('/')[:-1]))
+    hydro_path = os.path.abspath(os.path.join(*outfile_name.split("/")[:-1]))
 
     if not os.path.isdir(hydro_path):
         os.makedirs(hydro_path)
 
-    idx = pd.date_range(start="{0}-01-01 00:00".format(year),
-                        end="{0}-12-31 23:00".format(year),
-                        freq='H', tz='Europe/Berlin')
+    idx = pd.date_range(
+        start="{0}-01-01 00:00".format(year),
+        end="{0}-12-31 23:00".format(year),
+        freq="H",
+        tz="Europe/Berlin",
+    )
     feed_in = pd.DataFrame(columns=regions, index=idx)
     feed_in[feed_in.columns] = full_load_hours / len(feed_in)
     feed_in.to_csv(outfile_name)
@@ -805,24 +877,27 @@ def aggregate_by_region_hydro(pp, regions, year, outfile_name):
 
 def aggregate_by_region_geothermal(regions, year, outfile_name):
     """Aggregate hydro power plants by region."""
-    full_load_hours = cfg.get('feedin', 'geothermal_full_load_hours')
+    full_load_hours = cfg.get("feedin", "geothermal_full_load_hours")
 
-    hydro_path = os.path.abspath(os.path.join(
-        *outfile_name.split('/')[:-1]))
+    hydro_path = os.path.abspath(os.path.join(*outfile_name.split("/")[:-1]))
 
     if not os.path.isdir(hydro_path):
         os.makedirs(hydro_path)
 
-    idx = pd.date_range(start="{0}-01-01 00:00".format(year),
-                        end="{0}-12-31 23:00".format(year),
-                        freq='H', tz='Europe/Berlin')
+    idx = pd.date_range(
+        start="{0}-01-01 00:00".format(year),
+        end="{0}-12-31 23:00".format(year),
+        freq="H",
+        tz="Europe/Berlin",
+    )
     feed_in = pd.DataFrame(columns=regions, index=idx)
     feed_in[feed_in.columns] = full_load_hours / len(feed_in)
     feed_in.to_csv(outfile_name)
 
 
-def load_feedin_by_region(year, feedin_type, name, region=None,
-                          weather_year=None):
+def load_feedin_by_region(
+    year, feedin_type, name, region=None, weather_year=None
+):
     """
 
     Parameters
@@ -837,28 +912,34 @@ def load_feedin_by_region(year, feedin_type, name, region=None,
     -------
 
     """
-    feedin_path = os.path.join(cfg.get('paths', 'feedin'), name, str(year))
+    feedin_path = os.path.join(cfg.get("paths", "feedin"), name, str(year))
 
     # Create pattern for the name of the resulting files.
     if weather_year is None:
         feedin_region_outfile_name = os.path.join(
             feedin_path,
-            cfg.get('feedin', 'region_file_pattern').format(
-                year=year, type=feedin_type, name=name))
+            cfg.get("feedin", "region_file_pattern").format(
+                year=year, type=feedin_type, name=name
+            ),
+        )
     else:
-        feedin_path = os.path.join(feedin_path, 'weather_variations')
+        feedin_path = os.path.join(feedin_path, "weather_variations")
         feedin_region_outfile_name = os.path.join(
             feedin_path,
-            cfg.get('feedin', 'region_file_pattern_var').format(
-                year=year, type=feedin_type, name=name, var=weather_year))
+            cfg.get("feedin", "region_file_pattern_var").format(
+                year=year, type=feedin_type, name=name, var=weather_year
+            ),
+        )
 
     # Add any federal state to get its normalised feed-in.
-    if feedin_type in ['solar', 'wind']:
-        fd_in = pd.read_csv(feedin_region_outfile_name, index_col=[0],
-                            header=[0, 1, 2])
-    elif feedin_type in ['hydro', 'geothermal']:
-        fd_in = pd.read_csv(feedin_region_outfile_name, index_col=[0],
-                            header=[0])
+    if feedin_type in ["solar", "wind"]:
+        fd_in = pd.read_csv(
+            feedin_region_outfile_name, index_col=[0], header=[0, 1, 2]
+        )
+    elif feedin_type in ["hydro", "geothermal"]:
+        fd_in = pd.read_csv(
+            feedin_region_outfile_name, index_col=[0], header=[0]
+        )
     else:
         fd_in = None
 
@@ -882,42 +963,42 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
 
     Examples
     --------
-    >>> my_fn = os.path.join(cfg.get('paths', 'powerplants'),
+    >>> my_fn=os.path.join(cfg.get('paths', 'powerplants'),
     ...                      cfg.get('powerplants', 'reegis_pp'))
-    >>> my_pp = pd.DataFrame(pd.read_hdf(my_fn, 'pp'))  # doctest: +SKIP
-    >>> wz = windzone_region_fraction(my_pp, 'federal_states', 2014
+    >>> my_pp=pd.DataFrame(pd.read_hdf(my_fn, 'pp'))  # doctest: +SKIP
+    >>> wz=windzone_region_fraction(my_pp, 'federal_states', 2014
     ...                               dump=False)  # doctest: +SKIP
     >>> round(float(wz.loc['NI', 1]), 2)  # doctest: +SKIP
     0.31
     """
-    pp = pp.loc[pp.energy_source_level_2 == 'Wind']
+    pp = pp.loc[pp.energy_source_level_2 == "Wind"]
 
     if year is None:
-        capacity_col = 'capacity'
+        capacity_col = "capacity"
     else:
-        capacity_col = 'capacity_{0}'.format(year)
+        capacity_col = "capacity_{0}".format(year)
 
-    path = cfg.get('paths', 'geometry')
-    filename = 'windzones_germany.geojson'
+    path = cfg.get("paths", "geometry")
+    filename = "windzones_germany.geojson"
     gdf = geometries.load(path=path, filename=filename)
-    gdf.set_index('zone', inplace=True)
+    gdf.set_index("zone", inplace=True)
 
-    geo_path = cfg.get('paths', 'geometry')
-    geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
+    geo_path = cfg.get("paths", "geometry")
+    geo_file = cfg.get("coastdat", "coastdatgrid_polygon")
     coastdat_geo = geometries.load(path=geo_path, filename=geo_file)
-    coastdat_geo['geometry'] = coastdat_geo.centroid
+    coastdat_geo["geometry"] = coastdat_geo.centroid
 
-    points = geometries.spatial_join_with_buffer(coastdat_geo, gdf, 'windzone')
+    points = geometries.spatial_join_with_buffer(coastdat_geo, gdf, "windzone")
 
-    wz = pd.DataFrame(points['windzone'])
-    pp = pd.merge(pp, wz, left_on='coastdat2', right_index=True)
-    pp['windzone'].fillna(0, inplace=True)
-    pp = pp.groupby([name, 'windzone']).sum()[capacity_col]
+    wz = pd.DataFrame(points["windzone"])
+    pp = pd.merge(pp, wz, left_on="coastdat2", right_index=True)
+    pp["windzone"].fillna(0, inplace=True)
+    pp = pp.groupby([name, "windzone"]).sum()[capacity_col]
     wz_regions = pp.groupby(level=0).apply(lambda x: x / float(x.sum()))
 
     if dump is True:
-        filename = 'windzone_{0}.csv'.format(name)
-        fn = os.path.join(cfg.get('paths', 'powerplants'), filename)
+        filename = "windzone_{0}.csv".format(name)
+        fn = os.path.join(cfg.get("paths", "powerplants"), filename)
         wz_regions.to_csv(fn, header=False)
     return wz_regions
 
@@ -937,31 +1018,35 @@ def scenario_feedin(year, name, weather_year=None, feedin_ts=None):
         feedin_ts = pd.DataFrame(columns=cols)
 
     hydro = load_feedin_by_region(
-        year, 'hydro', name, weather_year=weather_year).reset_index(drop=True)
+        year, "hydro", name, weather_year=weather_year
+    ).reset_index(drop=True)
     for region in hydro.columns:
-        feedin_ts[region, 'hydro'] = hydro[region]
+        feedin_ts[region, "hydro"] = hydro[region]
 
     geothermal = load_feedin_by_region(
-        year, 'geothermal', name, weather_year=weather_year).reset_index(
-        drop=True)
+        year, "geothermal", name, weather_year=weather_year
+    ).reset_index(drop=True)
     for region in geothermal.columns:
-        feedin_ts[region, 'geothermal'] = geothermal[region]
+        feedin_ts[region, "geothermal"] = geothermal[region]
 
     if calendar.isleap(year) and weather_year is not None:
         if not calendar.isleap(weather_year):
             feedin_ts = feedin_ts.iloc[:8760]
 
-    feedin_ts = scenario_feedin_pv(year, name, feedin_ts=feedin_ts,
-                                   weather_year=weather_year)
+    feedin_ts = scenario_feedin_pv(
+        year, name, feedin_ts=feedin_ts, weather_year=weather_year
+    )
 
-    feedin_ts = scenario_feedin_wind(year, name, feedin_ts=feedin_ts,
-                                     weather_year=weather_year)
+    feedin_ts = scenario_feedin_wind(
+        year, name, feedin_ts=feedin_ts, weather_year=weather_year
+    )
 
     return feedin_ts.sort_index(1)
 
 
-def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
-                         weather_year=None):
+def scenario_feedin_wind(
+    year, name, regions=None, feedin_ts=None, weather_year=None
+):
     """
 
     Parameters
@@ -977,13 +1062,18 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
 
     """
     # Get fraction of windzone per region
-    wz = pd.read_csv(os.path.join(cfg.get('paths', 'powerplants'),
-                                  'windzone_{0}.csv'.format(name)),
-                     index_col=[0, 1], header=None)
+    wz = pd.read_csv(
+        os.path.join(
+            cfg.get("paths", "powerplants"), "windzone_{0}.csv".format(name)
+        ),
+        index_col=[0, 1],
+        header=None,
+    )
 
     # Get normalised feedin time series
     wind = load_feedin_by_region(
-        year, 'wind', name, weather_year=weather_year).reset_index(drop=True)
+        year, "wind", name, weather_year=weather_year
+    ).reset_index(drop=True)
 
     if weather_year is not None:
         if calendar.isleap(weather_year) and not calendar.isleap(year):
@@ -992,12 +1082,12 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
     # Rename columns and remove obsolete level
     wind.columns = wind.columns.droplevel(2)
     cols = wind.columns.get_level_values(1).unique()
-    rn = {c: c.replace('coastdat_{0}_wind_'.format(year), '') for c in cols}
+    rn = {c: c.replace("coastdat_{0}_wind_".format(year), "") for c in cols}
     wind.rename(columns=rn, level=1, inplace=True)
     wind.sort_index(1, inplace=True)
 
     # Get wind turbines by wind zone
-    wind_types = {float(k): v for (k, v) in cfg.get_dict('windzones').items()}
+    wind_types = {float(k): v for (k, v) in cfg.get_dict("windzones").items()}
     wind_types = pd.Series(wind_types).sort_index()
 
     if regions is None:
@@ -1008,15 +1098,25 @@ def scenario_feedin_wind(year, name, regions=None, feedin_ts=None,
         feedin_ts = pd.DataFrame(index=wind.index, columns=cols)
 
     for region in regions:
-        frac = pd.merge(wz.loc[region], pd.DataFrame(wind_types), how='right',
-                        right_index=True, left_index=True).set_index(
-                            0, drop=True).fillna(0).sort_index()
-        feedin_ts[region, 'wind'] = wind[region].multiply(frac[2]).sum(1)
+        frac = (
+            pd.merge(
+                wz.loc[region],
+                pd.DataFrame(wind_types),
+                how="right",
+                right_index=True,
+                left_index=True,
+            )
+            .set_index(0, drop=True)
+            .fillna(0)
+            .sort_index()
+        )
+        feedin_ts[region, "wind"] = wind[region].multiply(frac[2]).sum(1)
     return feedin_ts.sort_index(1)
 
 
-def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
-                       weather_year=None):
+def scenario_feedin_pv(
+    year, name, regions=None, feedin_ts=None, weather_year=None
+):
     """
     Join the different solar types and orientations to one time series defined
     by the fraction of each type and orientation.
@@ -1033,10 +1133,11 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
     -------
 
     """
-    pv_types = cfg.get_dict('pv_types')
-    pv_orientation = cfg.get_dict('pv_orientation')
+    pv_types = cfg.get_dict("pv_types")
+    pv_orientation = cfg.get_dict("pv_orientation")
     pv = load_feedin_by_region(
-        year, 'solar', name, weather_year=weather_year).reset_index(drop=True)
+        year, "solar", name, weather_year=weather_year
+    ).reset_index(drop=True)
 
     if weather_year is not None:
         if calendar.isleap(weather_year) and not calendar.isleap(year):
@@ -1053,20 +1154,31 @@ def scenario_feedin_pv(year, name, regions=None, feedin_ts=None,
 
     pv.sort_index(1, inplace=True)
     orientation_fraction.sort_index(inplace=True)
-    base_set_column = 'coastdat_{0}_solar_{1}'.format(year, '{0}')
+    base_set_column = "coastdat_{0}_solar_{1}".format(year, "{0}")
 
     for region in regions:
         # combine different pv-sets to one feedin time series
-        feedin_ts[region, 'solar'] = 0
+        feedin_ts[region, "solar"] = 0
         for mset in pv_types.keys():
             set_col = base_set_column.format(mset)
-            feedin_ts[region, 'solar'] += pv[region, set_col].multiply(
-                orientation_fraction).sum(1).multiply(pv_types[mset])
+            feedin_ts[region, "solar"] += (
+                pv[region, set_col]
+                .multiply(orientation_fraction)
+                .sum(1)
+                .multiply(pv_types[mset])
+            )
     return feedin_ts.sort_index(1)
 
 
-def get_feedin_per_region(year, region, name, weather_year=None,
-                          windzones=True, subregion=False, pp=None):
+def get_feedin_per_region(
+    year,
+    region,
+    name,
+    weather_year=None,
+    windzones=True,
+    subregion=False,
+    pp=None,
+):
     """
     Aggregate feed-in time series for the given geometry set.
 
@@ -1095,21 +1207,23 @@ def get_feedin_per_region(year, region, name, weather_year=None,
     # create and dump reegis basic powerplants table (created from opsd data)
     fn = powerplants.pp_opsd2reegis()
     filename = fn.split(os.sep)[-1]
-    path = fn.replace(filename, '')
+    path = fn.replace(filename, "")
 
     # Add column name "coastdat2" with the id of the coastdat weather cell for
     # each power plant.
-    geo_path = cfg.get('paths', 'geometry')
-    geo_file = cfg.get('coastdat', 'coastdatgrid_polygon')
+    geo_path = cfg.get("paths", "geometry")
+    geo_file = cfg.get("coastdat", "coastdatgrid_polygon")
     gdf = geometries.load(path=geo_path, filename=geo_file)
 
     pp = powerplants.add_regions_to_powerplants(
-        gdf, 'coastdat2', filename=filename, path=path, pp=pp)
+        gdf, "coastdat2", filename=filename, path=path, pp=pp
+    )
 
     # Add a column named with the name parameter, adding the region id to
     # each power plant
     pp = powerplants.add_regions_to_powerplants(
-        region, name, filename=filename, path=path, pp=pp, subregion=subregion)
+        region, name, filename=filename, path=path, pp=pp, subregion=subregion
+    )
 
     # Get only the power plants that are online in the given year.
     pp = powerplants.get_reegis_powerplants(year, pp=pp)
@@ -1118,8 +1232,9 @@ def get_feedin_per_region(year, region, name, weather_year=None,
         windzone_region_fraction(pp, name, year=year, dump=True)
 
     # Aggregate feedin time series for each region
-    return aggregate_feedin_by_region(year, pp, name,
-                                      weather_year=weather_year)
+    return aggregate_feedin_by_region(
+        year, pp, name, weather_year=weather_year
+    )
 
 
 def aggregate_feedin_by_region(year, pp, name, weather_year=None):
@@ -1128,10 +1243,10 @@ def aggregate_feedin_by_region(year, pp, name, weather_year=None):
     The name of the region set has to be a column in the pp table.
     """
     # Create the path for the output files.
-    feedin_path = os.path.join(cfg.get('paths', 'feedin'), name, str(year))
+    feedin_path = os.path.join(cfg.get("paths", "feedin"), name, str(year))
 
     if weather_year is not None:
-        feedin_path = os.path.join(feedin_path, 'weather_variations')
+        feedin_path = os.path.join(feedin_path, "weather_variations")
 
     os.makedirs(feedin_path, exist_ok=True)
 
@@ -1139,87 +1254,102 @@ def aggregate_feedin_by_region(year, pp, name, weather_year=None):
     if weather_year is None:
         feedin_deflex_outfile_name = os.path.join(
             feedin_path,
-            cfg.get('feedin', 'region_file_pattern').format(
-                year=year, type='{type}', name=name))
+            cfg.get("feedin", "region_file_pattern").format(
+                year=year, type="{type}", name=name
+            ),
+        )
     else:
         feedin_deflex_outfile_name = os.path.join(
             feedin_path,
-            cfg.get('feedin', 'region_file_pattern_var').format(
-                year=year, type='{type}', name=name, var=weather_year))
+            cfg.get("feedin", "region_file_pattern_var").format(
+                year=year, type="{type}", name=name, var=weather_year
+            ),
+        )
 
     # Filter the capacity of the powerplants for the given year.
-    pp = pp.groupby(
-        ['energy_source_level_2', name, 'coastdat2']).sum()
+    pp = pp.groupby(["energy_source_level_2", name, "coastdat2"]).sum()
 
     pp.index = pp.index.set_levels(pp.index.levels[1].astype(str), level=1)
     regions = pp.index.get_level_values(1).unique().sort_values()
 
     # Loop over weather depending feed-in categories.
     # WIND and PV
-    for cat in ['Wind', 'Solar']:
+    for cat in ["Wind", "Solar"]:
         outfile_name = feedin_deflex_outfile_name.format(type=cat.lower())
         if not os.path.isfile(outfile_name):
             aggregate_by_region_coastdat_feedin(
-                pp, regions, year, cat, outfile_name, weather_year)
+                pp, regions, year, cat, outfile_name, weather_year
+            )
 
     # HYDRO
-    outfile_name = feedin_deflex_outfile_name.format(type='hydro')
+    outfile_name = feedin_deflex_outfile_name.format(type="hydro")
     if not os.path.isfile(outfile_name):
         aggregate_by_region_hydro(pp, regions, year, outfile_name)
 
     # GEOTHERMAL
-    outfile_name = feedin_deflex_outfile_name.format(type='geothermal')
+    outfile_name = feedin_deflex_outfile_name.format(type="geothermal")
     if not os.path.isfile(outfile_name):
         aggregate_by_region_geothermal(regions, year, outfile_name)
     return feedin_path
 
 
-def get_solar_time_series_for_one_location(latitude, longitude, year,
-                                           set_name=None):
+def get_solar_time_series_for_one_location(
+    latitude, longitude, year, set_name=None
+):
     """
     Get a normalised solar time series for one location for one set or all
     available set if set_name is None.
     """
     coastdat_id = fetch_id_by_coordinates(latitude, longitude)
 
-    # set_name = 'M_LG290G3__I_ABB_MICRO_025_US208'
+    # set_name='M_LG290G3__I_ABB_MICRO_025_US208'
     df = pd.DataFrame()
     if set_name is not None:
-        hd_file = pd.HDFStore(os.path.join(
-            cfg.get('paths', 'feedin'), 'coastdat', str(year), 'solar',
-            cfg.get('feedin', 'file_pattern').format(year=year, type='solar',
-                                                     set_name=set_name)),
-            mode='r')
-        df = hd_file['/A{0}'.format(coastdat_id)]
+        hd_file = pd.HDFStore(
+            os.path.join(
+                cfg.get("paths", "feedin"),
+                "coastdat",
+                str(year),
+                "solar",
+                cfg.get("feedin", "file_pattern").format(
+                    year=year, type="solar", set_name=set_name
+                ),
+            ),
+            mode="r",
+        )
+        df = hd_file["/A{0}".format(coastdat_id)]
         hd_file.close()
     else:
         path = os.path.join(
-            cfg.get('paths', 'feedin'), 'coastdat', str(year), 'solar')
+            cfg.get("paths", "feedin"), "coastdat", str(year), "solar"
+        )
         for file in os.listdir(path):
-            hd_file = pd.HDFStore(os.path.join(path, file), mode='r')
-            tmp = hd_file['/A{0}'.format(coastdat_id)]
+            hd_file = pd.HDFStore(os.path.join(path, file), mode="r")
+            tmp = hd_file["/A{0}".format(coastdat_id)]
             hd_file.close()
             df = pd.concat([df, tmp], axis=1)
 
     opt = int(round(feedin.get_optimal_pv_angle(latitude)))
-    df.columns = df.columns.str.replace('opt', str(opt))
+    df.columns = df.columns.str.replace("opt", str(opt))
     return df
 
 
-def get_solar_time_series_for_one_location_all_years(latitude, longitude,
-                                                     set_name=None):
+def get_solar_time_series_for_one_location_all_years(
+    latitude, longitude, set_name=None
+):
     """
     Get a normalised solar time series for one location for one set or all
     available set if set_name is None. Get all available years.
     """
-    path = os.path.join(cfg.get('paths', 'feedin'), 'coastdat')
+    path = os.path.join(cfg.get("paths", "feedin"), "coastdat")
     years = os.listdir(path)
     df = pd.DataFrame(columns=pd.MultiIndex(levels=[[], []], codes=[[], []]))
 
     for year in years:
         if os.path.isdir(os.path.join(path, str(year))):
             tmp = get_solar_time_series_for_one_location(
-                latitude, longitude, year, set_name).reset_index(drop=True)
+                latitude, longitude, year, set_name
+            ).reset_index(drop=True)
             for col in tmp.columns:
                 df[year, col] = tmp[col]
     return df
@@ -1228,8 +1358,8 @@ def get_solar_time_series_for_one_location_all_years(latitude, longitude,
 def federal_states_feedin_example():
     """Get fullload hours for renewable sources for a federal states."""
     federal_states = geometries.get_federal_states_polygon()
-    get_feedin_per_region(2014, federal_states, 'federal_states')
-    return scenario_feedin(2014, 'federal_states')
+    get_feedin_per_region(2014, federal_states, "federal_states")
+    return scenario_feedin(2014, "federal_states")
 
 
 if __name__ == "__main__":

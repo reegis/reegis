@@ -2,7 +2,7 @@
 
 """Code snippets without context.
 
-Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
@@ -38,10 +38,11 @@ def download_file(filename, url, overwrite=False):
             logging.warning("File {0} not found.".format(filename))
         logging.warning("Try to download it from {0}.".format(url))
         req = requests.get(url)
-        with open(filename, 'wb') as fout:
+        with open(filename, "wb") as fout:
             fout.write(req.content)
-        logging.info("Downloaded from {0} and copied to '{1}'.".format(
-            url, filename))
+        logging.info(
+            "Downloaded from {0} and copied to '{1}'.".format(url, filename)
+        )
         r = req.status_code
     else:
         r = 1

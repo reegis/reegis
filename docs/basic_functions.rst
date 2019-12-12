@@ -23,12 +23,12 @@ Usage with file in the default directory:
 
     from reegis import energy_balance as eb
 
-    year = 2012
-    states = ['BB', 'NW']
-    fuel = 'lignite (raw)'
-    row = 'extraction'
+    year=2012
+    states=['BB', 'NW']
+    fuel='lignite (raw)'
+    row='extraction'
 
-    my_eb = eb.get_states_energy_balance(year)
+    my_eb=eb.get_states_energy_balance(year)
     print(my_eb.loc[(states, row), fuel])
 
 Usage with alternative file:
@@ -37,14 +37,14 @@ Usage with alternative file:
 
     from reegis import energy_balance as eb, config as cfg
 
-    year = 2012
-    states = ['BB', 'NW']
-    fuel = 'lignite (raw)'
-    row = 'extraction'
-    fn = '/my/path/my_file.csv'
+    year=2012
+    states=['BB', 'NW']
+    fuel='lignite (raw)'
+    row='extraction'
+    fn='/my/path/my_file.csv'
 
     cfg.tmp_set('energy_balance', 'energy_balance_states', fn)
-    my_eb = eb.get_states_energy_balance(year)
+    my_eb=eb.get_states_energy_balance(year)
     print(my_eb.loc[(states, row), fuel])
 
 If no year is passed to the function the whole table will be returned. This can
@@ -55,10 +55,10 @@ be used to show changes over the time.
     from matplotlib import pyplot as plt
     from reegis import energy_balance as eb
 
-    fuel = 'lignite (raw)'
-    ax = plt.figure(figsize=(9, 5)).add_subplot(1, 1, 1)
+    fuel='lignite (raw)'
+    ax=plt.figure(figsize=(9, 5)).add_subplot(1, 1, 1)
 
-    my_eb = eb.get_states_energy_balance()
+    my_eb=eb.get_states_energy_balance()
     my_eb.loc[(slice(None), slice(None), 'extraction'), fuel].groupby(
         level=0).sum().plot(ax=ax)
     plt.title("Extraction of raw lignite in Germany")
@@ -104,11 +104,11 @@ it is used to create a time series.
 
 .. code-block:: python
 
-    demand = pd.Series()
-    ax = plt.figure(figsize=(9, 4)).add_subplot(1, 1, 1)
+    demand=pd.Series()
+    ax=plt.figure(figsize=(9, 4)).add_subplot(1, 1, 1)
     for year in range(1991, 2016):
         print(year)
-        demand.loc[year] = bmwi.get_annual_electricity_demand_bmwi(year)
+        demand.loc[year]=bmwi.get_annual_electricity_demand_bmwi(year)
     print(demand)
 
 .. image:: _files/energy_demand_germany_bmwi.svg
@@ -125,7 +125,7 @@ The example shows the capacity of hydro energy plants in Germany in 2016.
 
 .. code-block:: python
 
-    re = bmwi_re_energy_capacity()
+    re=bmwi_re_energy_capacity()
     print(re.loc[2016, ('water', 'capacity')])
 
 If you frequently work with BMWi data please contact the author and give
@@ -143,6 +143,6 @@ The electricity profile is taken from ENTSO-E time series provided by
 
 .. code-block:: python
 
-    entsoe = get_entsoe_load(2015)
+    entsoe=get_entsoe_load(2015)
 
 For the full API see :py:mod:`~reegis.entsoe` .

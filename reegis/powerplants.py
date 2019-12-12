@@ -2,7 +2,7 @@
 
 """Processing a list of power plants in Germany.
 
-Copyright (c) 2016-2019 Uwe Krien <krien@uni-bremen.de>
+SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
@@ -34,7 +34,7 @@ def patch_offshore_wind(orig_df, columns=None):
 
     Examples
     --------
-    >>> df = pd.DataFrame()
+    >>> df=pd.DataFrame()
     >>> int(patch_offshore_wind(df)['capacity'].sum())
     5332
     """
@@ -44,42 +44,54 @@ def patch_offshore_wind(orig_df, columns=None):
         df = pd.DataFrame(columns=columns)
 
     offsh = pd.read_csv(
-        os.path.join(cfg.get('paths', 'static_sources'),
-                     cfg.get('static_sources', 'patch_offshore_wind')),
-        header=[0, 1], index_col=[0])
+        os.path.join(
+            cfg.get("paths", "static_sources"),
+            cfg.get("static_sources", "patch_offshore_wind"),
+        ),
+        header=[0, 1],
+        index_col=[0],
+    )
 
-    offsh = offsh.loc[offsh['reegis', 'com_year'].notnull(), 'reegis']
+    offsh = offsh.loc[offsh["reegis", "com_year"].notnull(), "reegis"]
     for column in offsh.columns:
         df[column] = offsh[column]
-    df['decom_year'] = 2050
-    df['decom_month'] = 12
-    df['energy_source_level_1'] = 'Renewable energy'
-    df['energy_source_level_2'] = 'Wind'
-    df['energy_source_level_3'] = 'Offshore'
+    df["decom_year"] = 2050
+    df["decom_month"] = 12
+    df["energy_source_level_1"] = "Renewable energy"
+    df["energy_source_level_2"] = "Wind"
+    df["energy_source_level_3"] = "Offshore"
     goffsh = geo.create_geo_df(df)
 
     offsh_df = pd.DataFrame(goffsh)
 
-    new_cap = offsh_df['capacity'].sum()
+    new_cap = offsh_df["capacity"].sum()
 
     if len(orig_df) > 0:
-        old_cap = orig_df.loc[orig_df['technology'] == 'Offshore',
-                              'capacity'].sum()
+        old_cap = orig_df.loc[
+            orig_df["technology"] == "Offshore", "capacity"
+        ].sum()
         # Remove Offshore technology from power plant table
-        orig_df = orig_df.loc[orig_df['technology'] != 'Offshore']
+        orig_df = orig_df.loc[orig_df["technology"] != "Offshore"]
     else:
         old_cap = 0
 
-    patched_df = pd.DataFrame(pd.concat([orig_df, offsh_df],
-                                        ignore_index=True, sort=True))
+    patched_df = pd.DataFrame(
+        pd.concat([orig_df, offsh_df], ignore_index=True, sort=True)
+    )
     logging.warning(
         "Offshore wind is patched. {0} MW were replaced by {1} MW".format(
-            old_cap, new_cap))
+            old_cap, new_cap
+        )
+    )
     return patched_df
 
 
-def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
-                   hydro_storage_fix=True):
+def pp_opsd2reegis(
+    offshore_patch=True,
+    filename_in=None,
+    filename_out=None,
+    hydro_storage_fix=True,
+):
     """
     Adapt opsd power plants to a more generalised reegis API with a reduced
     number of columns. In most case you should use the higher functions,
@@ -106,38 +118,60 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
 
     Examples
     --------
-    >>> filename_out = os.path.join(cfg.get('paths', 'powerplants'),
+    >>> filename_out=os.path.join(cfg.get('paths', 'powerplants'),
     ...                             cfg.get('powerplants', 'reegis_pp'))
     >>> if not os.path.isfile(filename_out):
-    ...     filename = pp_opsd2reegis()  # doctest: +SKIP
+    ...     filename=pp_opsd2reegis()  # doctest: +SKIP
     """
-    version_name = cfg.get('opsd', 'version_name')
+    version_name = cfg.get("opsd", "version_name")
 
     if filename_in is None:
-        opsd_path = cfg.get('paths_pattern', 'opsd').format(
-            version=version_name)
-        filename_in = os.path.join(opsd_path, cfg.get('opsd', 'opsd_prepared'))
+        opsd_path = cfg.get("paths_pattern", "opsd").format(
+            version=version_name
+        )
+        filename_in = os.path.join(opsd_path, cfg.get("opsd", "opsd_prepared"))
     if filename_out is None:
-        filename_out = os.path.join(cfg.get('paths', 'powerplants'),
-                                    cfg.get('powerplants', 'reegis_pp'))
+        filename_out = os.path.join(
+            cfg.get("paths", "powerplants"),
+            cfg.get("powerplants", "reegis_pp"),
+        )
         filename_out = filename_out.format(version=version_name)
 
-    keep_cols = {'decom_year', 'comment', 'chp', 'energy_source_level_1',
-                 'thermal_capacity', 'com_year', 'com_month',
-                 'chp_capacity_uba', 'energy_source_level_3', 'decom_month',
-                 'geometry', 'energy_source_level_2', 'capacity', 'technology',
-                 'com_year', 'efficiency'}
+    keep_cols = {
+        "decom_year",
+        "comment",
+        "chp",
+        "energy_source_level_1",
+        "thermal_capacity",
+        "com_year",
+        "com_month",
+        "chp_capacity_uba",
+        "energy_source_level_3",
+        "decom_month",
+        "geometry",
+        "energy_source_level_2",
+        "capacity",
+        "technology",
+        "com_year",
+        "efficiency",
+    }
 
-    string_cols = ['chp', 'comment', 'energy_source_level_1',
-                   'energy_source_level_2', 'energy_source_level_3',
-                   'geometry', 'technology']
+    string_cols = [
+        "chp",
+        "comment",
+        "energy_source_level_1",
+        "energy_source_level_2",
+        "energy_source_level_3",
+        "geometry",
+        "technology",
+    ]
 
     # Create opsd power plant tables if they do not exist.
     if not os.path.isfile(filename_in):
         logging.debug(MSG.format(filename_in))
         filename_in = opsd.opsd_power_plants()
     else:
-        for cat in ['renewable', 'conventional']:
+        for cat in ["renewable", "conventional"]:
             try:
                 pd.read_hdf(filename_in, cat)
             except KeyError:
@@ -148,56 +182,65 @@ def pp_opsd2reegis(offshore_patch=True, filename_in=None, filename_out=None,
                 filename_in = opsd.opsd_power_plants()
 
     pp = {}
-    for cat in ['conventional', 'renewable']:
+    for cat in ["conventional", "renewable"]:
         # Read opsd power plant tables
         pp[cat] = pd.DataFrame(pd.read_hdf(filename_in, cat))
 
         # Patch offshore wind energy with investigated data.
-        if cat == 'renewable' and offshore_patch:
+        if cat == "renewable" and offshore_patch:
             pp[cat] = patch_offshore_wind(pp[cat], keep_cols)
 
-        if cat == 'conventional' and hydro_storage_fix:
-            pp[cat].loc[pp[cat]['technology'] == 'Pumped storage',
-                        'energy_source_level_2'] = 'Storage'
-            pp[cat].loc[pp[cat]['technology'] == 'Pumped storage',
-                        'energy_source_level_3'] = 'Pumped storage'
+        if cat == "conventional" and hydro_storage_fix:
+            pp[cat].loc[
+                pp[cat]["technology"] == "Pumped storage",
+                "energy_source_level_2",
+            ] = "Storage"
+            pp[cat].loc[
+                pp[cat]["technology"] == "Pumped storage",
+                "energy_source_level_3",
+            ] = "Pumped storage"
 
         pp[cat] = pp[cat].drop(columns=set(pp[cat].columns) - keep_cols)
 
         # Replace 'nan' strings with nan values.
-        pp[cat] = pp[cat].replace('nan', np.nan)
+        pp[cat] = pp[cat].replace("nan", np.nan)
 
         # Remove lines with comments. Comments mark suspicious data.
         pp[cat] = pp[cat].loc[pp[cat].comment.isnull()]
 
         # Fill missing 'energy_source_level_1' values with 'unknown' and
         # the category from opsd.
-        pp[cat]['energy_source_level_1'] = (
-            pp[cat]['energy_source_level_1'].fillna(
-                'unknown from {0}'.format(cat)))
+        pp[cat]["energy_source_level_1"] = pp[cat][
+            "energy_source_level_1"
+        ].fillna("unknown from {0}".format(cat))
 
         # Fill missing 'energy_source_level_2' values with values from
         # 'energy_source_level_1' column.
-        pp[cat]['energy_source_level_2'] = (
-            pp[cat]['energy_source_level_2'].fillna(
-                pp[cat]['energy_source_level_1']))
+        pp[cat]["energy_source_level_2"] = pp[cat][
+            "energy_source_level_2"
+        ].fillna(pp[cat]["energy_source_level_1"])
 
-    pp = pd.DataFrame(pd.concat([pp['renewable'], pp['conventional']],
-                                ignore_index=True, sort=True))
+    pp = pd.DataFrame(
+        pd.concat(
+            [pp["renewable"], pp["conventional"]], ignore_index=True, sort=True
+        )
+    )
 
     # Merge 'chp_capacity_uba' into 'thermal_capacity' column.
-    pp['thermal_capacity'] = pp['thermal_capacity'].fillna(
-        pp['chp_capacity_uba'])
-    del pp['chp_capacity_uba']
+    pp["thermal_capacity"] = pp["thermal_capacity"].fillna(
+        pp["chp_capacity_uba"]
+    )
+    del pp["chp_capacity_uba"]
 
     # Convert all values to strings in string-columns
     pp[string_cols] = pp[string_cols].astype(str)
 
     # Store power plant table to hdf5 file.
-    pp.to_hdf(filename_out, 'pp', mode='w')
+    pp.to_hdf(filename_out, "pp", mode="w")
 
-    logging.info("Reegis power plants based on opsd stored in {0}".format(
-        filename_out))
+    logging.info(
+        "Reegis power plants based on opsd stored in {0}".format(filename_out)
+    )
     return filename_out
 
 
@@ -206,18 +249,17 @@ def add_capacity_in(pp):
     calculate an average efficiency for the summed up groups.
     """
     # Calculate the inflow capacity for power plants with an efficiency value.
-    pp['capacity_in'] = pp['capacity'].div(pp['efficiency'])
+    pp["capacity_in"] = pp["capacity"].div(pp["efficiency"])
 
     # Sum up the valid in/out capacities to calculate an average efficiency
-    cap_valid = pp.loc[pp['efficiency'].notnull(), 'capacity'].sum()
-    cap_in = pp.loc[pp['efficiency'].notnull(), 'capacity_in'].sum()
+    cap_valid = pp.loc[pp["efficiency"].notnull(), "capacity"].sum()
+    cap_in = pp.loc[pp["efficiency"].notnull(), "capacity_in"].sum()
 
     # Set the average efficiency for missing efficiency values
-    pp['efficiency'] = pp['efficiency'].fillna(
-        cap_valid / cap_in)
+    pp["efficiency"] = pp["efficiency"].fillna(cap_valid / cap_in)
 
     # Calculate the inflow for all power plants
-    pp['capacity_in'] = pp['capacity'].div(pp['efficiency'])
+    pp["capacity_in"] = pp["capacity"].div(pp["efficiency"])
 
     logging.info("'capacity_in' column added to power plant table.")
     return pp
@@ -235,18 +277,23 @@ def add_model_region_pp(pp, region_polygons, col_name, subregion=False):
         limit = 1
 
     # Add region names to power plant table
-    logging.debug('Adding column {0} to power plant table...'.format(col_name))
-    pp = pd.DataFrame(geo.spatial_join_with_buffer(pp, region_polygons,
-                                                   name=col_name, limit=limit))
-    pp['geometry'] = pp['geometry'].astype(str)
+    logging.debug("Adding column {0} to power plant table...".format(col_name))
+    pp = pd.DataFrame(
+        geo.spatial_join_with_buffer(
+            pp, region_polygons, name=col_name, limit=limit
+        )
+    )
+    pp["geometry"] = pp["geometry"].astype(str)
 
     logging.info(
-        "Region column {0} added to power plant table.".format(col_name))
+        "Region column {0} added to power plant table.".format(col_name)
+    )
     return pp
 
 
-def get_reegis_powerplants(year, path=None, filename=None, pp=None,
-                           overwrite_capacity=False):
+def get_reegis_powerplants(
+    year, path=None, filename=None, pp=None, overwrite_capacity=False
+):
     """
     Get all reegis power plants for the given year. The function uses the
     opsd power plant file. If this file does not exist it created. In that
@@ -274,10 +321,10 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
 
     Examples
     --------
-    >>> pp_reegis = get_reegis_powerplants(2012)  # doctest: +SKIP
+    >>> pp_reegis=get_reegis_powerplants(2012)  # doctest: +SKIP
     >>> 'capacity_2012' in pp_reegis.columns  # doctest: +SKIP
     True
-    >>> pp_reegis2 = get_reegis_powerplants(
+    >>> pp_reegis2=get_reegis_powerplants(
     ...     2012, overwrite_capacity=True)  # doctest: +SKIP
     >>> 'capacity_2012' in pp_reegis2.columns  # doctest: +SKIP
     False
@@ -290,11 +337,11 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
         default = False
 
     if path is None:
-        path = cfg.get('paths', 'powerplants')
+        path = cfg.get("paths", "powerplants")
 
     if filename is None:
-        version = cfg.get('opsd', 'version_name')
-        filename = cfg.get('powerplants', 'reegis_pp').format(version=version)
+        version = cfg.get("opsd", "version_name")
+        filename = cfg.get("powerplants", "reegis_pp").format(version=version)
 
     fn = os.path.join(path, filename)
 
@@ -303,12 +350,12 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
         logging.debug(MSG.format(fn))
         fn = pp_opsd2reegis()
     if pp is None:
-        pp = pd.DataFrame(pd.read_hdf(fn, 'pp'))
+        pp = pd.DataFrame(pd.read_hdf(fn, "pp"))
 
-    filter_columns = ['capacity_{0}']
+    filter_columns = ["capacity_{0}"]
 
-    if 'capacity_in' in pp.columns:
-        filter_columns.append('capacity_in_{0}')
+    if "capacity_in" in pp.columns:
+        filter_columns.append("capacity_in_{0}")
 
     # Get all powerplants for the given year.
     # If com_month exist the power plants will be considered month-wise.
@@ -317,15 +364,17 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
     for fcol in filter_columns:
         filter_column = fcol.format(year)
         orig_column = fcol[:-4]
-        c1 = (pp['com_year'] < year) & (pp['decom_year'] > year)
+        c1 = (pp["com_year"] < year) & (pp["decom_year"] > year)
         pp.loc[c1, filter_column] = pp.loc[c1, orig_column]
 
-        c2 = pp['com_year'] == year
-        pp.loc[c2, filter_column] = (pp.loc[c2, orig_column] *
-                                     (12 - pp.loc[c2, 'com_month']) / 12)
-        c3 = pp['decom_year'] == year
-        pp.loc[c3, filter_column] = (pp.loc[c3, orig_column] *
-                                     pp.loc[c3, 'com_month'] / 12)
+        c2 = pp["com_year"] == year
+        pp.loc[c2, filter_column] = (
+            pp.loc[c2, orig_column] * (12 - pp.loc[c2, "com_month"]) / 12
+        )
+        c3 = pp["decom_year"] == year
+        pp.loc[c3, filter_column] = (
+            pp.loc[c3, orig_column] * pp.loc[c3, "com_month"] / 12
+        )
 
         if overwrite_capacity:
             pp[orig_column] = 0
@@ -335,9 +384,17 @@ def get_reegis_powerplants(year, path=None, filename=None, pp=None,
     return pp
 
 
-def add_regions_to_powerplants(region, column, filename=None,
-                               filename_out=None, path=None, hdf_key='pp',
-                               subregion=False, dump=True, pp=None):
+def add_regions_to_powerplants(
+    region,
+    column,
+    filename=None,
+    filename_out=None,
+    path=None,
+    hdf_key="pp",
+    subregion=False,
+    dump=True,
+    pp=None,
+):
     """
     Add a column to the power plant table with the region id of the given
     region file.
@@ -372,9 +429,9 @@ def add_regions_to_powerplants(region, column, filename=None,
 
     Examples
     --------
-    >>> region_polygons = geo.load(path=cfg.get('paths', 'geometry'),
+    >>> region_polygons=geo.load(path=cfg.get('paths', 'geometry'),
     ...                            filename='region_polygons_de21_wiese.csv')
-    >>> pp = add_regions_to_powerplants(
+    >>> pp=add_regions_to_powerplants(
     ...     region_polygons, 'de_21_wiese', 'reegis_pp.h5',
     ...     filename_out='reegis_pp_regions.h5')  # doctest: +SKIP
 
@@ -385,11 +442,11 @@ def add_regions_to_powerplants(region, column, filename=None,
         default = False
 
     if path is None:
-        path = cfg.get('paths', 'powerplants')
+        path = cfg.get("paths", "powerplants")
 
     if filename is None:
-        version = cfg.get('opsd', 'version_name')
-        filename = cfg.get('powerplants', 'reegis_pp').format(version=version)
+        version = cfg.get("opsd", "version_name")
+        filename = cfg.get("powerplants", "reegis_pp").format(version=version)
 
     if filename_out is None:
         filename_out = filename
@@ -406,12 +463,12 @@ def add_regions_to_powerplants(region, column, filename=None,
     if column not in pp:
         pp = add_model_region_pp(pp, region, column, subregion=subregion)
 
-    if 'capacity_in' not in pp:
+    if "capacity_in" not in pp:
         pp = add_capacity_in(pp)
 
     if dump:
         fn = os.path.join(path, filename_out)
-        pp.to_hdf(fn, 'pp', mode='w')
+        pp.to_hdf(fn, "pp", mode="w")
 
     return pp
 
@@ -422,51 +479,49 @@ def calculate_chp_share_and_efficiency(eb, fix_total=True):
 
     Examples
     --------
-    >>> cb = energy_balance.get_transformation_balance(2014)
-    >>> efficiency = calculate_chp_share_and_efficiency(cb, fix_total=False)
+    >>> cb=energy_balance.get_transformation_balance(2014)
+    >>> efficiency=calculate_chp_share_and_efficiency(cb, fix_total=False)
     >>> round(efficiency['NI']['hp'], 4)
     0.9888
     >>> round(efficiency['BB']['hp'], 4)
     inf
-    >>> efficiency = calculate_chp_share_and_efficiency(cb)
+    >>> efficiency=calculate_chp_share_and_efficiency(cb)
     >>> round(efficiency['NI']['hp'], 4)
     0.9888
     >>> round(efficiency['BB']['hp'], 4)
     0.8885
     """
-    row_chp = 'Heizkraftwerke der allgemeinen Versorgung (nur KWK)'
-    row_hp = 'Heizwerke'
-    row_total = 'Insgesamt'
+    row_chp = "Heizkraftwerke der allgemeinen Versorgung (nur KWK)"
+    row_hp = "Heizwerke"
+    row_total = "Insgesamt"
 
     regions = list(eb.index.get_level_values(0).unique())
     eta = {}
-    rows = ['Heizkraftwerke der allgemeinen Versorgung (nur KWK)',
-            'Heizwerke']
+    rows = ["Heizkraftwerke der allgemeinen Versorgung (nur KWK)", "Heizwerke"]
 
     if fix_total:
-        eb.loc[eb.total == 0, 'total'] = eb.loc[eb.total == 0].sum(axis=1)
+        eb.loc[eb.total == 0, "total"] = eb.loc[eb.total == 0].sum(axis=1)
 
     for region in regions:
         eta[region] = {}
-        in_chp = eb.loc[region, 'input', row_chp]
-        in_hp = eb.loc[region, 'input', row_hp]
-        elec_chp = eb.loc[(region, 'output', row_chp), 'electricity']
-        heat_chp = eb.loc[(region, 'output', row_chp),
-                          'district heating']
-        heat_hp = eb.loc[(region, 'output', row_hp),
-                         'district heating']
-        heat_total = eb.loc[(region, 'output', row_total),
-                            'district heating']
-        end_total_heat = eb.loc[(region, 'usage', 'Endenergieverbrauch'),
-                                'district heating']
-        eta[region]['sys_heat'] = end_total_heat / heat_total
+        in_chp = eb.loc[region, "input", row_chp]
+        in_hp = eb.loc[region, "input", row_hp]
+        elec_chp = eb.loc[(region, "output", row_chp), "electricity"]
+        heat_chp = eb.loc[(region, "output", row_chp), "district heating"]
+        heat_hp = eb.loc[(region, "output", row_hp), "district heating"]
+        heat_total = eb.loc[(region, "output", row_total), "district heating"]
+        end_total_heat = eb.loc[
+            (region, "usage", "Endenergieverbrauch"), "district heating"
+        ]
+        eta[region]["sys_heat"] = end_total_heat / heat_total
 
-        eta[region]['hp'] = float(heat_hp / in_hp.total)
-        eta[region]['heat_chp'] = heat_chp / in_chp.total
-        eta[region]['elec_chp'] = elec_chp / in_chp.total
+        eta[region]["hp"] = float(heat_hp / in_hp.total)
+        eta[region]["heat_chp"] = heat_chp / in_chp.total
+        eta[region]["elec_chp"] = elec_chp / in_chp.total
 
-        eta[region]['fuel_share'] = eb.loc[region, 'input', rows].div(
-            eb.loc[region, 'input', rows].total.sum(), axis=0)
+        eta[region]["fuel_share"] = eb.loc[region, "input", rows].div(
+            eb.loc[region, "input", rows].total.sum(), axis=0
+        )
 
     return eta
 
@@ -481,7 +536,7 @@ def get_chp_share_and_efficiency_states(year):
 
     Examples
     --------
-    >>> df = get_chp_share_and_efficiency_states(2014)
+    >>> df=get_chp_share_and_efficiency_states(2014)
     >>> round(df['BB']['heat_chp'], 2)
     0.52
     >>> round(df['BB']['elec_chp'], 2)
@@ -522,35 +577,46 @@ def get_powerplants_by_region(region, year, name, grouped=True):
 
     Examples
     --------
-    >>> geometries = geo.get_federal_states_polygon()  # doctest: +SKIP
-    >>> my_year = 2014  # doctest: +SKIP
-    >>> my_pp = get_powerplants_by_region(
+    >>> geometries=geo.get_federal_states_polygon()  # doctest: +SKIP
+    >>> my_year=2014  # doctest: +SKIP
+    >>> my_pp=get_powerplants_by_region(
     ...     geometries, my_year, 'federal_states')  # doctest: +SKIP
 
     """
-    version = cfg.get('opsd', 'version_name')
-    filename = cfg.get('powerplants', 'reegis_pp')
-    filename = filename.format(version=str(version) + '_' + str(name))
+    version = cfg.get("opsd", "version_name")
+    filename = cfg.get("powerplants", "reegis_pp")
+    filename = filename.format(version=str(version) + "_" + str(name))
 
-    path = cfg.get('paths', 'powerplants')
+    path = cfg.get("paths", "powerplants")
 
     fn = os.path.join(path, filename)
 
-    basefile = cfg.get('powerplants', 'reegis_pp').format(version=version)
+    basefile = cfg.get("powerplants", "reegis_pp").format(version=version)
 
     if not os.path.isfile(os.path.join(path, basefile)):
         pp_opsd2reegis(filename_out=os.path.join(path, basefile))
 
     if not os.path.isfile(fn) and region is not None:
-        add_regions_to_powerplants(region, name, path=path, filename=basefile,
-                                   filename_out=filename, subregion=True)
+        add_regions_to_powerplants(
+            region,
+            name,
+            path=path,
+            filename=basefile,
+            filename_out=filename,
+            subregion=True,
+        )
 
     pp = get_reegis_powerplants(year, path=path, filename=filename)
 
     if grouped is True:
-        pp = pp.groupby([name, 'energy_source_level_2']).sum()
-        rm_columns = ['com_month', 'com_year', 'decom_month', 'decom_year',
-                      'efficiency']
+        pp = pp.groupby([name, "energy_source_level_2"]).sum()
+        rm_columns = [
+            "com_month",
+            "com_year",
+            "decom_month",
+            "decom_year",
+            "efficiency",
+        ]
         pp.drop(rm_columns, axis=1, inplace=True)
 
     return pp
