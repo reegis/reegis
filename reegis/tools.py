@@ -6,8 +6,8 @@ SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
-__license__ = "MIT"
+__copyright__="Uwe Krien <krien@uni-bremen.de>"
+__license__="MIT"
 
 
 # Python libraries
@@ -37,14 +37,14 @@ def download_file(filename, url, overwrite=False):
         else:
             logging.warning("File {0} not found.".format(filename))
         logging.warning("Try to download it from {0}.".format(url))
-        req = requests.get(url)
+        req=requests.get(url)
         with open(filename, 'wb') as fout:
             fout.write(req.content)
         logging.info("Downloaded from {0} and copied to '{1}'.".format(
             url, filename))
-        r = req.status_code
+        r=req.status_code
     else:
-        r = 1
+        r=1
     return r
 
 

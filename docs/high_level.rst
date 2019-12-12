@@ -15,11 +15,11 @@ plot with the capacity for every federal state by fuel for the year 2014.
 
     from matplotlib import pyplot as plt
     from reegis import powerplants
-    geometries = geo.get_federal_states_polygon()
-    year = 2014
-    my_pp = powerplants.get_powerplants_by_region(
+    geometries=geo.get_federal_states_polygon()
+    year=2014
+    my_pp=powerplants.get_powerplants_by_region(
         geometries, year, 'federal_states')
-    column = 'capacity_{0}'.format(year)
+    column='capacity_{0}'.format(year)
     my_pp[column].unstack().plot(kind='bar', stacked=True)
     plt.show()
 
@@ -56,7 +56,7 @@ municipalities is used and summed up within each polygon.
 .. code-block:: python
 
     from reegis import geometries, inhabitants
-    fs = geometries.get_federal_states_polygon()
+    fs=geometries.get_federal_states_polygon()
     inhabitants.get_inhabitants_by_region(2014, fs, name='federal_states').sum()
 
 For the full API see :py:mod:`~reegis.inhabitants` .
@@ -82,12 +82,12 @@ demand of Germany (see :ref:`bmwi_label`).
 
     from reegis import openego, geometries
 
-    federal_states = geometries.get_federal_states_polygon()
-    ego_demand = openego.get_ego_demand_by_region(
+    federal_states=geometries.get_federal_states_polygon()
+    ego_demand=openego.get_ego_demand_by_region(
         federal_states, 'federal_states', grouped=True)
 
     # the share of the overall demand
-    share = ego_demand.div(ego_demand.sum())
+    share=ego_demand.div(ego_demand.sum())
     print(share.mul(100).round(1))  # percentage
 
     # the scaled overall demand (eg. 555 TWh)
@@ -118,9 +118,9 @@ by the user.
 .. code-block:: python
 
     from reegis import demand_elec, geometries
-    fs = geometries.get_federal_states_polygon()
-    annual_demand = 'bmwi'
-    my_profile = demand_elec.get_entsoe_profile_by_region(
+    fs=geometries.get_federal_states_polygon()
+    annual_demand='bmwi'
+    my_profile=demand_elec.get_entsoe_profile_by_region(
         fs, 2014, 'test', annual_demand)
 
 .. image:: _files/electricity_profile_from_entsoe.svg
@@ -133,19 +133,19 @@ The full code of the plot can be found here
 .. code-block:: python
 
     from reegis import demand_elec, geometries
-    fs = geometries.get_federal_states_polygon()
+    fs=geometries.get_federal_states_polygon()
 
-    p1 = demand_elec.get_entsoe_profile_by_region(fs, 2014, 'test', 'entsoe')
-    p['entsoe'] = p1.sum().sum()
+    p1=demand_elec.get_entsoe_profile_by_region(fs, 2014, 'test', 'entsoe')
+    p['entsoe']=p1.sum().sum()
 
-    p2 = demand_elec.get_entsoe_profile_by_region(fs, 2013, 'test', 'bmwi')
-    p['bmwi'] = p2.sum().sum()
+    p2=demand_elec.get_entsoe_profile_by_region(fs, 2013, 'test', 'bmwi')
+    p['bmwi']=p2.sum().sum()
 
-    p3 = demand_elec.get_entsoe_profile_by_region(fs, 2013, 'test', 'openego')
-    p['openego'] = p3.sum().sum()
+    p3=demand_elec.get_entsoe_profile_by_region(fs, 2013, 'test', 'openego')
+    p['openego']=p3.sum().sum()
 
-    p4 = demand_elec.get_entsoe_profile_by_region(fs, 2011, 'test', 555555)
-    p['user value'] = p4.sum().sum()
+    p4=demand_elec.get_entsoe_profile_by_region(fs, 2011, 'test', 555555)
+    p['user value']=p4.sum().sum()
 
 .. image:: _files/scaled_electricity_profile.svg
   :width: 700

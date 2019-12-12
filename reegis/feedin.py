@@ -21,8 +21,8 @@ SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
-__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
-__license__ = "MIT"
+__copyright__="Uwe Krien <krien@uni-bremen.de>"
+__license__="MIT"
 
 
 # Python libraries
@@ -56,7 +56,7 @@ def create_pvlib_sets():
 
     Examples
     --------
-    >>> pv_set = create_pvlib_sets()['M_LG290G3__I_ABB_MICRO_025_US208'][3]
+    >>> pv_set=create_pvlib_sets()['M_LG290G3__I_ABB_MICRO_025_US208'][3]
     >>> int(pv_set['surface_azimuth'])
     180
     >>> for key in sorted(pv_set.keys()):
@@ -70,41 +70,41 @@ def create_pvlib_sets():
     surface_tilt
     """
     # get module and inverter parameter from sandia database
-    sandia_modules = pvlib.pvsystem.retrieve_sam('sandiamod')
-    sapm_inverters = pvlib.pvsystem.retrieve_sam('sandiainverter')
+    sandia_modules=pvlib.pvsystem.retrieve_sam('sandiamod')
+    sapm_inverters=pvlib.pvsystem.retrieve_sam('sandiainverter')
 
-    pvlib_sets = cfg.get_list('solar', 'set_list')
+    pvlib_sets=cfg.get_list('solar', 'set_list')
 
-    pvsets = {}
+    pvsets={}
     for pvlib_set in pvlib_sets:
-        set_name = cfg.get(pvlib_set, 'pv_set_name')
-        module_name = cfg.get(pvlib_set, 'module_name')
-        module_key = cfg.get(pvlib_set, 'module_key')
-        inverter = cfg.get(pvlib_set, 'inverter_name')
-        azimuth_angles = cfg.get_list(pvlib_set, 'surface_azimuth')
-        tilt_angles = cfg.get_list(pvlib_set, 'surface_tilt')
-        albedo_values = cfg.get_list(pvlib_set, 'albedo')
+        set_name=cfg.get(pvlib_set, 'pv_set_name')
+        module_name=cfg.get(pvlib_set, 'module_name')
+        module_key=cfg.get(pvlib_set, 'module_key')
+        inverter=cfg.get(pvlib_set, 'inverter_name')
+        azimuth_angles=cfg.get_list(pvlib_set, 'surface_azimuth')
+        tilt_angles=cfg.get_list(pvlib_set, 'surface_tilt')
+        albedo_values=cfg.get_list(pvlib_set, 'albedo')
 
-        set_idx = 0
-        pvsets[set_name] = {}
+        set_idx=0
+        pvsets[set_name]={}
         for t in tilt_angles:
             if t == '0':
-                az_angles = (0,)
+                az_angles=(0,)
             else:
-                az_angles = azimuth_angles
+                az_angles=azimuth_angles
             for a in az_angles:
                 for alb in albedo_values:
                     set_idx += 1
-                    pvsets[set_name][set_idx] = {
+                    pvsets[set_name][set_idx]={
                         'module_parameters': sandia_modules[module_name],
                         'inverter_parameters': sapm_inverters[inverter],
                         'surface_azimuth': float(a),
                         'surface_tilt': t,
                         'albedo': float(alb)}
-                    pvsets[set_name][set_idx]['p_peak'] = (
+                    pvsets[set_name][set_idx]['p_peak']=(
                         pvsets[set_name][set_idx]['module_parameters'].Impo *
                         pvsets[set_name][set_idx]['module_parameters'].Vmpo)
-                    pvsets[set_name][set_idx]['name'] = "_".join([
+                    pvsets[set_name][set_idx]['name']="_".join([
                         module_key,
                         inverter[:3],
                         "tlt{}".format(t[:3].rjust(3, '0')),
@@ -136,15 +136,15 @@ def feedin_pv_sets(weather, location, pv_parameter_set):
     pandas.DataFrame
 
     """
-    df = pd.DataFrame()
+    df=pd.DataFrame()
     for pv_system in pv_parameter_set.values():
         if pv_system['surface_tilt'] == 'optimal':
-            tilt = get_optimal_pv_angle(location.latitude)
+            tilt=get_optimal_pv_angle(location.latitude)
         else:
-            tilt = float(pv_system['surface_tilt'])
+            tilt=float(pv_system['surface_tilt'])
 
-        mc = feedin_pvlib(location, pv_system, weather, tilt=tilt)
-        df[pv_system['name']] = mc
+        mc=feedin_pvlib(location, pv_system, weather, tilt=tilt)
+        df[pv_system['name']]=mc
     return df
 
 
@@ -179,27 +179,27 @@ def feedin_pvlib(location, system, weather, tilt=None, peak=None,
 
     """
     if tilt is None:
-        tilt = system['surface_tilt']
+        tilt=system['surface_tilt']
 
     if peak is not None:
-        system['peak'] = peak
+        system['peak']=peak
 
     if not isinstance(location, pvlib.location.Location):
-        location = pvlib.location.Location(**location)
+        location=pvlib.location.Location(**location)
 
     # pvlib's ModelChain
-    pvsys = pvlib.pvsystem.PVSystem(
+    pvsys=pvlib.pvsystem.PVSystem(
         inverter_parameters=system['inverter_parameters'],
         module_parameters=system['module_parameters'],
         surface_tilt=tilt,
         surface_azimuth=system['surface_azimuth'],
         albedo=system['albedo'])
 
-    mc = pvlib.modelchain.ModelChain(
+    mc=pvlib.modelchain.ModelChain(
         pvsys, location, orientation_strategy=orientation_strategy)
-    pv_weather = weather.copy()
-    pv_weather.index = pv_weather.index.shift(-1, freq="30min")
-    out = mc.run_model(pv_weather.index, weather=pv_weather)
+    pv_weather=weather.copy()
+    pv_weather.index=pv_weather.index.shift(-1, freq="30min")
+    out=mc.run_model(pv_weather.index, weather=pv_weather)
     return out.ac.fillna(0).clip(0).div(system['p_peak']).multiply(
         installed_capacity)
 
@@ -213,7 +213,7 @@ def create_windpowerlib_sets():
 
     Examples
     --------
-    >>> wind_set = create_windpowerlib_sets()['ENERCON_82_hub98_2300'][1]
+    >>> wind_set=create_windpowerlib_sets()['ENERCON_82_hub98_2300'][1]
     >>> wind_set['hub_height']
     98
     >>> sorted(list(create_windpowerlib_sets().keys()))[:2]
@@ -223,15 +223,15 @@ def create_windpowerlib_sets():
     hub_height
     turbine_type
     """
-    windpowerlib_sets = cfg.get_list('wind', 'set_list')
+    windpowerlib_sets=cfg.get_list('wind', 'set_list')
 
     # Only one subset is created but following the pvlib sets it is possible
     # to create subsets.
-    windsets = {}
+    windsets={}
     for windpowerlib_set in windpowerlib_sets:
-        w_set = {1: cfg.get_dict(windpowerlib_set)}
-        set_name = w_set[1].pop('set_name')
-        windsets[set_name] = w_set
+        w_set={1: cfg.get_dict(windpowerlib_set)}
+        set_name=w_set[1].pop('set_name')
+        windsets[set_name]=w_set
     return windsets
 
 
@@ -254,12 +254,12 @@ def feedin_wind_sets(weather, wind_parameter_set):
     Examples
     --------
     >>> from reegis import coastdat
-    >>> fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
+    >>> fn=os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
     ...                   'data', 'test_coastdat_weather.csv')
-    >>> wind_parameter_set = create_windpowerlib_sets()
-    >>> weather = pd.read_csv(fn, header=[0, 1])['1126088']
-    >>> data_height = cfg.get_dict('coastdat_data_height')
-    >>> wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
+    >>> wind_parameter_set=create_windpowerlib_sets()
+    >>> weather=pd.read_csv(fn, header=[0, 1])['1126088']
+    >>> data_height=cfg.get_dict('coastdat_data_height')
+    >>> wind_weather=coastdat.adapt_coastdat_weather_to_windpowerlib(
     ...     weather, data_height)  # doctest: +SKIP
     >>> feedin_wind_sets(wind_weather, wind_parameter_set
     ...     ).sum().sort_index()  # doctest: +SKIP
@@ -268,10 +268,10 @@ def feedin_wind_sets(weather, wind_parameter_set):
     ENERCON_82_hub98_2300     1487.604336
     dtype: float64
     """
-    df = pd.DataFrame()
+    df=pd.DataFrame()
     for set_name, turbine in wind_parameter_set.items():
-        mc = feedin_windpowerlib(weather, turbine)
-        df[str(set_name).replace(' ', '_')] = mc
+        mc=feedin_windpowerlib(weather, turbine)
+        df[str(set_name).replace(' ', '_')]=mc
     return df
 
 
@@ -296,26 +296,26 @@ def feedin_windpowerlib(weather, turbine, installed_capacity=1):
     Examples
     --------
     >>> from reegis import coastdat
-    >>> fn = os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
+    >>> fn=os.path.join(os.path.dirname(__file__), os.pardir, 'tests',
     ...                  'data', 'test_coastdat_weather.csv')
-    >>> weather = pd.read_csv(fn, header=[0, 1])['1126088']
-    >>> turbine = {
+    >>> weather=pd.read_csv(fn, header=[0, 1])['1126088']
+    >>> turbine={
     ...     'hub_height': 135,
     ...     'rotor_diameter': 127,
     ...     'name': 'E-82/2300',
     ...     'nominal_power': 4200000,
     ...     'fetch_curve': 'power_coefficient_curve'}
-    >>> data_height = cfg.get_dict('coastdat_data_height')
-    >>> wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
+    >>> data_height=cfg.get_dict('coastdat_data_height')
+    >>> wind_weather=coastdat.adapt_coastdat_weather_to_windpowerlib(
     ...     weather, data_height)  # doctest: +SKIP
     >>> int(feedin_windpowerlib(wind_weather, turbine).sum())  # doctest: +SKIP
     1737
     """
     if not isinstance(turbine, WindTurbine):
-        turbine = WindTurbine(**turbine)
-    modelchain_data = cfg.get_dict('windpowerlib')
-    mc = ModelChain(turbine, **modelchain_data)
-    mcwpp = mc.run_model(weather)
+        turbine=WindTurbine(**turbine)
+    modelchain_data=cfg.get_dict('windpowerlib')
+    mc=ModelChain(turbine, **modelchain_data)
+    mcwpp=mc.run_model(weather)
     return mcwpp.power_output.div(turbine.nominal_power).multiply(
         installed_capacity)
 
