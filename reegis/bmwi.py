@@ -6,8 +6,8 @@ SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
-__copyright__="Uwe Krien <krien@uni-bremen.de>"
-__license__="MIT"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -24,11 +24,18 @@ from reegis import tools
 
 def get_bmwi_energiedaten_file(overwrite=False):
     """Download BMWi energy data table."""
-    filename=os.path.join(cfg.get("paths", 'general'),
-                            cfg.get('bmwi', 'energiedaten'))
-    logging.debug("Return status from energiedaten file: {0}".format(
-        tools.download_file(filename, cfg.get('bmwi', 'url_energiedaten'),
-                            overwrite=overwrite)))
+    filename = os.path.join(
+        cfg.get("paths", "general"), cfg.get("bmwi", "energiedaten")
+    )
+    logging.debug(
+        "Return status from energiedaten file: {0}".format(
+            tools.download_file(
+                filename,
+                cfg.get("bmwi", "url_energiedaten"),
+                overwrite=overwrite,
+            )
+        )
+    )
     return filename
 
 
@@ -46,10 +53,10 @@ def read_bmwi_sheet_7(sub):
 
     Examples
     --------
-    >>> fs=read_bmwi_sheet_7('a').sort_index()  # doctest: +SKIP
+    >>> fs = read_bmwi_sheet_7('a').sort_index()  # doctest: +SKIP
     >>> int(float(fs.loc[('Industrie', 'gesamt'), 2014]))  # doctest: +SKIP
     2545
-    >>> fs=read_bmwi_sheet_7('b').sort_index()  # doctest: +SKIP
+    >>> fs = read_bmwi_sheet_7('b').sort_index()  # doctest: +SKIP
     >>> float(fs.loc[('private Haushalte', 'gesamt'), 2014])  # doctest: +SKIP
     2188.04
     """
