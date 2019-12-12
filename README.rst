@@ -48,7 +48,7 @@ If you have a working Python 3 environment, use pypi to install the latest reegi
 Documentation
 =============
 
-Full documentation can be found at `readthedocs <https://reegis.readthedocs.io/en/latest/>`_.
+The `reegis documentation <https://reegis.readthedocs.io/en/latest/>`_ is powered by readthedocs.
 
 Go to the `download page <http://readthedocs.org/projects/reegis/downloads/>`_ to download different versions and formats (pdf, html, epub) of the documentation.
 
