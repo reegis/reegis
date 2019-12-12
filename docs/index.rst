@@ -12,6 +12,12 @@
 .. image:: https://img.shields.io/lgtm/alerts/g/reegis/reegis.svg?logo=lgtm&logoWidth=18
     :target: https://lgtm.com/projects/g/reegis/reegis/alerts/
 
+.. image:: https://img.shields.io/badge/automatic%20code%20style-black-blueviolet
+    :target: https://black.readthedocs.io/en/stable/
+
+.. image:: https://img.shields.io/badge/licence-MIT-blue
+    :target: https://spdx.org/licenses/MIT.html
+
 
 Introduction
 =============
