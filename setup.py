@@ -7,7 +7,7 @@ import os
 import reegis
 
 if not os.environ.get("READTHEDOCS") == "True":
-    requirements=[
+    requirements = [
         "pandas >= 0.21.0",
         "demandlib",
         "tables",
@@ -25,7 +25,7 @@ if not os.environ.get("READTHEDOCS") == "True":
         "xlrd",
     ]
 else:
-    requirements=["cycler"]
+    requirements = ["cycler"]
 
 
 def read(fname):

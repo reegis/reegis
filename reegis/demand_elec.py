@@ -6,8 +6,8 @@ SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
-__copyright__="Uwe Krien <krien@uni-bremen.de>"
-__license__="MIT"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 # Python libraries
@@ -59,28 +59,28 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand):
     """
     logging.debug("Get entsoe profile {0} for {1}".format(name, year))
 
-    profile=entsoe.get_entsoe_load(year).reset_index(drop=True)["DE_load_"]
-    norm_profile=profile.div(profile.sum())
-    ego_demand=openego.get_ego_demand_by_region(region, name, grouped=True)
+    profile = entsoe.get_entsoe_load(year).reset_index(drop=True)["DE_load_"]
+    norm_profile = profile.div(profile.sum())
+    ego_demand = openego.get_ego_demand_by_region(region, name, grouped=True)
 
     if annual_demand == "bmwi":
-        annual_demand=(
+        annual_demand = (
             bmwi_data.get_annual_electricity_demand_bmwi(year) * 1000
         )
     elif annual_demand == "entsoe":
-        annual_demand=profile.sum() / 1000
+        annual_demand = profile.sum() / 1000
     elif annual_demand == "openego":
-        annual_demand=ego_demand.sum()
+        annual_demand = ego_demand.sum()
     elif isinstance(annual_demand, (int, float)):
         pass
     else:
-        msg=(
+        msg = (
             "{0} of type {1} is not a valid input for 'annual_demand'.\n"
             "Use 'bmwi', 'entsoe' or a float/int value."
         )
         raise ValueError(msg.format(annual_demand, type(annual_demand)))
 
-    demand_fs=ego_demand.div(ego_demand.sum()).mul(annual_demand)
+    demand_fs = ego_demand.div(ego_demand.sum()).mul(annual_demand)
 
     return pd.DataFrame(
         [demand_fs.values] * len(norm_profile), columns=demand_fs.index

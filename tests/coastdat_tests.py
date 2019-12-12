@@ -10,8 +10,8 @@ SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
-__copyright__="Uwe Krien <krien@uni-bremen.de>"
-__license__="MIT"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 
 from nose.tools import eq_, assert_raises_regexp
@@ -21,12 +21,12 @@ import unittest
 
 @unittest.skip("URL test is very slow. Use it from time to time.")
 def test_coastdat_file_url():
-    check=True
+    check = True
     for year in range(1998, 2015):
-        f1='coastDat2_de_{0}.h5'.format(year)
-        f2=coastdat.download_coastdat_data(year=year, test_only=True)
+        f1 = "coastDat2_de_{0}.h5".format(year)
+        f2 = coastdat.download_coastdat_data(year=year, test_only=True)
         if f1 != f2:
-            check=year
+            check = year
     eq_(check, True)
 
 
@@ -36,21 +36,25 @@ def test_coastdat_file_url_2014():
     time to test the general infrastructure, and all links will be tested
     from time to time by removing the skip decorator.
     """
-    check=True
+    check = True
     for year in [2014]:
-        f1='coastDat2_de_{0}.h5'.format(year)
-        f2=coastdat.download_coastdat_data(year=year, test_only=True)
+        f1 = "coastDat2_de_{0}.h5".format(year)
+        f2 = coastdat.download_coastdat_data(year=year, test_only=True)
         if f1 != f2:
-            check=year
+            check = year
     eq_(check, True)
 
 
 def test_wrong_url():
-    assert_raises_regexp(ValueError, "No URL found",
-                         coastdat.download_coastdat_data, year=2018)
-    assert_raises_regexp(ValueError, "URL not valid",
-                         coastdat.download_coastdat_data,
-                         url='https://osf.io/url_id/download')
+    assert_raises_regexp(
+        ValueError, "No URL found", coastdat.download_coastdat_data, year=2018
+    )
+    assert_raises_regexp(
+        ValueError,
+        "URL not valid",
+        coastdat.download_coastdat_data,
+        url="https://osf.io/url_id/download",
+    )
 
 
 def test_coordinates_out_of_bound():

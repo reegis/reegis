@@ -6,8 +6,8 @@ SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
 SPDX-License-Identifier: MIT
 """
-__copyright__="Uwe Krien <krien@uni-bremen.de>"
-__license__="MIT"
+__copyright__ = "Uwe Krien <krien@uni-bremen.de>"
+__license__ = "MIT"
 
 import logging
 
@@ -39,16 +39,17 @@ def oedb(oep_url, schema, table, query, geo_column, epsg):
     26181
 
     """
-    full_url='{url}/schema/{schema}/tables/{table}/rows/{query}'.format(
-        url=oep_url, schema=schema, table=table, query=query)
+    full_url = "{url}/schema/{schema}/tables/{table}/rows/{query}".format(
+        url=oep_url, schema=schema, table=table, query=query
+    )
 
     logging.info("Download data set from {0}".format(full_url))
-    result=requests.get(full_url)
+    result = requests.get(full_url)
     logging.debug("Got results: {0}".format(result.status_code))
     logging.info("Convert results to geoDataFrame.")
-    result_df=pd.DataFrame(result.json())
-    result_df[geo_column]=result_df[geo_column].apply(wkb2wkt)
-    crs={'init': 'epsg:{0}'.format(epsg)}
+    result_df = pd.DataFrame(result.json())
+    result_df[geo_column] = result_df[geo_column].apply(wkb2wkt)
+    crs = {"init": "epsg:{0}".format(epsg)}
     return gpd.GeoDataFrame(result_df, crs=crs, geometry=geo_column)
 
 
