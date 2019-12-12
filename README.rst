@@ -16,6 +16,9 @@
 .. image:: https://img.shields.io/badge/licence-MIT-blue
     :target: https://spdx.org/licenses/MIT.html
 
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3572316.svg
+   :target: https://doi.org/10.5281/zenodo.3572316
+
 
 The reegis repository provides tools to fetch, prepare and organise input data for heat and power models. At the moment the focus is on the territory of Germany but some tools can be used for european models as well.
 
