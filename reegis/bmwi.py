@@ -24,11 +24,18 @@ from reegis import tools
 
 def get_bmwi_energiedaten_file(overwrite=False):
     """Download BMWi energy data table."""
-    filename = os.path.join(cfg.get("paths", 'general'),
-                            cfg.get('bmwi', 'energiedaten'))
-    logging.debug("Return status from energiedaten file: {0}".format(
-        tools.download_file(filename, cfg.get('bmwi', 'url_energiedaten'),
-                            overwrite=overwrite)))
+    filename = os.path.join(
+        cfg.get("paths", "general"), cfg.get("bmwi", "energiedaten")
+    )
+    logging.debug(
+        "Return status from energiedaten file: {0}".format(
+            tools.download_file(
+                filename,
+                cfg.get("bmwi", "url_energiedaten"),
+                overwrite=overwrite,
+            )
+        )
+    )
     return filename
 
 
