@@ -40,7 +40,11 @@ maintain the packages. Don't be shy, even if you are a beginner.
 Citing reegis
 ========================
 
-We use the zenodo project to get a DOI for each version. `Search zenodo for the right citation of your reegis version <https://zenodo.org/search?page=1&size=20&q=windpowerlib>`_.
+
+Go to the `Zenodo page of reegis <https://doi.org/10.5281/zenodo.3572316>`_ to find the DOI of your version. To cite all reegis versions use:
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.3572316.svg
+   :target: https://doi.org/10.5281/zenodo.3572316
 
 License
 ============
