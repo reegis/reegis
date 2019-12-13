@@ -216,7 +216,7 @@ def spatial_join_with_buffer(
 
     if isinstance(geo1, gpd.GeoSeries):
         crs = geo1.crs
-        geo1 = gpd.GeoDataFrame(geo1, columns=['geometry'])
+        geo1 = gpd.GeoDataFrame(geo1, columns=["geometry"])
         geo1.crs = crs
 
     logging.debug("Doing spatial join...")
