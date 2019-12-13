@@ -3,22 +3,26 @@ language: python
 matrix:
   include:
     - python: 3.6
-      dist: xenial
-      sudo: true
     - python: 3.7
-      dist: xenial
-      sudo: true
+    - python: 3.8
 
-# command to install dependencies
-before_install:
-  - sudo apt-get install libhdf5-serial-dev proj-bin libproj-dev libgeos-dev libspatialindex-dev 
+# install os dependencies
+addons:
+  apt:
+    packages:
+      - proj-bin
+      - libhdf5-serial-dev
+      - libproj-dev
+      - libgeos-dev
+      - libspatialindex-dev
 
+# install python dependencies
 install:
   - pip install cython
   - pip install .
   - pip install coveralls
 
-# command to run tests
+# command to run tests and coverage
 script:
   - nosetests --with-doctest --with-coverage -c nose.cfg
 
