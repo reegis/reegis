@@ -214,6 +214,11 @@ def spatial_join_with_buffer(
     if jcol == "index":
         jcol = "index_right"
 
+    if isinstance(geo1, gpd.GeoSeries):
+        crs = geo1.crs
+        geo1 = gpd.GeoDataFrame(geo1, columns=['geometry'])
+        geo1.crs = crs
+
     logging.debug("Doing spatial join...")
 
     # Spatial (left) join with the "within" operation.
