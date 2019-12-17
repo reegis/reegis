@@ -22,11 +22,6 @@ import geopandas as gpd
 from reegis import geometries, config as cfg, tools
 
 
-# fn = os.path.join(cfg.get('paths', 'geometry'), 'vg1000_geodata.geojson')
-# vg = geometries.load(fullname=fn)
-# print(vg)
-
-
 def get_pkw_table(filename):
     """
 
@@ -38,54 +33,70 @@ def get_pkw_table(filename):
     -------
 
     """
+    pkw = pd.read_excel(filename, 'Kfz_u_Kfz_Anh', skiprows=7,
+                        header=[0, 1], skipfooter=4)
+    pkw = pkw.drop([('Unnamed: 0_level_0', 'Unnamed: 0_level_1')], axis=1)
+    print(pkw)
+    exit(0)
     return {}
 
 
-def get_kfz_table(filename):
+def format_kba_table(filename, table):
     """
 
     Parameters
     ----------
     filename
+    table
 
     Returns
     -------
 
     """
+    tc = {
+        'Kfz_u_Kfz_Anh': {
+            'idx1': ('Unnamed: 1_level_0', 'Land'),
+            'idx2': ('Unnamed: 2_level_0', 'Regierungsbezirk'),
+            'idx3': ('Unnamed: 3_level_0',
+                     'Statistische Kennziffer und Zulassungsbezirk'), },
+        'Pkw': {
+            'idx1': ('Land\n\n', 'Unnamed: 1_level_1'),
+            'idx2': ('Regierungsbezirk', 'Unnamed: 2_level_1'),
+            'idx3': ('Statistische Kennziffer und Zulassungsbezirk',
+                     'Unnamed: 3_level_1'), }}
+
+    cn = tc[table]
+
     # Read table
-    kfz = pd.read_excel(filename, 'Kfz_u_Kfz_Anh', skiprows=7,
-                        header=[0, 1], skipfooter=4)
+    df = pd.read_excel(filename, table, skiprows=7,
+                       header=[0, 1], skipfooter=4)
 
     # Drop empty column
-    kfz = kfz.drop([('Unnamed: 0_level_0', 'Unnamed: 0_level_1')], axis=1)
+    df = df.drop([('Unnamed: 0_level_0', 'Unnamed: 0_level_1')], axis=1)
 
     # Remove lines with subtotal
-    idx2 = ('Unnamed: 2_level_0',
-            'Regierungsbezirk')
-    idx3 = ('Unnamed: 3_level_0',
-            'Statistische Kennziffer und Zulassungsbezirk')
-    kfz.loc[(kfz[('Unnamed: 1_level_0', 'Land')] == 'SONSTIGE'), idx2] = (
+    df.loc[(df[cn['idx1']] == 'SONSTIGE'), cn['idx2']] = (
         "SONSTIGE")
-    kfz.loc[(kfz[('Unnamed: 1_level_0', 'Land')] == 'SONSTIGE'), idx3] = (
+    df.loc[(df[cn['idx1']] == 'SONSTIGE'), cn['idx3']] = (
         "00000 SONSTIGE")
-    kfz = kfz.drop(kfz.loc[kfz[idx3].isnull()].index)
-    kfz[kfz.columns[[0, 1, 2]]] = kfz[kfz.columns[[0, 1, 2]]].fillna(
+    df = df.drop(df.loc[df[cn['idx3']].isnull()].index)
+    df[df.columns[[0, 1, 2]]] = df[df.columns[[0, 1, 2]]].fillna(
         method='ffill')
 
     # Add column with name of subregion and remove name from index
-    kfz[kfz.columns[2]] = kfz[kfz.columns[2]].str[:5]
+    df[df.columns[2]] = df[df.columns[2]].str[:5]
 
     # set MultiIndex
-    kfz.set_index(list(kfz.columns[[0, 1, 2]]), inplace=True)
-    kfz.index = kfz.index.set_names(['state', 'region', 'subregion'])
+    df.set_index(list(df.columns[[0, 1, 2]]), inplace=True)
+    df.index = df.index.set_names(['state', 'region', 'subregion'])
 
     # Remove format-strings from column names
-    level1 = (kfz.columns.get_level_values(1).
+    level1 = (df.columns.get_level_values(1).
               str.replace("\n", " ").str.replace("- ", ""))
-    level0 = (kfz.columns.get_level_values(0).
+    level0 = (df.columns.get_level_values(0).
               str.replace("\n", " ").str.replace("- ", ""))
-    kfz.columns = pd.MultiIndex.from_arrays([level0, level1])
-    return kfz
+    df.columns = pd.MultiIndex.from_arrays([level0, level1])
+    return df
 
 
 def get_kba_table():
@@ -103,8 +114,15 @@ def get_kba_table():
     if not os.path.isfile(kba_filename):
         tools.download_file(kba_filename, cfg.get('mobility', 'url_kba'))
 
-    return kba_table(kfz=get_kfz_table(kba_filename),
-                     pkw=get_pkw_table(kba_filename))
+    return kba_table(kfz=format_kba_table(kba_filename, 'Kfz_u_Kfz_Anh'),
+                     pkw=format_kba_table(kba_filename, 'Pkw'))
 
 
-print(get_kba_table().kfz.sum())
+df1 = get_kba_table().pkw.groupby(level=2).sum()
+fn = os.path.join(cfg.get('paths', 'geometry'), 'vg1000_geodata.geojson')
+vg = geometries.load(fullname=fn)
+vg.set_index('RS', inplace=True)
+neu = vg.merge(df1, left_index=True, right_index=True)
+print(neu.sum())
+neu.plot(column=('Insgesamt', 'Unnamed: 4_level_1'))
+plt.show()
