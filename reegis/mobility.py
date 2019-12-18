@@ -10,6 +10,7 @@ __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
 import os
+
 try:
     from matplotlib import pyplot as plt
 except ImportError:
@@ -103,7 +104,7 @@ def create_sum_table():
 
 if __name__ == "__main__":
     df1 = get_kba_table().kfz
-    df1.columns = [' '.join(col).strip() for col in df1.columns.values]
+    df1.columns = [" ".join(col).strip() for col in df1.columns.values]
     for c in df1.columns:
         print(c)
     print(len(df1.columns))
@@ -118,5 +119,5 @@ if __name__ == "__main__":
     col = "Personenkraftwagen  PKW-Dichte je 1.000  Einwohner"
     neu[col] = neu[col].astype(int)
     print(neu[col].max(), neu[col].min())
-    neu.plot(column=col, ax=ax, legend=True, cmap='OrRd', vmax=500, vmin=400)
+    neu.plot(column=col, ax=ax, legend=True, cmap="OrRd", vmax=500, vmin=400)
     plt.show()
