@@ -9,37 +9,16 @@ SPDX-License-Identifier: MIT
 __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
-import logging
 import os
-from matplotlib import pyplot as plt
+try:
+    from matplotlib import pyplot as plt
+except ImportError:
+    plt = None
 from collections import namedtuple
 
-import requests
-from shapely import wkb
 import pandas as pd
-import geopandas as gpd
 
 from reegis import geometries, config as cfg, tools
-
-
-def get_pkw_table(filename):
-    """
-
-    Parameters
-    ----------
-    filename
-
-    Returns
-    -------
-
-    """
-    pkw = pd.read_excel(
-        filename, "Kfz_u_Kfz_Anh", skiprows=7, header=[0, 1], skipfooter=4
-    )
-    pkw = pkw.drop([("Unnamed: 0_level_0", "Unnamed: 0_level_1")], axis=1)
-    print(pkw)
-    exit(0)
-    return {}
 
 
 def format_kba_table(filename, table):
@@ -54,39 +33,21 @@ def format_kba_table(filename, table):
     -------
 
     """
-    tc = {
-        "Kfz_u_Kfz_Anh": {
-            "idx1": ("Unnamed: 1_level_0", "Land"),
-            "idx2": ("Unnamed: 2_level_0", "Regierungsbezirk"),
-            "idx3": (
-                "Unnamed: 3_level_0",
-                "Statistische Kennziffer und Zulassungsbezirk",
-            ),
-        },
-        "Pkw": {
-            "idx1": ("Land\n\n", "Unnamed: 1_level_1"),
-            "idx2": ("Regierungsbezirk", "Unnamed: 2_level_1"),
-            "idx3": (
-                "Statistische Kennziffer und Zulassungsbezirk",
-                "Unnamed: 3_level_1",
-            ),
-        },
-    }
-
-    cn = tc[table]
 
     # Read table
-    df = pd.read_excel(
-        filename, table, skiprows=7, header=[0, 1], skipfooter=4
-    )
+    df = pd.read_excel(filename, table, skiprows=7, header=[0, 1])
 
     # Drop empty column
     df = df.drop([("Unnamed: 0_level_0", "Unnamed: 0_level_1")], axis=1)
 
+    idx1 = df.columns[0]
+    idx2 = df.columns[1]
+    idx3 = df.columns[2]
+
     # Remove lines with subtotal
-    df.loc[(df[cn["idx1"]] == "SONSTIGE"), cn["idx2"]] = "SONSTIGE"
-    df.loc[(df[cn["idx1"]] == "SONSTIGE"), cn["idx3"]] = "00000 SONSTIGE"
-    df = df.drop(df.loc[df[cn["idx3"]].isnull()].index)
+    df.loc[(df[idx1] == "SONSTIGE"), idx2] = "SONSTIGE"
+    df.loc[(df[idx1] == "SONSTIGE"), idx3] = "00000 SONSTIGE"
+    df = df.drop(df.loc[df[idx3].isnull()].index)
     df[df.columns[[0, 1, 2]]] = df[df.columns[[0, 1, 2]]].fillna(
         method="ffill"
     )
@@ -110,6 +71,7 @@ def format_kba_table(filename, table):
         .str.replace("- ", "")
     )
     df.columns = pd.MultiIndex.from_arrays([level0, level1])
+
     return df
 
 
@@ -135,11 +97,26 @@ def get_kba_table():
     )
 
 
-df1 = get_kba_table().pkw.groupby(level=2).sum()
-fn = os.path.join(cfg.get("paths", "geometry"), "vg1000_geodata.geojson")
-vg = geometries.load(fullname=fn)
-vg.set_index("RS", inplace=True)
-neu = vg.merge(df1, left_index=True, right_index=True)
-print(neu.sum())
-neu.plot(column=("Insgesamt", "Unnamed: 4_level_1"))
-plt.show()
+def create_sum_table():
+    pass
+
+
+if __name__ == "__main__":
+    df1 = get_kba_table().kfz
+    df1.columns = [' '.join(col).strip() for col in df1.columns.values]
+    for c in df1.columns:
+        print(c)
+    print(len(df1.columns))
+    df1.index = df1.index.droplevel([0, 1])
+    print(df1.index)
+    fn = os.path.join(cfg.get("paths", "geometry"), "vg1000_geodata.geojson")
+    vg = geometries.load(fullname=fn)
+    vg.set_index("RS", inplace=True)
+    neu = vg.merge(df1, left_index=True, right_index=True)
+    print(neu.columns)
+    fig, ax = plt.subplots(1, 1)
+    col = "Personenkraftwagen  PKW-Dichte je 1.000  Einwohner"
+    neu[col] = neu[col].astype(int)
+    print(neu[col].max(), neu[col].min())
+    neu.plot(column=col, ax=ax, legend=True, cmap='OrRd', vmax=500, vmin=400)
+    plt.show()
