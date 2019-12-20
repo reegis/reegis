@@ -102,22 +102,24 @@ def get_kba_table():
 
 def create_sum_table():
     import pprint
+
     df = get_kba_table().kfz
     df.index = df.index.droplevel([0, 1])
-    df.columns = [' '.join(col).strip() for col in df.columns.values]
+    df.columns = [" ".join(col).strip() for col in df.columns.values]
     kfz_dict = cfg.get_dict("KFZ")
     pprint.pprint(kfz_dict)
     print(df.columns)
     for col in df.columns:
-        df[col] = pd.to_numeric(df[col].replace('-', ''))
+        df[col] = pd.to_numeric(df[col].replace("-", ""))
     df = df.groupby(by=kfz_dict, axis=1).sum()
-    df['traction engine, general'] = (
-        df['traction engine, total'] -
-        df['traction engine, agriculture and forestry'])
-    df.drop('traction engine, total', axis=1, inplace=True)
-    df.drop('ignore', axis=1, inplace=True)
+    df["traction engine, general"] = (
+        df["traction engine, total"]
+        - df["traction engine, agriculture and forestry"]
+    )
+    df.drop("traction engine, total", axis=1, inplace=True)
+    df.drop("ignore", axis=1, inplace=True)
 
-    print(df.sum()/df.sum().sum()*100)
+    print(df.sum() / df.sum().sum() * 100)
 
 
 if __name__ == "__main__":
