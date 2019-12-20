@@ -65,11 +65,13 @@ def format_kba_table(filename, table):
         df.columns.get_level_values(1)
         .str.replace("\n", " ")
         .str.replace("- ", "")
+        .str.replace(":", "")
     )
     level0 = (
         df.columns.get_level_values(0)
         .str.replace("\n", " ")
         .str.replace("- ", "")
+        .str.replace(":", "")
     )
     df.columns = pd.MultiIndex.from_arrays([level0, level1])
 
@@ -99,10 +101,28 @@ def get_kba_table():
 
 
 def create_sum_table():
-    pass
+    import pprint
+    df = get_kba_table().kfz
+    df.index = df.index.droplevel([0, 1])
+    df.columns = [' '.join(col).strip() for col in df.columns.values]
+    kfz_dict = cfg.get_dict("KFZ")
+    pprint.pprint(kfz_dict)
+    print(df.columns)
+    for col in df.columns:
+        df[col] = pd.to_numeric(df[col].replace('-', ''))
+    df = df.groupby(by=kfz_dict, axis=1).sum()
+    df['traction engine, general'] = (
+        df['traction engine, total'] -
+        df['traction engine, agriculture and forestry'])
+    df.drop('traction engine, total', axis=1, inplace=True)
+    df.drop('ignore', axis=1, inplace=True)
+
+    print(df.sum()/df.sum().sum()*100)
 
 
 if __name__ == "__main__":
+    create_sum_table()
+    exit(0)
     df1 = get_kba_table().kfz
     df1.columns = [" ".join(col).strip() for col in df1.columns.values]
     for c in df1.columns:
