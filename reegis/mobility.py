@@ -105,8 +105,7 @@ def create_grouped_table_kfz():
         df[col] = pd.to_numeric(df[col].replace("-", ""))
     df = df.groupby(by=kfz_dict, axis=1).sum()
     df["traction engine, general"] = (
-        df["traction engine"]
-        - df["traction engine, agriculture and forestry"]
+        df["traction engine"] - df["traction engine, agriculture and forestry"]
     )
     df.drop("traction engine", axis=1, inplace=True)
     df.drop("ignore", axis=1, inplace=True)
@@ -117,7 +116,7 @@ def create_grouped_table_pkw():
     """Extract fuel groups of passenger cars"""
     df = get_kba_table().pkw
     df.index = df.index.droplevel([0, 1])
-    df = df['Nach Kraftstoffarten']
+    df = df["Nach Kraftstoffarten"]
     df = df.groupby(by=cfg.get_dict("PKW"), axis=1).sum()
     df.drop("ignore", axis=1, inplace=True)
     return df
@@ -130,7 +129,8 @@ def get_admin_by_region(region):
     vg.set_index("RS", inplace=True)
 
     reg2vg = geometries.spatial_join_with_buffer(
-        vg.representative_point(), region, "fs", limit=0)
+        vg.representative_point(), region, "fs", limit=0
+    )
 
     return pd.DataFrame(reg2vg.drop("geometry", axis=1))
 
@@ -149,9 +149,9 @@ def get_grouped_kfz_by_region(region):
     """
     df = create_grouped_table_kfz()
     reg2vg = get_admin_by_region(region)
-    df2reg = df.merge(reg2vg, left_index=True, right_index=True, how='left')
-    df2reg['fs'] = df2reg['fs'].fillna('unknown')
-    return df2reg.groupby('fs').sum()
+    df2reg = df.merge(reg2vg, left_index=True, right_index=True, how="left")
+    df2reg["fs"] = df2reg["fs"].fillna("unknown")
+    return df2reg.groupby("fs").sum()
 
 
 def get_traffic_fuel_energy(year):
@@ -175,8 +175,9 @@ def get_traffic_fuel_energy(year):
     """
     fuel_energy = energy_balance.get_de_balance(year).loc["Straßenverkehr"]
     fuel_energy = fuel_energy[fuel_energy != 0]
-    fuel_energy.drop(["primär (gesamt)", "sekundär (gesamt)", "Row",
-                      "gesamt"], inplace=True)
+    fuel_energy.drop(
+        ["primär (gesamt)", "sekundär (gesamt)", "Row", "gesamt"], inplace=True
+    )
     return fuel_energy
 
 
