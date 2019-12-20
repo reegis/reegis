@@ -9,17 +9,12 @@ SPDX-License-Identifier: MIT
 __copyright__ = "Uwe Krien <krien@uni-bremen.de>"
 __license__ = "MIT"
 
-import os
 
-try:
-    from matplotlib import pyplot as plt
-except ImportError:
-    plt = None
+import os
+import pandas as pd
 from collections import namedtuple
 
-import pandas as pd
-
-from reegis import geometries, config as cfg, tools
+from reegis import geometries, config as cfg, tools, energy_balance
 
 
 def format_kba_table(filename, table):
@@ -100,46 +95,90 @@ def get_kba_table():
     )
 
 
-def create_sum_table():
-    import pprint
-
+def create_grouped_table_kfz():
+    """Group the kfz-table by main groups."""
     df = get_kba_table().kfz
     df.index = df.index.droplevel([0, 1])
     df.columns = [" ".join(col).strip() for col in df.columns.values]
     kfz_dict = cfg.get_dict("KFZ")
-    pprint.pprint(kfz_dict)
-    print(df.columns)
     for col in df.columns:
         df[col] = pd.to_numeric(df[col].replace("-", ""))
     df = df.groupby(by=kfz_dict, axis=1).sum()
     df["traction engine, general"] = (
-        df["traction engine, total"]
+        df["traction engine"]
         - df["traction engine, agriculture and forestry"]
     )
-    df.drop("traction engine, total", axis=1, inplace=True)
+    df.drop("traction engine", axis=1, inplace=True)
     df.drop("ignore", axis=1, inplace=True)
+    return df
 
-    print(df.sum() / df.sum().sum() * 100)
+
+def create_grouped_table_pkw():
+    """Extract fuel groups of passenger cars"""
+    df = get_kba_table().pkw
+    df.index = df.index.droplevel([0, 1])
+    df = df['Nach Kraftstoffarten']
+    df = df.groupby(by=cfg.get_dict("PKW"), axis=1).sum()
+    df.drop("ignore", axis=1, inplace=True)
+    return df
 
 
-if __name__ == "__main__":
-    create_sum_table()
-    exit(0)
-    df1 = get_kba_table().kfz
-    df1.columns = [" ".join(col).strip() for col in df1.columns.values]
-    for c in df1.columns:
-        print(c)
-    print(len(df1.columns))
-    df1.index = df1.index.droplevel([0, 1])
-    print(df1.index)
+def get_admin_by_region(region):
+    """Allocate admin keys to the given regions."""
     fn = os.path.join(cfg.get("paths", "geometry"), "vg1000_geodata.geojson")
     vg = geometries.load(fullname=fn)
     vg.set_index("RS", inplace=True)
-    neu = vg.merge(df1, left_index=True, right_index=True)
-    print(neu.columns)
-    fig, ax = plt.subplots(1, 1)
-    col = "Personenkraftwagen  PKW-Dichte je 1.000  Einwohner"
-    neu[col] = neu[col].astype(int)
-    print(neu[col].max(), neu[col].min())
-    neu.plot(column=col, ax=ax, legend=True, cmap="OrRd", vmax=500, vmin=400)
-    plt.show()
+
+    reg2vg = geometries.spatial_join_with_buffer(
+        vg.representative_point(), region, "fs", limit=0)
+
+    return pd.DataFrame(reg2vg.drop("geometry", axis=1))
+
+
+def get_grouped_kfz_by_region(region):
+    """Get the main vehicle groups by region.
+
+    Examples
+    --------
+    >>> fs = geometries.get_federal_states_polygon()
+    >>> total = get_grouped_kfz_by_region(fs).sum()
+    >>> int(total["passenger car"])
+    47095784
+    >>> int(total["lorry, > 7500"])
+    295826
+    """
+    df = create_grouped_table_kfz()
+    reg2vg = get_admin_by_region(region)
+    df2reg = df.merge(reg2vg, left_index=True, right_index=True, how='left')
+    df2reg['fs'] = df2reg['fs'].fillna('unknown')
+    return df2reg.groupby('fs').sum()
+
+
+def get_traffic_fuel_energy(year):
+    """
+
+    Parameters
+    ----------
+    year
+
+    Returns
+    -------
+
+    Examples
+    --------
+    >>> fuel_energy = get_traffic_fuel_energy(2017)
+    >>> int(fuel_energy["Ottokraftstoffe"])
+    719580
+    >>> fuel_share = fuel_energy.div(fuel_energy.sum()) * 100
+    >>> round(fuel_share["Dieselkraftstoffe"], 1)
+    62.7
+    """
+    fuel_energy = energy_balance.get_de_balance(year).loc["Straßenverkehr"]
+    fuel_energy = fuel_energy[fuel_energy != 0]
+    fuel_energy.drop(["primär (gesamt)", "sekundär (gesamt)", "Row",
+                      "gesamt"], inplace=True)
+    return fuel_energy
+
+
+if __name__ == "__main__":
+    pass
