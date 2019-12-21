@@ -113,7 +113,17 @@ def create_grouped_table_kfz():
 
 
 def create_grouped_table_pkw():
-    """Extract fuel groups of passenger cars"""
+    """
+    Extract fuel groups of passenger cars
+
+    Examples
+    --------
+    >>> pkw = create_grouped_table_pkw()
+    >>> pkw['petrol'].sum()
+    31031021.0
+    >>> pkw['diesel'].sum()
+    15153364.0
+    """
     df = get_kba_table().pkw
     df.index = df.index.droplevel([0, 1])
     df = df["Nach Kraftstoffarten"]
