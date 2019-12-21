@@ -105,7 +105,7 @@ def feedin_pvlib_test():
         "pv_set_name": "M_LG290G3__I_ABB_MICRO_025_US208",
         "module_name": "LG_LG290N1C_G3__2013_",
         "module_key": "LG290G3",
-        "inverter_name": "ABB__MICRO_0_25_I_OUTD_US_208_208V__CEC_2014_",
+        "inverter_name": "ABB__MICRO_0_25_I_OUTD_US_208__208V_",
         "surface_azimuth": 180,
         "surface_tilt": 35,
         "albedo": 0.2,
@@ -114,8 +114,8 @@ def feedin_pvlib_test():
     pv["inverter_parameters"] = sapm_inverters[pv["inverter_name"]]
     pv["p_peak"] = pv["module_parameters"].Impo * pv["module_parameters"].Vmpo
 
-    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1025)
-    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1025)
+    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1031)
+    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 1031)
 
 
 def feedin_pv_sets_tests():
@@ -144,10 +144,10 @@ def feedin_pv_sets_tests():
         )
     s2 = pd.Series(
         {
-            "M_STP280S__I_GEPVb_5000_NA_240": 798,
-            "M_BP2150S__I_P235HV_240": 722,
-            "M_SF160S___I_ABB_MICRO_025_US208": 801,
-            "M_LG290G3__I_ABB_MICRO_025_US208": 817,
+            "M_STP280S__I_GEPVb_5000_NA_240": 555,
+            "M_BP2150S__I_P235HV_240": 731,
+            "M_SF160S___I_ABB_MICRO_025_US208": 800,
+            "M_LG290G3__I_ABB_MICRO_025_US208": 820,
         }
     )
     pd.testing.assert_series_equal(s1.sort_index(), s2.sort_index())

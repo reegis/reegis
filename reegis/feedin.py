@@ -213,7 +213,7 @@ def feedin_pvlib(
     )
     pv_weather = weather.copy()
     pv_weather.index = pv_weather.index.shift(-1, freq="30min")
-    out = mc.run_model(pv_weather.index, weather=pv_weather)
+    out = mc.run_model(weather=pv_weather)
     return (
         out.ac.fillna(0)
         .clip(0)
