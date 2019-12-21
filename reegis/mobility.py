@@ -75,7 +75,7 @@ def format_kba_table(filename, table):
 
 def get_kba_table():
     """
-    
+
     Returns
     -------
 
