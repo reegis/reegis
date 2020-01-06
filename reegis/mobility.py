@@ -99,7 +99,7 @@ def create_grouped_table_kfz():
     """Group the kfz-table by main groups."""
     df = get_kba_table().kfz
     df.index = df.index.droplevel([0, 1])
-    df.columns = [" ".join(col).strip() for col in df.columns.values]
+    df.columns = [" ".join(col).strip() for col in df.columns]
     kfz_dict = cfg.get_dict("KFZ")
     for col in df.columns:
         df[col] = pd.to_numeric(df[col].replace("-", ""))
