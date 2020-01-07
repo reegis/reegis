@@ -17,21 +17,30 @@ from collections import namedtuple
 from reegis import geometries, config as cfg, tools, energy_balance
 
 
-def format_kba_table(filename, table):
+def format_kba_table(filename, sheet):
     """
+    Clean the layout of the table.
+
+    The tables are made for human readability and not for automatic processing.
+    Lines with subtotals and format-strings of the column names are removed.
+    A valid MultiIndex is created to make it easier to filter the table by the
+    index.
 
     Parameters
     ----------
-    filename
-    table
+    filename : str
+        Path and name of the excel file.
+    sheet : str
+        Name of the sheet of the excel table.
 
     Returns
     -------
+    pandas.DataFrame
 
     """
 
     # Read table
-    df = pd.read_excel(filename, table, skiprows=7, header=[0, 1])
+    df = pd.read_excel(filename, sheet, skiprows=7, header=[0, 1])
 
     # Drop empty column
     df = df.drop([("Unnamed: 0_level_0", "Unnamed: 0_level_1")], axis=1)
@@ -75,10 +84,19 @@ def format_kba_table(filename, table):
 
 def get_kba_table():
     """
+    Get the "kfz" table for all vehicles and the "pkw" table for more
+    statistics about passenger cars.
 
     Returns
     -------
+    namedtuple
 
+    Examples
+    --------
+    >>> table = get_kba_table()
+    >>> kfz = table.kfz
+    >>> print(type(kfz))
+    <class 'pandas.core.frame.DataFrame'>
     """
     kba_table = namedtuple("kba_table", "kfz pkw")
     kba_filename = os.path.join(
@@ -217,7 +235,17 @@ def create_grouped_table_pkw():
 
 
 def get_admin_by_region(region):
-    """Allocate admin keys to the given regions."""
+    """
+    Allocate admin keys to the given regions.
+
+    Parameters
+    ----------
+    region : geopandas.GeoDataFrame
+
+    Returns
+    -------
+    pd.DataFrame
+    """
     fn = os.path.join(cfg.get("paths", "geometry"), "vg1000_geodata.geojson")
     vg = geometries.load(fullname=fn)
     vg.set_index("RS", inplace=True)
@@ -230,7 +258,16 @@ def get_admin_by_region(region):
 
 
 def get_grouped_kfz_by_region(region):
-    """Get the main vehicle groups by region.
+    """
+    Get the main vehicle groups by region.
+
+    Parameters
+    ----------
+    region : geopandas.GeoDataFrame
+
+    Returns
+    -------
+    pd.DataFrame
 
     Examples
     --------
@@ -253,7 +290,7 @@ def get_traffic_fuel_energy(year):
 
     Parameters
     ----------
-    year
+    year : int
 
     Returns
     -------
