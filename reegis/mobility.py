@@ -95,6 +95,90 @@ def get_kba_table():
     )
 
 
+def get_mileage_table():
+    url = (
+        "https://www.kba.de/SharedDocs/Publikationen/DE/Statistik/"
+        "Kraftverkehr/VK/2018/vk_2018_xlsx.xlsx?__blob=publicationFile&v=22"
+    )
+
+    mileage_filename = os.path.join(
+        cfg.get("paths", "general"), "mileage_table_kba.xlsx"
+    )
+
+    # Download table if it does not exit
+    if not os.path.isfile(mileage_filename):
+        tools.download_file(mileage_filename, url)
+    return mileage_filename
+
+
+def get_sheet_from_mileage_table(sheet):
+    fn = get_mileage_table()
+    df = pd.read_excel(
+        fn, sheet, skiprows=7, index_col=[0, 1, 2], skipfooter=9
+    )
+    df.index = df.index.droplevel(0).set_names(["", ""])
+
+    return df.drop(
+        df.loc[pd.IndexSlice[slice(None), "Insgesamt"], slice(None)].index
+    )
+
+
+def get_mileage_by_type_and_fuel(year):
+    # get km per year and type
+    total = (
+        get_sheet_from_mileage_table("VK 1.1")
+        .loc["Jahresfahrleistung in 1.000 km", str(year)]
+        .mul(1000)
+    )
+    passenger = (
+        get_sheet_from_mileage_table("VK 1.7")
+        .loc["Jahresfahrleistung in 1.000 km", str(year)]
+        .mul(1000)
+    )
+    small_trucks = (
+        get_sheet_from_mileage_table("VK 1.17")
+        .loc["Jahresfahrleistung in 1.000 km", str(year)]
+        .mul(1000)
+    )
+    medium_trucks = (
+        get_sheet_from_mileage_table("VK 1.20")
+        .loc["Jahresfahrleistung in 1.000 km", str(year)]
+        .mul(1000)
+    )
+    big_trucks_diesel = (
+        get_sheet_from_mileage_table("VK 1.23")
+        .loc["Jahresfahrleistung in 1.000 km", str(year)]
+        .mul(1000).sum()
+    )
+    df = pd.DataFrame(index=total.index, columns=["diesel", "petrol", "other"])
+    dc = {
+        "Benzin": "petrol",
+        "Diesel": "diesel",
+        "Sonstige einschl. ohne Angabe": "other",
+    }
+
+    # add km by fuel for passenger cars
+    df.loc["Personenkraftwagen"] = passenger.rename(dc, axis=0)
+
+    # add km by fuel for small trucks (<= 3.5 tons)
+    df.loc["Lastkraftwagen bis 3.500 kg zulässige Gesamtmasse"] = (
+        small_trucks.rename(dc, axis=0)
+    )
+
+    # add km by fuel for medium trucks (3.5 < weight <= 7.5 tons)
+    df.loc["Lastkraftwagen 3.501 bis 7.500 kg zulässige Gesamtmasse"] = (
+        medium_trucks.rename(dc, axis=0)
+    )
+
+    # add km by fuel for big trucks (> 7.5 tons)
+    # assuming that non-diesel engines are 50% petrol and 50% other
+    n = "Lastkraftwagen über 7.500 kg zulässige Gesamtmasse"
+    df.loc[n, "diesel"] = big_trucks_diesel
+    df.loc[n, ["petrol", "other"]] = (total[n] - big_trucks_diesel) / 2
+
+    return df
+
+
 def create_grouped_table_kfz():
     """Group the kfz-table by main groups."""
     df = get_kba_table().kfz
@@ -192,4 +276,4 @@ def get_traffic_fuel_energy(year):
 
 
 if __name__ == "__main__":
-    pass
+    # print(get_mileage_by_type_and_fuel(2017))
