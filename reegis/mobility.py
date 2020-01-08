@@ -166,7 +166,8 @@ def get_mileage_by_type_and_fuel(year):
     big_trucks_diesel = (
         get_sheet_from_mileage_table("VK 1.23")
         .loc["Jahresfahrleistung in 1.000 km", str(year)]
-        .mul(1000).sum()
+        .mul(1000)
+        .sum()
     )
     df = pd.DataFrame(index=total.index, columns=["diesel", "petrol", "other"])
     dc = {
@@ -179,14 +180,14 @@ def get_mileage_by_type_and_fuel(year):
     df.loc["Personenkraftwagen"] = passenger.rename(dc, axis=0)
 
     # add km by fuel for small trucks (<= 3.5 tons)
-    df.loc["Lastkraftwagen bis 3.500 kg zulässige Gesamtmasse"] = (
-        small_trucks.rename(dc, axis=0)
-    )
+    df.loc[
+        "Lastkraftwagen bis 3.500 kg zulässige Gesamtmasse"
+    ] = small_trucks.rename(dc, axis=0)
 
     # add km by fuel for medium trucks (3.5 < weight <= 7.5 tons)
-    df.loc["Lastkraftwagen 3.501 bis 7.500 kg zulässige Gesamtmasse"] = (
-        medium_trucks.rename(dc, axis=0)
-    )
+    df.loc[
+        "Lastkraftwagen 3.501 bis 7.500 kg zulässige Gesamtmasse"
+    ] = medium_trucks.rename(dc, axis=0)
 
     # add km by fuel for big trucks (> 7.5 tons)
     # assuming that non-diesel engines are 50% petrol and 50% other
