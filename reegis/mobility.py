@@ -313,4 +313,4 @@ def get_traffic_fuel_energy(year):
 
 
 if __name__ == "__main__":
-    # print(get_mileage_by_type_and_fuel(2017))
+    print(get_mileage_by_type_and_fuel(2017))
