@@ -523,12 +523,16 @@ def calculate_chp_share_and_efficiency(eb, fix_total=True):
             eb.loc[region, "input", rows].total.sum(), axis=0
         )
         eta[region]["out_share_factor_chp"] = (
-                heat_chp/in_chp.total *
-                (in_chp.total + in_hp.total)/(heat_chp + heat_hp)
+            heat_chp
+            / in_chp.total
+            * (in_chp.total + in_hp.total)
+            / (heat_chp + heat_hp)
         )
         eta[region]["out_share_factor_hp"] = (
-                heat_hp/in_hp.total *
-                (in_chp.total + in_hp.total)/(heat_chp + heat_hp)
+            heat_hp
+            / in_hp.total
+            * (in_chp.total + in_hp.total)
+            / (heat_chp + heat_hp)
         )
 
     return eta
