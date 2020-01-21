@@ -141,7 +141,7 @@ def get_sheet_from_mileage_table(sheet):
     )
 
 
-def get_mileage_by_type_and_fuel(year):
+def get_mileage_by_type_and_fuel(year=2018):
     # get km per year and type
     total = (
         get_sheet_from_mileage_table("VK 1.1")
@@ -170,30 +170,35 @@ def get_mileage_by_type_and_fuel(year):
         .sum()
     )
     df = pd.DataFrame(index=total.index, columns=["diesel", "petrol", "other"])
-    dc = {
-        "Benzin": "petrol",
-        "Diesel": "diesel",
-        "Sonstige einschl. ohne Angabe": "other",
-    }
+
+    vt_dict = cfg.get_dict("vehicle_types_dictionary")
+    df.rename(vt_dict, axis=0, inplace=True)
+    total.rename(vt_dict, axis=0, inplace=True)
+
+    dc = cfg.get_dict("fuel_dictionary")
 
     # add km by fuel for passenger cars
-    df.loc["Personenkraftwagen"] = passenger.rename(dc, axis=0)
+    df.loc["passenger car"] = passenger.rename(dc, axis=0)
 
     # add km by fuel for small trucks (<= 3.5 tons)
-    df.loc[
-        "Lastkraftwagen bis 3.500 kg zulässige Gesamtmasse"
-    ] = small_trucks.rename(dc, axis=0)
+    df.loc["small truck (max. 3.5 tons)"] = small_trucks.rename(dc, axis=0)
 
     # add km by fuel for medium trucks (3.5 < weight <= 7.5 tons)
-    df.loc[
-        "Lastkraftwagen 3.501 bis 7.500 kg zulässige Gesamtmasse"
-    ] = medium_trucks.rename(dc, axis=0)
+    df.loc["medium truck (3.5 to 7.5 tons)"] = medium_trucks.rename(
+        dc, axis=0)
 
     # add km by fuel for big trucks (> 7.5 tons)
     # assuming that non-diesel engines are 50% petrol and 50% other
-    n = "Lastkraftwagen über 7.500 kg zulässige Gesamtmasse"
+    n = "big truck (over 7.5 tons)"
     df.loc[n, "diesel"] = big_trucks_diesel
     df.loc[n, ["petrol", "other"]] = (total[n] - big_trucks_diesel) / 2
+
+    fuel_share = pd.DataFrame(
+        cfg.get_dict_list("fuel share"), index=["diesel", "petrol", "other"]
+    ).astype(float)
+
+    for col in fuel_share.columns:
+        df.loc[col] = fuel_share[col].mul(total[col])
 
     return df
 
@@ -313,5 +318,23 @@ def get_traffic_fuel_energy(year):
     return fuel_energy
 
 
+def calculate_mobility_energy():
+    df = get_mileage_by_type_and_fuel()
+    print(df)
+    df2 = pd.DataFrame(cfg.get_dict_list("fuel consumption"),
+                       index=["diesel", "petrol", "other"]
+                       ).astype(float).transpose()
+    print(df2)
+    df3 = pd.Series(cfg.get_dict("energy_per_liter"
+                                         ))[["diesel", "petrol"]]
+    df3["other"] = 0
+    print(df3)
+    my = df.mul(df2).sum().mul(df3).sum() / 1000000
+    eb = 731696+1556013
+    print(my, eb)
+    print(my/eb*100)
+
+
+
 if __name__ == "__main__":
-    print(get_mileage_by_type_and_fuel(2017))
+    calculate_mobility_energy()
