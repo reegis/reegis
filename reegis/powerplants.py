@@ -411,7 +411,7 @@ def add_regions_to_powerplants(
         Name of the new power plant hdf5 file e.g. 'reegis_pp_region.h5'. If
         None the original file will be overwritten.
     subregion : bool
-        Set to True if all region polygons together are a subregion of
+        Set to True if all region polygons together are a sub-region of
         Germany. This will switch off the buffer in the spatial_join function.
     path : str or None
         Path for the files. If None the default power plant path from the
