@@ -21,6 +21,9 @@ from workalendar.europe import Germany
 # oemof libraries
 import demandlib.bdew as bdew
 
+# DemandRegio modules
+from disaggregator import spatial
+
 # internal modules
 from reegis import config as cfg
 from reegis import bmwi
@@ -450,6 +453,35 @@ def get_heat_profiles_by_region(
         demand_region.to_csv(to_csv)
 
     return demand_region
+
+def get_househould_heat_demand_by_NUTS3(year, region_pick, by='buildings', weight_by_income=False):
+
+    """
+    Parameters
+    ----------
+    year : int
+        Year of interest
+    region_pick : list
+        Selected regions in NUTS-3 format
+    by : string
+        Can be either 'buildings' or 'households'
+    weight_by_income : bool
+        Choose whether heat demand shall be weighted by household income
+
+    Returns: pd.DataFrame
+        Dataframe containing yearly household load for selection
+    -------
+    """
+    # Abbildung des Witterungseinflusses über Abweichung im Gasverbrauch zwischen 2010-2018
+    year_norm = pd.DataFrame({'Faktor' :[1.16, 0.94, 1.02, 1.07, 0.89, 0.97, 1.01, 1, 0.93]}, index=range(2010, 2019))
+
+    qdem_temp = spatial.disagg_households_heat(by=by, weight_by_income=weight_by_income)
+    qdem_temp = qdem_temp.SpaceHeatingPlusHotWater.sum(axis=1)
+    qdem_temp = qdem_temp.multiply(year_norm.loc[year]['Faktor'])
+    df = qdem_temp[region_pick]
+
+    return df
+
 
 
 if __name__ == "__main__":
