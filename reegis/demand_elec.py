@@ -89,7 +89,8 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand):
         [demand_fs.values] * len(norm_profile), columns=demand_fs.index
     ).mul(norm_profile, axis=0)
 
-def get_household_powerload_by_NUTS3_profile(year, region_pick, method='SLP'):
+
+def get_household_powerload_by_NUTS3_profile(year, region_pick, method="SLP"):
     """
     Parameters
     ----------
@@ -105,25 +106,28 @@ def get_household_powerload_by_NUTS3_profile(year, region_pick, method='SLP'):
     -------
     """
 
-    if method is 'SLP':
-        elc_consumption_hh_spattemp = data.elc_consumption_HH_spatiotemporal(year=year)
+    if method is "SLP":
+        elc_consumption_hh_spattemp = data.elc_consumption_HH_spatiotemporal(
+            year=year
+        )
         df = elc_consumption_hh_spattemp[region_pick]
 
-    elif method is 'ZVE':
-        logging.warning('Can be lengthy for larger lists')
+    elif method is "ZVE":
+        logging.warning("Can be lengthy for larger lists")
         list_result = []
         sum_load = data.elc_consumption_HH_spatial(year=year)
         for reg in region_pick:
-            elc_consumption_hh_spattemp_zve = temporal.make_zve_load_profiles(year=year, reg=reg) * sum_load[reg]
+            elc_consumption_hh_spattemp_zve = (
+                temporal.make_zve_load_profiles(year=year, reg=reg)
+                * sum_load[reg]
+            )
             list_result.append(elc_consumption_hh_spattemp_zve)
         df = pd.concat(list_result, axis=1, sort=False)
 
     else:
-        raise ValueError('Chosen method is not valid')
+        raise ValueError("Chosen method is not valid")
 
     return df
-
-
 
 
 if __name__ == "__main__":
