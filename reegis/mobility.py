@@ -317,9 +317,25 @@ def get_traffic_fuel_energy(year):
     return fuel_energy
 
 
-def calculate_mobility_energy():
-    df = get_mileage_by_type_and_fuel()
+def calculate_mobility_energy_use(year):
+    """
+
+    Parameters
+    ----------
+    year
+
+    Returns
+    -------
+
+    Examples
+    --------
+
+    """
+    # fetch table of mileage by fuel and vehicle type
+    df = get_mileage_by_type_and_fuel(year)
     print(df)
+
+    # fetch table of specific demand by fuel and vehicle type (from 2011)
     df2 = (
         pd.DataFrame(
             cfg.get_dict_list("fuel consumption"),
@@ -329,14 +345,29 @@ def calculate_mobility_energy():
         .transpose()
     )
     print(df2)
-    df3 = pd.Series(cfg.get_dict("energy_per_liter"))[["diesel", "petrol"]]
-    df3["other"] = 0
+    df2['other'] = df2['petrol']
+    # fetch the energy content of the different fuel types
+    df3 = pd.Series(cfg.get_dict("energy_per_liter"))[["diesel", "petrol", "other"]]
     print(df3)
-    my = df.mul(df2).sum().mul(df3).sum() / 1000000
-    eb = 731696 + 1556013
-    print(my, eb)
-    print(my / eb * 100)
+    my = df.mul(df2).sum().mul(df3) / 1000000 * 0.95
+    df4 = get_traffic_fuel_energy(2017)
+    eb_o = df4["Ottokraftstoffe"]
+    eb_d = df4["Dieselkraftstoffe"]
+    eb_a = df4.sum() - eb_o - eb_d
+    eb = get_traffic_fuel_energy(2017).sum()
+    print(my)
+    print("*****")
+    print(eb)
+    print(my.sum())
+    print(eb_d + eb_o + eb_a)
+    print("***")
+    print(eb_d, eb_o, eb_a)
+    print(my.sum() / eb * 100)
 
 
 if __name__ == "__main__":
-    calculate_mobility_energy()
+    # print(get_mileage_by_type_and_fuel(2017))
+    # print(get_mileage_by_type_and_fuel(2014))
+
+    print(get_traffic_fuel_energy(2017))
+    calculate_mobility_energy_use(2017)
