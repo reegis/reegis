@@ -363,9 +363,10 @@ def calculate_mobility_energy_use(year):
 
     # fetch the energy content of the different fuel types
     energy_content = pd.Series(cfg.get_dict("energy_per_liter"))[
-        ["diesel", "petrol", "other"]]
+        ["diesel", "petrol", "other"]
+    ]
 
-    return mileage.mul(spec_demand).mul(energy_content) / 10**6
+    return mileage.mul(spec_demand).mul(energy_content) / 10 ** 6
 
 
 if __name__ == "__main__":
