@@ -380,8 +380,4 @@ def calculate_mobility_energy_use(year):
 
 
 if __name__ == "__main__":
-    # print(get_mileage_by_type_and_fuel(2017))
-    # print(get_mileage_by_type_and_fuel(2014))
-
-    print(get_traffic_fuel_energy(2017))
-    calculate_mobility_energy_use(2017)
+    pass
