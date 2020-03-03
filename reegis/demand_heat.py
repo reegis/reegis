@@ -183,7 +183,7 @@ def share_of_mechanical_energy_bmwi(year):
         " - davon Öl": "oil",
         " - davon Gas": "natural gas",
     }
-    del mech.index.name
+    mech.index.name = ""
     mech.rename(columns=ren_col, inplace=True)
     mech.rename(index=ren_index, inplace=True)
     mech.fillna(0, inplace=True)

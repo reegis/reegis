@@ -51,7 +51,7 @@ def prices_from_bmwi_energiedaten(src):
     # get unit conversion (uc) from sheet 0.2
     uc = pd.read_excel(filename, "0.2", skiprows=6, index_col=[0]).iloc[:6]
     del uc["Unnamed: 1"]
-    del uc.index.name
+    uc.index.name = ""
     uc.set_index(uc.index.str.strip(), inplace=True)
     uc = uc.drop(uc.index[[0]])
 
