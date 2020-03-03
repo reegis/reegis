@@ -395,8 +395,8 @@ def get_heat_profiles_by_region(
     >>> regions=geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     cfg.get('geometry', 'de21_polygons'))
-    >>> hp1=get_heat_profiles_by_region(regions, 2014, from_csv=fn)
-    >>> round(hp1.sum().sum(), 1)
+    >>> hpl=get_heat_profiles_by_region(regions, 2014, from_csv=fn)
+    >>> round(hpl.sum().sum(), 1)
     272699.7
     >>> os.remove(fn)
 
