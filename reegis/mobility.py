@@ -329,14 +329,30 @@ def calculate_mobility_energy_use(year):
 
     Examples
     --------
-
+    >>> mobility_balance = get_traffic_fuel_energy(2017)
+    >>> energy_use = calculate_mobility_energy_use(2017)
+    >>> p = "Petrol usage [TJ]"
+    >>> d = "Diesel usage [TJ]"
+    >>> o = "Overall fuel usage [TJ]"
+    >>> print(p, "(energy balance):", int(mobility_balance["Ottokraftstoffe"]))
+    Petrol usage [TJ] (energy balance): 719580
+    >>> print(p, "(calculated):", int(energy_use["petrol"].sum()))
+    Petrol usage [TJ] (calculated): 803603
+    >>> print(d, "(energy balance):",
+    ...     int(mobility_balance["Dieselkraftstoffe"]))
+    Diesel usage [TJ] (energy balance): 1425424
+    >>> print(d, "(calculated):", int(energy_use["diesel"].sum()))
+    Diesel usage [TJ] (calculated): 1636199
+    >>> print(o, "(energy balance):", int(mobility_balance.sum()))
+    Overall fuel usage [TJ] (energy balance): 2275143
+    >>> print(o, "(calculated):", int(energy_use.sum().sum()))
+    Overall fuel usage [TJ] (calculated): 2439803
     """
     # fetch table of mileage by fuel and vehicle type
-    df = get_mileage_by_type_and_fuel(year)
-    print(df)
+    mileage = get_mileage_by_type_and_fuel(year)
 
     # fetch table of specific demand by fuel and vehicle type (from 2011)
-    df2 = (
+    spec_demand = (
         pd.DataFrame(
             cfg.get_dict_list("fuel consumption"),
             index=["diesel", "petrol", "other"],
@@ -344,25 +360,12 @@ def calculate_mobility_energy_use(year):
         .astype(float)
         .transpose()
     )
-    print(df2)
-    df2['other'] = df2['petrol']
+
     # fetch the energy content of the different fuel types
-    df3 = pd.Series(cfg.get_dict("energy_per_liter"))[["diesel", "petrol", "other"]]
-    print(df3)
-    my = df.mul(df2).sum().mul(df3) / 1000000 * 0.95
-    df4 = get_traffic_fuel_energy(2017)
-    eb_o = df4["Ottokraftstoffe"]
-    eb_d = df4["Dieselkraftstoffe"]
-    eb_a = df4.sum() - eb_o - eb_d
-    eb = get_traffic_fuel_energy(2017).sum()
-    print(my)
-    print("*****")
-    print(eb)
-    print(my.sum())
-    print(eb_d + eb_o + eb_a)
-    print("***")
-    print(eb_d, eb_o, eb_a)
-    print(my.sum() / eb * 100)
+    energy_content = pd.Series(cfg.get_dict("energy_per_liter"))[
+        ["diesel", "petrol", "other"]]
+
+    return mileage.mul(spec_demand).mul(energy_content) / 10**6
 
 
 if __name__ == "__main__":
