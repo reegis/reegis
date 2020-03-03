@@ -36,7 +36,7 @@ def download_oedb(oep_url, schema, table, query, fn, overwrite=False):
     """Download map from oedb in WGS84 and store as csv file."""
     if not os.path.isfile(fn) or overwrite:
         gdf = oedb.oedb(oep_url, schema, table, query, "geom_centre", 3035)
-        gdf = gdf.to_crs({"init": "epsg:4326"})
+        gdf = gdf.to_crs(crs="epsg:4326")
         logging.info("Write data to {0}".format(fn))
         gdf.to_csv(fn)
     else:
@@ -44,7 +44,7 @@ def download_oedb(oep_url, schema, table, query, fn, overwrite=False):
     return fn
 
 
-def get_ego_data(osf=True, query='?where=version=v0.4.5'):
+def get_ego_data(osf=True, query="?where=version=v0.4.5"):
     """
 
     Parameters
