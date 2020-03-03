@@ -19,7 +19,16 @@ from reegis import config
 def test_ini_filenames_basic():
     files = config.get_ini_filenames(use_importer=False, local=False)
     fn = sorted([f.split(os.sep)[-1] for f in files])
-    eq_(fn, ["dictionary.ini", "reegis.ini", "solar.ini", "wind.ini"])
+    eq_(
+        fn,
+        [
+            "dictionary.ini",
+            "mobility.ini",
+            "reegis.ini",
+            "solar.ini",
+            "wind.ini",
+        ],
+    )
 
 
 def test_ini_filenames_local_path():
@@ -45,6 +54,7 @@ def test_ini_filenames_additional_path():
         [
             "config_test.ini",
             "dictionary.ini",
+            "mobility.ini",
             "reegis.ini",
             "solar.ini",
             "wind.ini",
@@ -55,7 +65,16 @@ def test_ini_filenames_additional_path():
 def test_init_basic():
     config.init()
     fn = sorted([f.split(os.sep)[-1] for f in config.FILES])
-    eq_(fn, ["dictionary.ini", "reegis.ini", "solar.ini", "wind.ini"])
+    eq_(
+        fn,
+        [
+            "dictionary.ini",
+            "mobility.ini",
+            "reegis.ini",
+            "solar.ini",
+            "wind.ini",
+        ],
+    )
 
 
 def test_init_additional_path():
@@ -67,6 +86,7 @@ def test_init_additional_path():
         [
             "config_test.ini",
             "dictionary.ini",
+            "mobility.ini",
             "reegis.ini",
             "solar.ini",
             "wind.ini",
