@@ -176,7 +176,7 @@ def get_entsoe_load(year):
     --------
     >>> entsoe=get_entsoe_load(2015)
     >>> int(entsoe.sum())
-    477924124
+    477923089
     """
     filename = os.path.join(
         cfg.get("paths", "entsoe"), cfg.get("entsoe", "load_file")
