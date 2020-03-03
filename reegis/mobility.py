@@ -114,6 +114,10 @@ def get_kba_table():
 
 
 def get_mileage_table():
+    """
+    Download mileage table from the KBA (Kraftfahrtbundesamt) and store it
+    locally.
+    """
     url = (
         "https://www.kba.de/SharedDocs/Publikationen/DE/Statistik/"
         "Kraftverkehr/VK/2018/vk_2018_xlsx.xlsx?__blob=publicationFile&v=22"
@@ -130,6 +134,7 @@ def get_mileage_table():
 
 
 def get_sheet_from_mileage_table(sheet):
+    """Load given sheet from the mileage file."""
     fn = get_mileage_table()
     df = pd.read_excel(
         fn, sheet, skiprows=7, index_col=[0, 1, 2], skipfooter=9
@@ -142,6 +147,11 @@ def get_sheet_from_mileage_table(sheet):
 
 
 def get_mileage_by_type_and_fuel(year=2018):
+    """
+    Get mileage by type and fuel from mileage table and other sources.
+
+    See mobility.ini file for more information.
+    """
     # get km per year and type
     total = (
         get_sheet_from_mileage_table("VK 1.1")
