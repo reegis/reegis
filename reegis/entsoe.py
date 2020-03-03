@@ -17,7 +17,6 @@ import os
 import logging
 import datetime
 from collections import namedtuple
-from pytz import timezone
 
 # internal modules
 from reegis import config as cfg
