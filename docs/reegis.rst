@@ -93,7 +93,7 @@ reegis.storages module
 reegis.mobility module
 ----------------------
 
-.. automodule:: reegis.storages
+.. automodule:: reegis.mobility
     :members:
     :undoc-members:
     :show-inheritance:
