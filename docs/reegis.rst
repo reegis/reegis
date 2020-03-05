@@ -90,6 +90,14 @@ reegis.storages module
     :undoc-members:
     :show-inheritance:
 
+reegis.mobility module
+----------------------
+
+.. automodule:: reegis.storages
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 reegis.tools module
 -------------------
 
