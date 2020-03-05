@@ -16,7 +16,7 @@ if not os.environ.get("READTHEDOCS") == "True":
         "geopandas",
         "requests",
         "numpy",
-        "workalendar < 8.0",
+        "workalendar",
         "pyproj",
         "pytz",
         "windpowerlib",
@@ -45,7 +45,7 @@ setup(
     packages=find_packages(),
     namespace_package=["reegis"],
     install_requires=requirements,
-    license='MIT',
+    license="MIT",
     extras_require={
         "dev": [
             "nose",
