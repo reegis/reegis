@@ -49,7 +49,7 @@ def oedb(oep_url, schema, table, query, geo_column, epsg):
     logging.info("Convert results to geoDataFrame.")
     result_df = pd.DataFrame(result.json())
     result_df[geo_column] = result_df[geo_column].apply(wkb2wkt)
-    crs = {"init": "epsg:{0}".format(epsg)}
+    crs = "epsg:{0}".format(epsg)
     return gpd.GeoDataFrame(result_df, crs=crs, geometry=geo_column)
 
 

@@ -176,7 +176,7 @@ def get_entsoe_load(year):
     --------
     >>> entsoe=get_entsoe_load(2015)
     >>> int(entsoe.sum())
-    477924124
+    477923089
     """
     filename = os.path.join(
         cfg.get("paths", "entsoe"), cfg.get("entsoe", "load_file")
@@ -186,8 +186,10 @@ def get_entsoe_load(year):
         load.to_hdf(filename, "entsoe")
 
     # Read entsoe time series for the given year
-    f = pd.datetime(year, 1, 1, 0)
-    t = pd.datetime(year, 12, 31, 23)
+    f = datetime.datetime(year, 1, 1, 0)
+    t = datetime.datetime(year, 12, 31, 23)
+    f = f.astimezone(pytz.timezone("Europe/Berlin"))
+    t = t.astimezone(pytz.timezone("Europe/Berlin"))
     logging.info("Read entsoe load series from {0} to {1}".format(f, t))
     df = pd.DataFrame(pd.read_hdf(filename, "entsoe"))
     return df.loc[f:t]
