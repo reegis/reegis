@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Calculte the mobility demand.
+"""Calculate the mobility demand.
 
 SPDX-FileCopyrightText: 2016-2019 Uwe Krien <krien@uni-bremen.de>
 
