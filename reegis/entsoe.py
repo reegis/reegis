@@ -77,7 +77,8 @@ def read_original_timeseries_file(orig_csv_file=None, overwrite=False):
         with open(json, "wb") as fout:
             fout.write(req.content)
     logging.debug("Reading file: {0}".format(orig_csv_file))
-    orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True)
+    orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True,
+                       date_parser=lambda col: pd.to_datetime(col, utc=True))
     orig = orig.tz_convert("Europe/Berlin")
     return orig
 
@@ -117,9 +118,9 @@ def split_timeseries_file(filename=None, overwrite=False):
         filename,
         index_col="utc_timestamp",
         parse_dates=True,
-        date_parser=dateutil.parser.parse,
+        date_parser=lambda col: pd.to_datetime(col, utc=True),
     )
-
+    de_ts.index = de_ts.index.tz_convert("Europe/Berlin")
     berlin = pytz.timezone("Europe/Berlin")
     end_date = berlin.localize(datetime.datetime(2015, 1, 1, 0, 0, 0))
 
