@@ -197,7 +197,7 @@ def get_states_energy_balance(year=None):
         index_col=[0, 1, 2],
         skipfooter=10,
         engine="python",
-        encoding = "utf-8",
+        encoding="utf-8",
     )
     eb.columns = header.columns
     codes = {

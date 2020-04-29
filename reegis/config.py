@@ -58,7 +58,7 @@ def get_ini_filenames(additional_paths=None, use_importer=True, local=True):
         paths.append(local_reegis)
 
     for p in paths:
-        if p == '':  # Empty path string must be ignored
+        if p == "":  # Empty path string must be ignored
             continue
         for f in os.listdir(p):
             if f[-4:] == ".ini":
