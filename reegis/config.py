@@ -80,7 +80,7 @@ def init(files=None, paths=None, **kwargs):
         files = get_ini_filenames(paths, **kwargs)
     global FILES
     FILES = files
-    cfg.read(files)
+    cfg.read(files, encoding="utf-8")
     global _loaded
     _loaded = True
     set_reegis_paths(paths)
