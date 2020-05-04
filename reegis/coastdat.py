@@ -855,7 +855,7 @@ def aggregate_by_region_hydro(pp, regions, year, outfile_name):
 
     full_load_hours = hydro.loc[year, "energy"] / hydro_capacity * 1000
 
-    hydro_path = os.path.abspath(os.path.join(*outfile_name.split("/")[:-1]))
+    hydro_path = os.path.abspath(os.path.dirname(outfile_name))
 
     if not os.path.isdir(hydro_path):
         os.makedirs(hydro_path)
@@ -879,7 +879,7 @@ def aggregate_by_region_geothermal(regions, year, outfile_name):
     """Aggregate hydro power plants by region."""
     full_load_hours = cfg.get("feedin", "geothermal_full_load_hours")
 
-    hydro_path = os.path.abspath(os.path.join(*outfile_name.split("/")[:-1]))
+    hydro_path = os.path.abspath(os.path.dirname(outfile_name))
 
     if not os.path.isdir(hydro_path):
         os.makedirs(hydro_path)
