@@ -212,7 +212,7 @@ def get_heat_profile_from_demandlib(
     --------
     >>> temperature=pd.Series(list(range(50)), index=pd.date_range(
     ...     '2014-05-03 12:00', periods=50, freq='h'))
-    >>> temperature=10 + temperature * 0.1
+    >>> temperature = 10 + temperature * 0.1
     >>> hp=get_heat_profile_from_demandlib(
     ...     temperature, 5345, 'retail', 2014)
     >>> round(hp.sum())
