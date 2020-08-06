@@ -21,9 +21,6 @@ from workalendar.europe import Germany
 # oemof libraries
 import demandlib.bdew as bdew
 
-# DemandRegio modules
-from disaggregator import spatial
-
 # internal modules
 from reegis import config as cfg
 from reegis import bmwi
