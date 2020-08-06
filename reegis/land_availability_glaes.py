@@ -3,7 +3,7 @@ import pandas as pd
 import os
 from disaggregator import data
 import geopandas as gpd
-import integrate_demandregio
+from reegis import demand_disaggregator
 from reegis import config as cfg
 
 
@@ -217,7 +217,7 @@ def aggregate_capacity_by_region(regions, P_max=None):
                         P_max.set_index('nuts3', drop=True, inplace=True)
 
         agg_capacity = pd.DataFrame(index=regions.index, columns=["P_wind", "P_pv"])
-        nuts3_list = integrate_demandregio.get_nutslist_for_regions(regions)
+        nuts3_list = demand_disaggregator.get_nutslist_for_regions(regions)
 
         for zone in regions.index:
                 idx = nuts3_list.loc[zone]['nuts']
