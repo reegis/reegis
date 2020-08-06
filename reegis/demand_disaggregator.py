@@ -1,6 +1,5 @@
-from disaggregator import data, config, spatial, temporal
+from disaggregator import data, spatial, temporal
 from reegis import geometries as geo, config as cfg
-from deflex import geometries as geo_deflex
 import pandas as pd
 import logging, os
 
@@ -21,7 +20,6 @@ def get_nutslist_for_regions(regions):
 
     # Transform CRS System to match reegis geometries
     nuts_centroid = nuts3_disaggregator.centroid.to_crs(4326)
-    nuts_geo = nuts3_disaggregator.to_crs(crs=4326)
 
     # Match NUTS3-regions with federal states
     nuts_geo = geo.spatial_join_with_buffer(

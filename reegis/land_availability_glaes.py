@@ -199,7 +199,6 @@ def get_pv_wind_capacity_potential_by_nuts3(
             # Calculate PV and Wind areas
             path = os.path.join(cfg.get("paths", "GLAES"), "nuts3_geojson")
             if not os.path.isdir(path):
-                mkjson = True
                 suitable_area = get_pv_wind_areas_by_nuts3(create_geojson=True)
             else:
                 suitable_area = get_pv_wind_areas_by_nuts3()
