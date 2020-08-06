@@ -16,9 +16,6 @@ import logging
 # External packages
 import pandas as pd
 
-# Disaggregator modules
-from disaggregator import data, temporal
-
 # internal modules
 from reegis import entsoe
 from reegis import geometries
