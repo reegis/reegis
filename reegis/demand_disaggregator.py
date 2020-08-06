@@ -1,7 +1,8 @@
 from disaggregator import data, spatial, temporal
 from reegis import geometries as geo, config as cfg
 import pandas as pd
-import logging, os
+import logging
+import os
 
 
 def get_nutslist_for_regions(regions):
@@ -53,13 +54,13 @@ def get_demandregio_hhload_by_NUTS3_profile(year, region_pick, method="SLP"):
     -------
     """
 
-    if method is "SLP":
+    if method == "SLP":
         elc_consumption_hh_spattemp = data.elc_consumption_HH_spatiotemporal(
             year=year
         )
         df = elc_consumption_hh_spattemp[region_pick]
 
-    elif method is "ZVE":
+    elif method == "ZVE":
         logging.warning("Can be lengthy for larger lists")
         list_result = []
         sum_load = data.elc_consumption_HH_spatial(year=year)
