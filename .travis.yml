@@ -16,6 +16,7 @@ addons:
       - libgeos-dev
       - libspatialindex-dev
       - libgdal-dev
+      - gdal-bin
 
 # install python dependencies
 install:
