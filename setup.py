@@ -12,7 +12,7 @@ if not os.environ.get("READTHEDOCS") == "True":
         "demandlib",
         "tables",
         "shapely",
-        "pvlib < 0.7",
+        "pvlib",
         "geopandas",
         "requests",
         "numpy",
