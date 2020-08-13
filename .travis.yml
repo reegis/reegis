@@ -38,7 +38,8 @@ install:
 
 # command to run tests and coverage
 script:
-  - nosetests --with-doctest --with-coverage -c nose.cfg
+  - coverage run --rcfile=.coveragerc --source reegis -m py.test
+  - coverage report
 
 after_success:
   - coveralls

@@ -77,7 +77,12 @@ def read_original_timeseries_file(orig_csv_file=None, overwrite=False):
         with open(json, "wb") as fout:
             fout.write(req.content)
     logging.debug("Reading file: {0}".format(orig_csv_file))
-    orig = pd.read_csv(orig_csv_file, index_col=[0], parse_dates=True)
+    orig = pd.read_csv(
+        orig_csv_file,
+        index_col=[0],
+        parse_dates=True,
+        date_parser=lambda col: pd.to_datetime(col, utc=True),
+    )
     orig = orig.tz_convert("Europe/Berlin")
     return orig
 
@@ -117,9 +122,9 @@ def split_timeseries_file(filename=None, overwrite=False):
         filename,
         index_col="utc_timestamp",
         parse_dates=True,
-        date_parser=dateutil.parser.parse,
+        date_parser=lambda col: pd.to_datetime(col, utc=True),
     )
-
+    de_ts.index = de_ts.index.tz_convert("Europe/Berlin")
     berlin = pytz.timezone("Europe/Berlin")
     end_date = berlin.localize(datetime.datetime(2015, 1, 1, 0, 0, 0))
 
@@ -176,7 +181,7 @@ def get_entsoe_load(year):
     --------
     >>> entsoe=get_entsoe_load(2015)
     >>> int(entsoe.sum())
-    477924124
+    477923089
     """
     filename = os.path.join(
         cfg.get("paths", "entsoe"), cfg.get("entsoe", "load_file")
@@ -186,8 +191,10 @@ def get_entsoe_load(year):
         load.to_hdf(filename, "entsoe")
 
     # Read entsoe time series for the given year
-    f = pd.datetime(year, 1, 1, 0)
-    t = pd.datetime(year, 12, 31, 23)
+    f = datetime.datetime(year, 1, 1, 0)
+    t = datetime.datetime(year, 12, 31, 23)
+    f = f.astimezone(pytz.timezone("Europe/Berlin"))
+    t = t.astimezone(pytz.timezone("Europe/Berlin"))
     logging.info("Read entsoe load series from {0} to {1}".format(f, t))
     df = pd.DataFrame(pd.read_hdf(filename, "entsoe"))
     return df.loc[f:t]

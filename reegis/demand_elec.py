@@ -38,7 +38,7 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand):
     Returns
     -------
     pandas.DataFrame : A table with a time series for each region. The unit
-        will be GW/GWh for the internal methods or the same unit as the input
+        is MW for the internal methods or the same unit order as the input
         of the annual_demand parameter.
     Examples
     --------
@@ -50,11 +50,11 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand):
     >>> d2=get_entsoe_profile_by_region(fs, 2014, 'federal_states', 'bmwi'
     ...     )  # doctest: +SKIP
     >>> int(d2.sum().sum())  # doctest: +SKIP
-    523
-    >>> d3=get_entsoe_profile_by_region(fs, 2014, 'federal_states', 200
+    523988000
+    >>> d3=get_entsoe_profile_by_region(fs, 2014, 'federal_states', 200000
     ...     )  # doctest: +SKIP
     >>> round(d3.sum().sum())  # doctest: +SKIP
-    200.0
+    200000.0
 
     """
     logging.debug("Get entsoe profile {0} for {1}".format(name, year))
@@ -65,12 +65,12 @@ def get_entsoe_profile_by_region(region, year, name, annual_demand):
 
     if annual_demand == "bmwi":
         annual_demand = (
-            bmwi_data.get_annual_electricity_demand_bmwi(year) * 1000
+            bmwi_data.get_annual_electricity_demand_bmwi(year) * 10 ** 6
         )
     elif annual_demand == "entsoe":
-        annual_demand = profile.sum() / 1000
+        annual_demand = profile.sum()
     elif annual_demand == "openego":
-        annual_demand = ego_demand.sum()
+        annual_demand = ego_demand.sum() * 10 ** 3
     elif isinstance(annual_demand, (int, float)):
         pass
     else:

@@ -411,7 +411,7 @@ def add_regions_to_powerplants(
         Name of the new power plant hdf5 file e.g. 'reegis_pp_region.h5'. If
         None the original file will be overwritten.
     subregion : bool
-        Set to True if all region polygons together are a subregion of
+        Set to True if all region polygons together are a sub-region of
         Germany. This will switch off the buffer in the spatial_join function.
     path : str or None
         Path for the files. If None the default power plant path from the
@@ -521,6 +521,18 @@ def calculate_chp_share_and_efficiency(eb, fix_total=True):
 
         eta[region]["fuel_share"] = eb.loc[region, "input", rows].div(
             eb.loc[region, "input", rows].total.sum(), axis=0
+        )
+        eta[region]["out_share_factor_chp"] = (
+            heat_chp
+            / in_chp.total
+            * (in_chp.total + in_hp.total)
+            / (heat_chp + heat_hp)
+        )
+        eta[region]["out_share_factor_hp"] = (
+            heat_hp
+            / in_hp.total
+            * (in_chp.total + in_hp.total)
+            / (heat_chp + heat_hp)
         )
 
     return eta

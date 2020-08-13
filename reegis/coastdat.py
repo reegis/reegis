@@ -202,7 +202,11 @@ def fetch_coastdat_weather(year, coastdat_id):
     if not os.path.isfile(weather_file_name):
         download_coastdat_data(filename=weather_file_name, year=year)
     key = "/A{0}".format(int(coastdat_id))
-    return pd.DataFrame(pd.read_hdf(weather_file_name, key))
+    hdf = pd.HDFStore(weather_file_name, "r")
+    df = hdf[key]
+    df = df.asfreq("H")
+    hdf.close()
+    return df
 
 
 def adapt_coastdat_weather_to_pvlib(weather, loc):
@@ -675,10 +679,13 @@ def spatial_average_weather(
             else:
                 key = cid
             tmp[cid] = weather[key][parameter]
+            tmp[cid] = tmp[cid].asfreq("H")
         if len(cd_ids) < 1:
             key = "A" + str(fix[region])
             avg_value[region] = weather[key][parameter]
+            avg_value[region] = avg_value[region].asfreq("H")
         else:
+            tmp = tmp.asfreq("H")
             avg_value[region] = tmp.sum(1).div(number_of_sets)
     weather.close()
 
@@ -855,7 +862,7 @@ def aggregate_by_region_hydro(pp, regions, year, outfile_name):
 
     full_load_hours = hydro.loc[year, "energy"] / hydro_capacity * 1000
 
-    hydro_path = os.path.abspath(os.path.join(*outfile_name.split("/")[:-1]))
+    hydro_path = os.path.abspath(os.path.dirname(outfile_name))
 
     if not os.path.isdir(hydro_path):
         os.makedirs(hydro_path)
@@ -879,7 +886,7 @@ def aggregate_by_region_geothermal(regions, year, outfile_name):
     """Aggregate hydro power plants by region."""
     full_load_hours = cfg.get("feedin", "geothermal_full_load_hours")
 
-    hydro_path = os.path.abspath(os.path.join(*outfile_name.split("/")[:-1]))
+    hydro_path = os.path.abspath(os.path.dirname(outfile_name))
 
     if not os.path.isdir(hydro_path):
         os.makedirs(hydro_path)

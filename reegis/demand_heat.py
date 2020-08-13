@@ -183,7 +183,7 @@ def share_of_mechanical_energy_bmwi(year):
         " - davon Öl": "oil",
         " - davon Gas": "natural gas",
     }
-    del mech.index.name
+    mech.index.name = ""
     mech.rename(columns=ren_col, inplace=True)
     mech.rename(index=ren_index, inplace=True)
     mech.fillna(0, inplace=True)
@@ -212,11 +212,11 @@ def get_heat_profile_from_demandlib(
     --------
     >>> temperature=pd.Series(list(range(50)), index=pd.date_range(
     ...     '2014-05-03 12:00', periods=50, freq='h'))
-    >>> temperature=10 + temperature * 0.1
+    >>> temperature = 10 + temperature * 0.1
     >>> hp=get_heat_profile_from_demandlib(
     ...     temperature, 5345, 'retail', 2014)
-    >>> round(hp.sum())
-    5302.0
+    >>> int(round(hp.sum()))
+    5302
     """
     cal = Germany()
     holidays = dict(cal.holidays(year))
@@ -395,8 +395,8 @@ def get_heat_profiles_by_region(
     >>> regions=geometries.load(
     ...     cfg.get('paths', 'geometry'),
     ...     cfg.get('geometry', 'de21_polygons'))
-    >>> hp1=get_heat_profiles_by_region(regions, 2014, from_csv=fn)
-    >>> round(hp1.sum().sum(), 1)
+    >>> hpl=get_heat_profiles_by_region(regions, 2014, from_csv=fn)
+    >>> round(hpl.sum().sum(), 1)
     272699.7
     >>> os.remove(fn)
 

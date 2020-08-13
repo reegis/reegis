@@ -167,7 +167,7 @@ def create_geo_df(
         pass
 
     if crs is None:
-        crs = {"init": "epsg:4326"}
+        crs = "epsg:4326"
 
     gdf = gpd.GeoDataFrame(df, crs=crs, geometry="geometry")
 
