@@ -202,7 +202,11 @@ def fetch_coastdat_weather(year, coastdat_id):
     if not os.path.isfile(weather_file_name):
         download_coastdat_data(filename=weather_file_name, year=year)
     key = "/A{0}".format(int(coastdat_id))
-    return pd.DataFrame(pd.read_hdf(weather_file_name, key))
+    hdf = pd.HDFStore(weather_file_name, "r")
+    df = hdf[key]
+    df = df.asfreq("H")
+    hdf.close()
+    return df
 
 
 def adapt_coastdat_weather_to_pvlib(weather, loc):
@@ -675,10 +679,13 @@ def spatial_average_weather(
             else:
                 key = cid
             tmp[cid] = weather[key][parameter]
+            tmp[cid] = tmp[cid].asfreq("H")
         if len(cd_ids) < 1:
             key = "A" + str(fix[region])
             avg_value[region] = weather[key][parameter]
+            avg_value[region] = avg_value[region].asfreq("H")
         else:
+            tmp = tmp.asfreq("H")
             avg_value[region] = tmp.sum(1).div(number_of_sets)
     weather.close()
 
