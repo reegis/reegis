@@ -28,7 +28,7 @@ import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
-def feedin_wind_sets_tests():
+def test_feedin_wind_sets():
     fn = os.path.join(
         os.path.dirname(__file__),
         os.pardir,
@@ -61,7 +61,7 @@ def feedin_wind_sets_tests():
     )
 
 
-def feedin_windpowerlib_test():
+def test_feedin_windpowerlib():
     fn = os.path.join(
         os.path.dirname(__file__),
         os.pardir,
@@ -80,7 +80,7 @@ def feedin_windpowerlib_test():
     eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 2164)
 
 
-def feedin_pvlib_test():
+def test_feedin_pvlib():
     fn = os.path.join(
         os.path.dirname(__file__),
         os.pardir,
@@ -118,7 +118,7 @@ def feedin_pvlib_test():
     eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 904)
 
 
-def feedin_pv_sets_tests():
+def test_feedin_pv_sets():
     fn = os.path.join(
         os.path.dirname(__file__),
         os.pardir,

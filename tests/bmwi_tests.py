@@ -16,7 +16,7 @@ import os
 from reegis import bmwi
 
 
-def read_bmwi_sheet_7_test():
+def test_read_bmwi_sheet_7():
     test_path = os.path.join(os.path.dirname(__file__), "data", "temp")
     os.makedirs(test_path, exist_ok=True)
     eq_(bmwi.bmwi_re_energy_capacity().loc[2016, ("water", "capacity")], 5629)

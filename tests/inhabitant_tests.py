@@ -15,7 +15,7 @@ import os
 from reegis import inhabitants, config as cfg, geometries as geo
 
 
-def inhabitant_tests():
+def test_inhabitant_fcts():
     test_path = os.path.join(os.path.dirname(__file__), "data", "temp")
     os.makedirs(test_path, exist_ok=True)
     cfg.tmp_set("paths", "inhabitants", test_path)

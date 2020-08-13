@@ -34,7 +34,7 @@ warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
 class TestOpsd2reegis:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         path = os.path.join(os.path.dirname(__file__), "data")
         cfg.tmp_set("paths_pattern", "opsd", path)
         cfg.tmp_set("paths", "powerplants", path)

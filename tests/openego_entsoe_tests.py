@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 class TestEgoEntsoeDemandAndDownload:
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         cfg.tmp_set("open_ego", "ego_load_areas", "ego_load_areas_db_test.csv")
         openego.get_ego_data(osf=False, query="?where=un_id<10")
         cfg.tmp_set("open_ego", "ego_load_areas", "ego_load_areas_test.csv")
