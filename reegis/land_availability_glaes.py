@@ -5,9 +5,128 @@ from disaggregator import data
 import geopandas as gpd
 from reegis import demand_disaggregator
 from reegis import config as cfg
+import numpy as np
+
+
+def calculate_wind_area_speed_only(region, v_wind):
+    """
+    This function excludes regions with wind velocity below threshold from suitable areas for wind sites.
+
+    Parameters
+    ----------
+    region: geojson/shapefile
+        Geometry to perform analysis in
+    v_wind : Float
+        Threshold value of wind velocity
+
+    Returns: Float
+        Area above threshold in given region
+    -------
+    """
+
+    # Choose Region
+    ecWind = gl.ExclusionCalculator(region, srs=3035, pixelSize=100, limitOne=False)
+    ecWind.excludePrior('windspeed_100m_threshold', value=(None, v_wind))
+    area = ecWind.areaAvailable
+
+    return area
+
+
+def calc_wind_areas_speed_only(path, v_wind):
+    """
+    This function loops through a set of Geometries to calculate areas above a wind velocity threshold
+
+    Parameters
+    ----------
+    path: String
+        Path where geometries are stored in as files
+    v_wind : Float
+        Threshold value of wind velocity
+
+    Returns: Series
+        Series with available area above threshold per region
+    -------
+    """
+    nuts3_gdf = data.database_shapes()
+    list_filenames = list()
+    suitable_area = pd.DataFrame(index=nuts3_gdf.index, columns=["wind_area"])
+
+    for nuts3_name in nuts3_gdf.index:
+        list_filenames.append(path + '/' + nuts3_name + '.geojson')
+
+    #list_filenames = list_filenames[0:10]
+
+    for n in list_filenames:
+        idx = n[len(path)+1:len(path) + 6]
+        area_wind = calculate_wind_area_speed_only(n, v_wind)
+        suitable_area["wind_area"][idx] = area_wind
+
+    return suitable_area
+
+
+def calc_average_windspeed_by_nuts3():
+    """
+    This function calculates the avarage wind speed of a set of geometries.
+
+    Parameters
+    ----------
+    Returns: DataFrame
+        DataFrame with average wind speeds per NUTS3 region
+    -------
+    """
+    fn = os.path.join(cfg.get("paths", "GLAES"), 'mean_wind_velocity_by_nuts3.csv')
+
+    if not os.path.isfile(fn):
+
+        path = os.path.join(cfg.get("paths", "GLAES"), 'nuts3_geojson')
+
+        # Calculate area above threshold
+        nuts3_index = data.database_shapes().index
+        area_compare = pd.DataFrame(index=nuts3_index)
+
+        for v_wind in range(0,21):
+            v_wind = v_wind/2
+            area_tmp = calc_wind_areas_speed_only(path, v_wind)
+            area_compare[str(v_wind)+" m/s"] = area_tmp
+            #print(area_tmp)
+
+        # Substract areas from each others to obtain areas in specific intervals
+        cols = area_compare.columns
+        speed_per_NUTS3 = pd.DataFrame(index=nuts3_index, columns=cols)
+
+        for n in range(0,len(cols)-1):
+            speed_per_NUTS3[cols[n]] = abs(area_compare[cols[n+1]] - area_compare[cols[n]])
+        speed_per_NUTS3[cols[20]] = area_compare[cols[20]]
+
+        # Calculate the average value per region
+        v_wind = np.linspace(0, 10, num=21)
+        v_mean = pd.DataFrame(index=nuts3_index, columns=['v_mean'])
+
+        for idx in nuts3_index:
+            v_composition = speed_per_NUTS3.loc[idx]
+            tmp = sum(v_composition*v_wind) / sum(v_composition)
+            v_mean.loc[idx][v_mean] = tmp
+
+        v_mean.to_csv(fn)
+    else:
+        v_mean = pd.read_csv(fn)
+        v_mean.set_index('nuts3', drop=True, inplace=True)
+
+    return v_mean
 
 
 def save_nuts3_to_geojson(path):
+    """
+    Other functions in this module require regional geometry-files as input. This function is therefore
+    collecting the needed NUTS3-geoemtries and saves them to a defined path in GeoJSON format.
+
+    Parameters
+    ----------
+    path: String
+        Path where the files should be stored.
+
+    -------
+    """
     # Apparently this doesn't work with geopandas 0.8.0 but with geopandas 0.4.1
     nuts3_gdf = data.database_shapes()
 
@@ -23,6 +142,21 @@ def save_nuts3_to_geojson(path):
 
 
 def calculate_wind_area(region):
+    """
+    This function uses the Tool GLAES to perfrom exclusion calculations to calculate suitable areas for wind power
+    sites. The exclusion parameters are defined within the function in the dictionary "selExlWind". The parameters
+    have been set according to a study from the German Federal Environment Agency (UBA) as well as a dissertation of
+    Marion Wingenbach.
+
+    Parameters
+    ----------
+    region: GeoJSON/SHP
+        File containing geometry of interest
+
+    returns: DataFrame
+        DataFrame with suitable areas for wind power sites
+    -------
+    """
     # Choose Region
     ecWind = gl.ExclusionCalculator(
         region, srs=3035, pixelSize=100, limitOne=False
@@ -106,6 +240,19 @@ def calculate_wind_area(region):
 
 
 def calc_wind_pv_areas(path):
+    """
+    This function calls the functions to calculate the wind and the pv area for a set of regions and stores the
+    result in a DataFrame
+
+    Parameters
+    ----------
+    path: string
+        Path to a directory with geometry files
+
+    returns: DataFrame
+        DataFrame with suitable areas for wind and solar power sites
+    -------
+    """
     nuts3_gdf = data.database_shapes()
     list_filenames = list()
     suitable_area = pd.DataFrame(
@@ -160,17 +307,17 @@ def calculate_pv_area(region):
 
 def get_pv_wind_areas_by_nuts3(create_geojson=False):
     """
-        Parameters
-        ----------
-        year : int
-            Year of interest
-        region_pick : list
-            Selected regions in NUTS-3 format
+    Parameters
+    ----------
+    year : int
+       Year of interest
+    region_pick : list
+        Selected regions in NUTS-3 format
 
-        Returns: pd.DataFrame
-            Dataframe containing yearly heat CTS heat consumption by NUTS-3 region
+    Returns: pd.DataFrame
+        Dataframe containing yearly heat CTS heat consumption by NUTS-3 region
         -------
-        """
+    """
     path = os.path.join(cfg.get("paths", "GLAES"), "nuts3_geojson")
 
     if create_geojson:
@@ -191,7 +338,20 @@ def get_pv_wind_areas_by_nuts3(create_geojson=False):
 def get_pv_wind_capacity_potential_by_nuts3(
     pwind_per_m2=8, psolar_per_m2=200, suitable_area=None
 ):
+    """
+    Parameters
+    ----------
+    pwind_per_m2: int
+       Installable wind power per squaremeter
+    psolar_per_m2: list
+        Installable solar power per squaremeter
+    suitable_area: DataFrame
+        Suitable areas for wind/solar
 
+    Returns: pd.DataFrame
+        Dataframe containing maximum rated power per region
+        -------
+    """
     fn = os.path.join(cfg.get("paths", "GLAES"), "suitable_area_wind_pv.csv")
 
     if suitable_area is None:
@@ -231,7 +391,18 @@ def get_pv_wind_capacity_potential_by_nuts3(
 
 
 def aggregate_capacity_by_region(regions, P_max=None):
+    """
+    Parameters
+    ----------
+    regions: GeoDataFrame
+       Region, usually divided into different zones, where NUTS3 capacities should be mapped to
+    P_max: DataFrame
+        Table containing maximum rated power per NUTS3-region
 
+    Returns: pd.DataFrame
+        Dataframe containing maximum rated power per region
+        -------
+    """
     fn = os.path.join(
         cfg.get("paths", "GLAES"), "wind_pv_capacity_per_NUTS3.csv"
     )
