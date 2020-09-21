@@ -305,7 +305,7 @@ def get_combined_heatload_for_region(year, region_pick=None):
     return df_heating
 
 
-def aggregate_heat_by_region(regions, year, heat_data=None):
+def aggregate_heat_by_region(regions, year=2015, heat_data=None):
     """
     Parameters
     ----------
