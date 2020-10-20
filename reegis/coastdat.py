@@ -235,8 +235,11 @@ def adapt_coastdat_weather_to_pvlib(weather, loc):
     False
     >>> 'ghi' in pv_weather.columns
     True
+    >>> "dni" in pv_weather.columns
+    True
     """
-    w = pd.DataFrame(weather.copy())
+    w = weather.copy(deep=True)
+    w = w.asfreq("H")
     w["temp_air"] = w.temp_air - 273.15
     w["ghi"] = w.dirhi + w.dhi
     clearskydni = loc.get_clearsky(w.index).dni
