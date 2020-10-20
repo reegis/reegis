@@ -186,8 +186,8 @@ def get_entsoe_load(year, version=None):
     Examples
     --------
     >>> entsoe=get_entsoe_load(2015)
-    >>> int(entsoe.sum())
-    479454142
+    >>> float(round(entsoe.sum()/1e6, 1))
+    479.5
     """
     if version is None:
         version = cfg.get("entsoe", "timeseries_version")

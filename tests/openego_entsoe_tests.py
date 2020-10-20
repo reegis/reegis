@@ -49,7 +49,7 @@ class TestEgoEntsoeDemandAndDownload:
         d1 = demand_elec.get_entsoe_profile_by_region(
             self.geo, 2016, "test", "entsoe"
         )
-        eq_(int(d1.sum().sum()), 486992473)
+        eq_(round(d1.sum().sum()/1e6, 1), 487.0)  # TWh
 
     def test_profile_by_region_with_bmwi_annual_values(self):
         d2 = demand_elec.get_entsoe_profile_by_region(
