@@ -187,7 +187,7 @@ def get_entsoe_load(year, version=None):
     --------
     >>> entsoe=get_entsoe_load(2015)
     >>> int(entsoe.sum())
-    477923089
+    479454142
     """
     if version is None:
         version = cfg.get("entsoe", "timeseries_version")
@@ -229,7 +229,7 @@ def get_entsoe_renewable_data(file=None, version=None):
     --------
     >>> my_re=get_entsoe_renewable_data()
     >>> int(my_re['DE_solar_generation_actual'].sum())
-    237214558
+    188160676
     """
     if version is None:
         version = cfg.get("entsoe", "timeseries_version")
