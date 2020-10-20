@@ -129,7 +129,7 @@ def split_timeseries_file(filename=None, overwrite=False, version=None):
         date_parser=lambda col: pd.to_datetime(col, utc=True),
     )
     de_ts.index = de_ts.index.tz_convert("Europe/Berlin")
-    de_ts.index.rename('cet_timestamp', inplace=True)
+    de_ts.index.rename("cet_timestamp", inplace=True)
 
     de_ts["DE_load_"] = de_ts["DE_load_actual_entsoe_transparency"]
 

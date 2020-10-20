@@ -101,7 +101,12 @@ def get_entsoe_profile_by_region(
 
 
 def get_open_ego_slp_profile_by_region(
-    region, year, name, annual_demand=None, filename=None, dynamic_H0=True,
+    region,
+    year,
+    name,
+    annual_demand=None,
+    filename=None,
+    dynamic_H0=True,
 ):
     """
     Create standardised load profiles (slp) for each region.
