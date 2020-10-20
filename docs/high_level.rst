@@ -14,12 +14,12 @@ plot with the capacity for every federal state by fuel for the year 2014.
 .. code-block:: python
 
     from matplotlib import pyplot as plt
-    from reegis import powerplants
-    geometries=geo.get_federal_states_polygon()
-    year=2014
-    my_pp=powerplants.get_powerplants_by_region(
+    from reegis import powerplants, geometries as geo
+    geometries = geo.get_federal_states_polygon()
+    year = 2014
+    my_pp = powerplants.get_powerplants_by_region(
         geometries, year, 'federal_states')
-    column='capacity_{0}'.format(year)
+    column = 'capacity_{0}'.format(year)
     my_pp[column].unstack().plot(kind='bar', stacked=True)
     plt.show()
 
