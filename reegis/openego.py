@@ -16,6 +16,7 @@ import logging
 from shapely import wkb
 import warnings
 
+
 # External libraries
 import pandas as pd
 
@@ -44,7 +45,7 @@ def download_oedb(oep_url, schema, table, query, fn, overwrite=False):
     return fn
 
 
-def get_ego_data(osf=True, query="?where=version=v0.4.5"):
+def get_ego_data(osf=True, sectors=False, query="?where=version=v0.4.5"):
     """
 
     Parameters
@@ -53,6 +54,9 @@ def get_ego_data(osf=True, query="?where=version=v0.4.5"):
         If True the file will be downloaded from the osf page instead of of
         selected from the database. You may not get the latest version.
         (default: False)
+    sectors : bool
+        By default (False) only the total comsumption is returned. If "True"
+        the consumption devided by sectors will be returned.
     query : str
         Database query to filter the data set.
         (default: '?where=version=v0.4.5')
@@ -109,24 +113,34 @@ def get_ego_data(osf=True, query="?where=version=v0.4.5"):
         columns={"sector_consumption_sum": "consumption"}, inplace=True
     )
 
-    load = pd.concat(
-        [
-            load_areas[["consumption", "geom_centre"]],
-            large_consumer[["consumption", "geom_centre"]],
+    if sectors:
+        large_consumer["sector_consumption_large_consumers"] = large_consumer[
+            "consumption"
         ]
-    )
+        cols_lc = [c for c in large_consumer.columns if "consumption" in c] + [
+            "geom_centre"
+        ]
+        cols_la = [c for c in load_areas.columns if "consumption" in c] + [
+            "geom_centre"
+        ]
+
+    else:
+        cols_la = ["consumption", "geom_centre"]
+        cols_lc = ["consumption", "geom_centre"]
+
+    load = pd.concat([load_areas[cols_la], large_consumer[cols_lc]])
     load = load.rename(columns={"geom_centre": "geom"})
 
-    return load.reset_index()
+    return load.reset_index(drop=True)
 
 
-def get_ego_demand(filename=None, fn=None, overwrite=False):
+def get_ego_demand(filename=None, sectors=False, overwrite=False):
     """
 
     Parameters
     ----------
     filename : str
-    fn  : str
+    sectors : bool
     overwrite : bool
 
     Returns
@@ -135,16 +149,17 @@ def get_ego_demand(filename=None, fn=None, overwrite=False):
 
     """
     if filename is None:
-        filename = cfg.get("open_ego", "ego_file")
-    if fn is None:
         path = cfg.get("paths", "demand")
-        fn = os.path.join(path, filename)
+        filename = os.path.join(path, cfg.get("open_ego", "ego_file"))
 
-    if os.path.isfile(fn) and not overwrite:
-        return pd.DataFrame(pd.read_hdf(fn, "demand"))
+    if sectors is True:
+        filename = filename.replace(".", "_sectors.")
+
+    if os.path.isfile(filename) and not overwrite:
+        return pd.DataFrame(pd.read_hdf(filename, "demand"))
     else:
-        load = get_ego_data(osf=True)
-        load.to_hdf(fn, "demand")
+        load = get_ego_data(osf=True, sectors=sectors)
+        load.to_hdf(filename, "demand")
         return load
 
 
@@ -155,6 +170,7 @@ def get_ego_demand_by_region(
     infile=None,
     dump=False,
     grouped=False,
+    sectors=False,
     overwrite=False,
 ):
     """
@@ -181,6 +197,8 @@ def get_ego_demand_by_region(
         If grouped is False the openego table with a region column is returned.
         Otherwise the map is grouped by the region column and the consumption
         column is summed up. (default: False)
+    sectors : bool
+        Still missing.
     overwrite : bool
 
     Returns
@@ -199,19 +217,22 @@ def get_ego_demand_by_region(
     >>> bmwi_annual=bmwi_data.get_annual_electricity_demand_bmwi(
     ...    2015)  # doctest: +SKIP
 
-    >>> ego_demand=get_ego_demand_by_region(
+    >>> egodemand=get_ego_demand_by_region(
     ...     federal_states, 'federal_states', grouped=True)  # doctest: +SKIP
 
-    >>> ego_demand.div(ego_demand.sum()).mul(bmwi_annual)  # doctest: +SKIP
+    >>> egodemand.div(ego_demand.sum()).mul(bmwi_annual)  # doctest: +SKIP
 
     """
     if outfile is None:
         path = cfg.get("paths", "demand")
         outfile = os.path.join(path, "open_ego_demand_{0}.h5")
-        outfile = outfile.format(name)
+        if sectors:
+            outfile = outfile.format(name + "_sectors")
+        else:
+            outfile = outfile.format(name)
 
     if not os.path.isfile(outfile) or overwrite:
-        ego_data = get_ego_demand(filename=infile)
+        ego_data = get_ego_demand(filename=infile, sectors=sectors)
         ego_demand = geometries.create_geo_df(ego_data)
 
         # Add column with regions
@@ -239,7 +260,3 @@ def get_ego_demand_by_region(
         return ego_demand.groupby(name)["consumption"].sum()
     else:
         return ego_demand
-
-
-if __name__ == "__main__":
-    pass
