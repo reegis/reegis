@@ -19,7 +19,7 @@ if not os.environ.get("READTHEDOCS") == "True":
         "workalendar",
         "pyproj",
         "pytz",
-        "https://github.com/wind-python/windpowerlib/archive/dev.zip",
+        "windpowerlib@https://github.com/wind-python/windpowerlib/archive/dev.zip",
         "python-dateutil",
         "Rtree",
         "xlrd",
