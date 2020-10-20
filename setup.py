@@ -23,6 +23,10 @@ if not os.environ.get("READTHEDOCS") == "True":
         "python-dateutil",
         "Rtree",
         "xlrd",
+        "PyYAML",
+        "disaggregator@https://github.com/reegis/disaggregator/archive/master.zip",
+        "geokit@https://github.com/FZJ-IEK3-VSA/geokit/archive/master.zip",
+        "glaes@https://github.com/FZJ-IEK3-VSA/glaes/archive/master.zip",
     ]
 else:
     requirements = ["cycler"]

@@ -3,8 +3,8 @@ language: python
 matrix:
   include:
     - python: 3.6
-    - python: 3.7
-    - python: 3.8
+#    - python: 3.7
+#    - python: 3.8
 
 # install os dependencies
 addons:
@@ -15,6 +15,20 @@ addons:
       - libproj-dev
       - libgeos-dev
       - libspatialindex-dev
+      - gcc
+
+# Try GDAL stuff
+before_install:
+  - yes | sudo add-apt-repository ppa:ubuntugis/ppa
+  - sudo apt-get update
+  - sudo apt-get install gdal-bin
+  - sudo apt-get install libgdal-dev
+  -
+  - export CPLUS_INCLUDE_PATH=/usr/include/gdal
+  - export C_INCLUDE_PATH=/usr/include/gdal
+  - gdal-config --version
+  - pip install GDAL==2.2.2
+
 
 # install python dependencies
 install:
