@@ -42,16 +42,26 @@ def get_federal_states_polygon():
 
 
 def get_germany_with_awz_polygon():
+    return get_germany_polygon(with_awz=True)
+
+
+def get_germany_polygon(with_awz=False):
     """
     Get the polygon of Germany with the exclusive economic zone of Germany in
     one polygon.
 
     Examples
     --------
-    >>> get_germany_with_awz_polygon()['GEN'][0]
-    'Deutschland mit AWZ'
+    >>> int(get_germany_polygon(with_awz=True).to_crs(epsg=25832).area[0]/1e6)
+    414537
+    >>> int(get_germany_polygon(with_awz=False).to_crs(epsg=25832).area[0]/1e6)
+    357047
     """
-    return load(cfg.get("paths", "geometry"), "germany_awz_polygon.geojson")
+    if with_awz:
+        name = "germany_awz_polygon"
+    else:
+        name = "germany_polygon"
+    return load(cfg.get("paths", "geometry"), "{0}.geojson".format(name))
 
 
 def load(
