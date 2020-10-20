@@ -43,8 +43,9 @@ from reegis import geometries
 from reegis import bmwi
 
 
-def download_coastdat_data(filename=None, year=None, url=None,
-                           test_only=False, overwrite=True):
+def download_coastdat_data(
+    filename=None, year=None, url=None, test_only=False, overwrite=True
+):
     """
     Download coastdat data set from internet source.
 
@@ -191,8 +192,8 @@ def fetch_coastdat_weather(year, coastdat_id):
 
     Examples
     --------
-    >>> coastdat_id=fetch_id_by_coordinates(53.655119, 11.181475)
-    >>> fetch_coastdat_weather(2014, coastdat_id)['v_wind'].mean().round(2)
+    >>> coastdt_id=fetch_id_by_coordinates(53.655119, 11.181475)
+    >>> fetch_coastdat_weather(2014, coastdt_id)['v_wind'].mean().round(2)
     4.39
     """
     weather_file_name = os.path.join(
@@ -273,9 +274,9 @@ def adapt_coastdat_weather_to_windpowerlib(weather, data_height):
     --------
     >>> cd_id=1132101
     >>> cd_weather=fetch_coastdat_weather(2014, cd_id)
-    >>> data_height=cfg.get_dict('coastdat_data_height')
+    >>> data_hght=cfg.get_dict('coastdat_data_height')
     >>> wind_weather=adapt_coastdat_weather_to_windpowerlib(
-    ...     cd_weather, data_height)
+    ...     cd_weather, data_hght)
     >>> cd_weather.columns.nlevels
     1
     >>> wind_weather.columns.nlevels
@@ -976,9 +977,9 @@ def windzone_region_fraction(pp, name, year=None, dump=False):
     >>> my_fn=os.path.join(cfg.get('paths', 'powerplants'),
     ...                      cfg.get('powerplants', 'reegis_pp'))
     >>> my_pp=pd.DataFrame(pd.read_hdf(my_fn, 'pp'))  # doctest: +SKIP
-    >>> wz=windzone_region_fraction(my_pp, 'federal_states', 2014
-    ...                               dump=False)  # doctest: +SKIP
-    >>> round(float(wz.loc['NI', 1]), 2)  # doctest: +SKIP
+    >>> my_wz=windzone_region_fraction(my_pp, 'federal_states', 2014,
+    ...                                dump=False)  # doctest: +SKIP
+    >>> round(float(my_wz.loc['NI', 1]), 2)  # doctest: +SKIP
     0.31
     """
     pp = pp.loc[pp.energy_source_level_2 == "Wind"]
