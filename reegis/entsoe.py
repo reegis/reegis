@@ -25,13 +25,15 @@ from reegis import config as cfg
 import pandas as pd
 import requests
 import pytz
-import dateutil
 
 
-def read_original_timeseries_file(orig_csv_file=None, overwrite=False):
+def read_original_timeseries_file(
+    orig_csv_file=None, overwrite=False, version=None
+):
     """Read timeseries file if it exists. Otherwise download it from opsd.
     """
-    version = cfg.get("entsoe", "timeseries_version")
+    if version is None:
+        version = cfg.get("entsoe", "timeseries_version")
 
     if orig_csv_file is None:
         orig_csv_file = os.path.join(
@@ -43,8 +45,6 @@ def read_original_timeseries_file(orig_csv_file=None, overwrite=False):
     json = os.path.join(
         cfg.get("paths", "entsoe"), cfg.get("entsoe", "json_file")
     ).format(version=version)
-
-    version = cfg.get("entsoe", "timeseries_version")
 
     if not os.path.isfile(orig_csv_file) or overwrite:
         req = requests.get(
@@ -87,16 +87,19 @@ def read_original_timeseries_file(orig_csv_file=None, overwrite=False):
     return orig
 
 
-def prepare_de_file(filename=None, overwrite=False):
+def prepare_de_file(filename=None, overwrite=False, version=None):
     """Convert demand file. CET index and Germany's load only."""
-    version = cfg.get("entsoe", "timeseries_version")
+    if version is None:
+        version = cfg.get("entsoe", "timeseries_version")
     if filename is None:
         filename = os.path.join(
             cfg.get("paths", "entsoe"),
             cfg.get("entsoe", "de_file").format(version=version),
         )
     if not os.path.isfile(filename) or overwrite:
-        ts = read_original_timeseries_file(overwrite=overwrite)
+        ts = read_original_timeseries_file(
+            overwrite=overwrite, version=version
+        )
         for col in ts.columns:
             if "DE" not in col:
                 ts.drop(col, 1, inplace=True)
@@ -104,11 +107,12 @@ def prepare_de_file(filename=None, overwrite=False):
         ts.to_csv(filename)
 
 
-def split_timeseries_file(filename=None, overwrite=False):
+def split_timeseries_file(filename=None, overwrite=False, version=None):
     """Split table into load and renewables."""
     entsoe_ts = namedtuple("entsoe", ["load", "renewables"])
     logging.info("Splitting time series.")
-    version = cfg.get("entsoe", "timeseries_version")
+    if version is None:
+        version = cfg.get("entsoe", "timeseries_version")
     path_pattern = os.path.join(cfg.get("paths", "entsoe"), "{0}")
     if filename is None:
         filename = path_pattern.format(
@@ -116,24 +120,25 @@ def split_timeseries_file(filename=None, overwrite=False):
         )
 
     if not os.path.isfile(filename) or overwrite:
-        prepare_de_file(filename, overwrite)
+        prepare_de_file(filename, overwrite, version)
 
     de_ts = pd.read_csv(
-        filename,
+        filename.format(version=version),
         index_col="utc_timestamp",
         parse_dates=True,
         date_parser=lambda col: pd.to_datetime(col, utc=True),
     )
     de_ts.index = de_ts.index.tz_convert("Europe/Berlin")
-    berlin = pytz.timezone("Europe/Berlin")
-    end_date = berlin.localize(datetime.datetime(2015, 1, 1, 0, 0, 0))
+    de_ts.index.rename("cet_timestamp", inplace=True)
 
-    de_ts.loc[de_ts.index < end_date, "DE_load_"] = de_ts.loc[
-        de_ts.index < end_date, "DE_load_actual_entsoe_power_statistics"
-    ]
-    de_ts.loc[de_ts.index >= end_date, "DE_load_"] = de_ts.loc[
-        de_ts.index >= end_date, "DE_load_actual_entsoe_transparency"
-    ]
+    de_ts["DE_load_"] = de_ts["DE_load_actual_entsoe_transparency"]
+
+    if "DE_load_actual_entsoe_power_statistics" in de_ts:
+        berlin = pytz.timezone("Europe/Berlin")
+        end_date = berlin.localize(datetime.datetime(2015, 1, 1, 0, 0, 0))
+        de_ts.loc[de_ts.index < end_date, "DE_load_"] = de_ts.loc[
+            de_ts.index < end_date, "DE_load_actual_entsoe_power_statistics"
+        ]
 
     load = pd.DataFrame(
         de_ts[pd.notnull(de_ts["DE_load_"])]["DE_load_"], columns=["DE_load_"]
@@ -167,12 +172,13 @@ def split_timeseries_file(filename=None, overwrite=False):
     return entsoe_ts(load=load, renewables=renewables)
 
 
-def get_entsoe_load(year):
+def get_entsoe_load(year, version=None):
     """
 
     Parameters
     ----------
     year
+    version
 
     Returns
     -------
@@ -180,15 +186,17 @@ def get_entsoe_load(year):
     Examples
     --------
     >>> entsoe=get_entsoe_load(2015)
-    >>> int(entsoe.sum())
-    477923089
+    >>> float(round(entsoe.sum()/1e6, 1))
+    479.5
     """
+    if version is None:
+        version = cfg.get("entsoe", "timeseries_version")
     filename = os.path.join(
         cfg.get("paths", "entsoe"), cfg.get("entsoe", "load_file")
     )
     if not os.path.isfile(filename):
-        load = split_timeseries_file().load
-        load.to_hdf(filename, "entsoe")
+        load = split_timeseries_file(version=version).load
+        load.to_hdf(filename.format(version=version), "entsoe")
 
     # Read entsoe time series for the given year
     f = datetime.datetime(year, 1, 1, 0)
@@ -196,31 +204,56 @@ def get_entsoe_load(year):
     f = f.astimezone(pytz.timezone("Europe/Berlin"))
     t = t.astimezone(pytz.timezone("Europe/Berlin"))
     logging.info("Read entsoe load series from {0} to {1}".format(f, t))
-    df = pd.DataFrame(pd.read_hdf(filename, "entsoe"))
+    df = pd.DataFrame(pd.read_hdf(filename.format(version=version), "entsoe"))
     return df.loc[f:t]
 
 
-def get_entsoe_renewable_data():
+def get_filtered_file(name, url, version=None):
+    # name += ".csv"
+    fn = os.path.join(cfg.get("paths", "entsoe"), name + ".csv")
+    if not os.path.isfile(fn):
+        req = requests.get(url.format(version=version))
+        with open(fn, "wb") as fout:
+            fout.write(req.content)
+    return pd.read_csv(fn)
+
+
+def get_entsoe_renewable_data(file=None, version=None):
     """
+    Load the default file for re time series or a specific file.
 
     Returns
     -------
 
     Examples
     --------
-    >>> re=get_entsoe_renewable_data()
-    >>> int(re['DE_solar_generation_actual'].sum())
-    237214558
+    >>> my_re=get_entsoe_renewable_data()
+    >>> int(my_re['DE_solar_generation_actual'].sum())
+    188160676
     """
-    version = cfg.get("entsoe", "timeseries_version")
+    if version is None:
+        version = cfg.get("entsoe", "timeseries_version")
     path_pattern = os.path.join(cfg.get("paths", "entsoe"), "{0}")
-    fn = path_pattern.format(
-        cfg.get("entsoe", "renewables_file_csv").format(version=version)
-    )
+    if file is None:
+        fn = path_pattern.format(
+            cfg.get("entsoe", "renewables_file_csv").format(version=version)
+        )
+    else:
+        fn = file.format(version=version)
+
     if not os.path.isfile(fn):
-        renewables = split_timeseries_file().renewables
-        renewables.to_csv(fn)
-    re = pd.read_csv(fn, index_col=[0], parse_dates=True)
+        if file is None:
+            renewables = split_timeseries_file().renewables
+            renewables.to_csv(fn)
+
+    re = pd.read_csv(
+        fn,
+        index_col=[0],
+        parse_dates=True,
+        date_parser=lambda x: datetime.datetime.strptime(
+            x.split("+")[0], "%Y-%m-%d %H:%M:%S"
+        ),
+    )
     return re
 
 

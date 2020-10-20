@@ -9,7 +9,7 @@ import reegis
 if not os.environ.get("READTHEDOCS") == "True":
     requirements = [
         "pandas >= 0.21.0",
-        "demandlib",
+        "demandlib@https://github.com/oemof/demandlib/archive/master.zip",
         "tables",
         "shapely",
         "pvlib",
@@ -19,7 +19,7 @@ if not os.environ.get("READTHEDOCS") == "True":
         "workalendar",
         "pyproj",
         "pytz",
-        "windpowerlib",
+        "windpowerlib@https://github.com/wind-python/windpowerlib/archive/dev.zip",
         "python-dateutil",
         "Rtree",
         "xlrd",
@@ -43,9 +43,9 @@ setup(
     package_dir={"reegis": "reegis"},
     url="https://github.com/reegis/reegis",
     packages=find_packages(),
-    namespace_package=["reegis"],
     install_requires=requirements,
     license="MIT",
+    python_requires=">=3.6",
     extras_require={
         "dev": [
             "nose",

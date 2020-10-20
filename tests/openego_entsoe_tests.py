@@ -47,25 +47,25 @@ class TestEgoEntsoeDemandAndDownload:
 
     def test_profile_by_region_with_entsoe_annual_values(self):
         d1 = demand_elec.get_entsoe_profile_by_region(
-            self.geo, 2014, "test", "entsoe"
+            self.geo, 2016, "test", "entsoe"
         )
-        eq_(int(d1.sum().sum()), 519757349)
+        eq_(round(d1.sum().sum() / 1e6, 1), 487.0)  # TWh
 
     def test_profile_by_region_with_bmwi_annual_values(self):
         d2 = demand_elec.get_entsoe_profile_by_region(
-            self.geo, 2013, "test", "bmwi"
+            self.geo, 2015, "test", "bmwi"
         )
-        eq_(int(d2.sum().sum()), 535684999)
+        eq_(int(d2.sum().sum()), 530599999)
 
     def test_profile_by_region_with_openego_annual_values(self):
         d3 = demand_elec.get_entsoe_profile_by_region(
-            self.geo, 2013, "test", "openego"
+            self.geo, 2017, "test", "openego"
         )
         eq_(int(d3.sum().sum()), 31726254)
 
     def test_profile_by_region_with_user_annual_values(self):
         d4 = demand_elec.get_entsoe_profile_by_region(
-            self.geo, 2011, "test", 200
+            self.geo, 2018, "test", 200
         )
         eq_(int(round(d4.sum().sum(), 0)), 200)
 

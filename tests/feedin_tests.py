@@ -18,8 +18,6 @@ import os
 import pandas as pd
 import pvlib
 
-from nose.tools import eq_
-
 from windpowerlib.wind_turbine import WindTurbine
 
 from reegis import coastdat, feedin, config as cfg
@@ -75,9 +73,9 @@ def test_feedin_windpowerlib():
     wind_weather = coastdat.adapt_coastdat_weather_to_windpowerlib(
         weather, data_height
     )  # doctest: +SKIP
-    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 2164)
+    assert int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()) == 2164
     turbine = WindTurbine(**turbine)
-    eq_(int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()), 2164)
+    assert int(feedin.feedin_windpowerlib(wind_weather, turbine).sum()) == 2164
 
 
 def test_feedin_pvlib():
@@ -115,7 +113,7 @@ def test_feedin_pvlib():
     pv["inverter_parameters"] = sapm_inverters[pv["inverter_name"]]
     pv["p_peak"] = pv["module_parameters"].Impo * pv["module_parameters"].Vmpo
 
-    eq_(int(feedin.feedin_pvlib(location, pv, pv_weather).sum()), 904)
+    assert int(feedin.feedin_pvlib(location, pv, pv_weather).sum()) == 899
 
 
 def test_feedin_pv_sets():
@@ -144,10 +142,10 @@ def test_feedin_pv_sets():
         )
     s2 = pd.Series(
         {
-            "M_STP280S__I_GEPVb_5000_NA_240": 555,
-            "M_BP2150S__I_P235HV_240": 731,
-            "M_SF160S___I_ABB_MICRO_025_US208": 800,
-            "M_LG290G3__I_ABB_MICRO_025_US208": 820,
+            "M_STP280S__I_GEPVb_5000_NA_240": 550,
+            "M_BP2150S__I_P235HV_240": 725,
+            "M_SF160S___I_ABB_MICRO_025_US208": 797,
+            "M_LG290G3__I_ABB_MICRO_025_US208": 815,
         }
     )
     pd.testing.assert_series_equal(s1.sort_index(), s2.sort_index())

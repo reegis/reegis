@@ -53,12 +53,12 @@ def read_bmwi_sheet_7(sub):
 
     Examples
     --------
-    >>> fs = read_bmwi_sheet_7('a').sort_index()  # doctest: +SKIP
-    >>> int(float(fs.loc[('Industrie', 'gesamt'), 2014]))  # doctest: +SKIP
+    >>> my_fs = read_bmwi_sheet_7('a').sort_index()
+    >>> int(float(my_fs.loc[('Industrie', 'gesamt'), 2014]))
     2545
-    >>> fs = read_bmwi_sheet_7('b').sort_index()  # doctest: +SKIP
-    >>> float(fs.loc[('private Haushalte', 'gesamt'), 2014])  # doctest: +SKIP
-    2188.04
+    >>> my_fs = read_bmwi_sheet_7('b').sort_index()
+    >>> int(my_fs.loc[('private Haushalte', 'gesamt'), 2014])
+    2188
     """
     filename = get_bmwi_energiedaten_file()
 
@@ -124,9 +124,9 @@ def bmwi_re_energy_capacity():
 
     Examples
     --------
-    >>> re=bmwi_re_energy_capacity()  # doctest: +SKIP
-    >>> re.loc[2016, ('water', 'capacity')]  # doctest: +SKIP
-    5601
+    >>> re=bmwi_re_energy_capacity()
+    >>> int(re.loc[2016, ('water', 'capacity')])
+    5629
     """
     filename = get_bmwi_energiedaten_file()
     repp = pd.read_excel(filename, "20", skiprows=22).iloc[:24]
@@ -152,7 +152,7 @@ def get_annual_electricity_demand_bmwi(year):
 
     Examples
     --------
-    >>> get_annual_electricity_demand_bmwi(2014)  # doctest: +SKIP
+    >>> get_annual_electricity_demand_bmwi(2014)  # puppel
     523.988
     """
     import math
