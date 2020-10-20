@@ -9,7 +9,7 @@ import reegis
 if not os.environ.get("READTHEDOCS") == "True":
     requirements = [
         "pandas >= 0.21.0",
-        "demandlib",
+        "demandlib@https://github.com/oemof/demandlib/archive/master.zip",
         "tables",
         "shapely",
         "pvlib",
