@@ -245,11 +245,14 @@ def get_entsoe_renewable_data(file=None, version=None):
         if file is None:
             renewables = split_timeseries_file().renewables
             renewables.to_csv(fn)
-    mydateparser = lambda x: datetime.datetime.strptime(
-        x.split("+")[0], "%Y-%m-%d %H:%M:%S"
-    )
+
     re = pd.read_csv(
-        fn, index_col=[0], parse_dates=True, date_parser=mydateparser
+        fn,
+        index_col=[0],
+        parse_dates=True,
+        date_parser=lambda x: datetime.datetime.strptime(
+            x.split("+")[0], "%Y-%m-%d %H:%M:%S"
+        ),
     )
     return re
 
