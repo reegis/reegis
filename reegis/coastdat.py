@@ -349,17 +349,7 @@ def normalised_feedin_for_each_data_set(
     )
 
     # Fetch coastdat region-keys from weather file.
-    key_file_path = coastdat_path.format(year="", type="")[:-2]
-    key_file = os.path.join(key_file_path, "coastdat_keys.csv")
-    if not os.path.isfile(key_file):
-        coastdat_keys = weather.keys()
-        if not os.path.isdir(key_file_path):
-            os.makedirs(key_file_path)
-        pd.Series(coastdat_keys).to_csv(key_file)
-    else:
-        coastdat_keys = pd.read_csv(
-            key_file, index_col=[0], squeeze=True, header=None
-        )
+    coastdat_keys = weather.keys()
 
     txt_create = "Creating normalised {0} feedin time series for {1}."
     hdf = {"wind": {}, "solar": {}}
