@@ -158,14 +158,14 @@ def get_open_ego_slp_profile_by_region(
     fs_profile = pd.DataFrame()
     for region in regions:
         logging.info("Create SLP for {0}".format(region))
-        annual_demand = ego_demand_grouped.loc[region]
+        annual_demand_type = ego_demand_grouped.loc[region]
 
         annual_electrical_demand_per_sector = {
-            "g0": annual_demand.sector_consumption_retail,
-            "h0": annual_demand.sector_consumption_residential,
-            "l0": annual_demand.sector_consumption_agricultural,
-            "i0": annual_demand.sector_consumption_industrial
-            + annual_demand.sector_consumption_large_consumers,
+            "g0": annual_demand_type.sector_consumption_retail,
+            "h0": annual_demand_type.sector_consumption_residential,
+            "l0": annual_demand_type.sector_consumption_agricultural,
+            "i0": annual_demand_type.sector_consumption_industrial
+            + annual_demand_type.sector_consumption_large_consumers,
         }
         e_slp = bdew.ElecSlp(year, holidays=holidays)
 

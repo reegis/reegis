@@ -61,7 +61,11 @@ def get_germany_polygon(with_awz=False):
         name = "germany_awz_polygon"
     else:
         name = "germany_polygon"
-    return load(cfg.get("paths", "geometry"), "{0}.geojson".format(name))
+    return load(
+        cfg.get("paths", "geometry"),
+        "{0}.geojson".format(name),
+        index_col="gid",
+    )
 
 
 def load(
