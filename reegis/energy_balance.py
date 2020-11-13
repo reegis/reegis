@@ -45,6 +45,7 @@ def get_eb_index_translation_dict():
 def get_de_balance(year):
     """Download and return energy balance of germany for a given year."""
     url = cfg.get("energy_balance", "url_energy_balance_germany")
+
     req = requests.get(url.format(year=str(year)[-2:], suffix="xls"))
 
     if int(req.headers["Content-length"]) > 0:

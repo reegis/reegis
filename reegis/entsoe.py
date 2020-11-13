@@ -243,7 +243,7 @@ def get_entsoe_renewable_data(file=None, version=None):
 
     if not os.path.isfile(fn):
         if file is None:
-            renewables = split_timeseries_file().renewables
+            renewables = split_timeseries_file(version=version).renewables
             renewables.to_csv(fn)
 
     re = pd.read_csv(
