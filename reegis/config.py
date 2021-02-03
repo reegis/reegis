@@ -119,10 +119,13 @@ def get(section, key):
 def get_list(section, parameter, sep=",", string=False):
     """Returns the values (separated by sep) of a given key in a given
     section as a list.
+
+    string : boolean
+        Force all values to strings if set True.
     """
     try:
         my_list = get(section, parameter).split(sep)
-        my_list = [x.strip() for x in my_list]
+        my_list = [x.strip() for x in my_list if len(x) > 0]
 
     except AttributeError:
         if string is True:
