@@ -105,6 +105,7 @@ def prepare_de_file(filename=None, overwrite=False, version=None):
                 ts.drop(col, 1, inplace=True)
 
         ts.to_csv(filename)
+    return filename
 
 
 def split_timeseries_file(filename=None, overwrite=False, version=None):
