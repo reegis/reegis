@@ -192,8 +192,8 @@ def fetch_coastdat_weather(year, coastdat_id):
 
     Examples
     --------
-    >>> coastdt_id=fetch_id_by_coordinates(53.655119, 11.181475)
-    >>> fetch_coastdat_weather(2014, coastdt_id)['v_wind'].mean().round(2)
+    >>> coastdat_id=fetch_id_by_coordinates(53.655119, 11.181475)
+    >>> fetch_coastdat_weather(2014, coastdat_id)['v_wind'].mean().round(2)
     4.39
     """
     weather_file_name = os.path.join(
@@ -274,9 +274,9 @@ def adapt_coastdat_weather_to_windpowerlib(weather, data_height):
     --------
     >>> cd_id=1132101
     >>> cd_weather=fetch_coastdat_weather(2014, cd_id)
-    >>> data_hght=cfg.get_dict('coastdat_data_height')
+    >>> data_height=cfg.get_dict('coastdat_data_height')
     >>> wind_weather=adapt_coastdat_weather_to_windpowerlib(
-    ...     cd_weather, data_hght)
+    ...     cd_weather, data_height)
     >>> cd_weather.columns.nlevels
     1
     >>> wind_weather.columns.nlevels
@@ -396,7 +396,11 @@ def normalised_feedin_for_each_data_set(
     # Loop over all regions
     for coastdat_key in coastdat_keys:
         # Get weather data set for one location
-        local_weather = weather[coastdat_key]
+        # Reset frequency because there are problems with the frequency in
+        # hdf5-files that were stored with an older pandas version.
+        local_weather = weather[coastdat_key].asfreq(
+            weather[coastdat_key].index.freq.rule_code
+        )
 
         # Adapt the coastdat weather format to the needs of pvlib.
         # The expression "len(list(hdf['solar'].keys()))" returns the number
@@ -672,14 +676,14 @@ def spatial_average_weather(
                 key = "A" + str(cid)
             else:
                 key = cid
-            tmp[cid] = weather[key][parameter]
-            tmp[cid] = tmp[cid].asfreq("H")
+            wkp = weather[key][parameter]
+            wkp = wkp.asfreq("H")
+            tmp[cid] = wkp
+            tmp[cid].asfreq("H")
         if len(cd_ids) < 1:
             key = "A" + str(fix[region])
             avg_value[region] = weather[key][parameter]
-            avg_value[region] = avg_value[region].asfreq("H")
         else:
-            tmp = tmp.asfreq("H")
             avg_value[region] = tmp.sum(1).div(number_of_sets)
     weather.close()
 
