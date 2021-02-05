@@ -73,6 +73,7 @@ def get_de_balance(year):
 
     df = pd.read_excel(fn_de, "tj", index_col=[0], skiprows=6)
     df.dropna(thresh=50, axis=1, inplace=True)
+    df.columns = head[1:]
     return df
 
 
