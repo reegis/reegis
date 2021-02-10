@@ -86,7 +86,7 @@ def init(files=None, paths=None, **kwargs):
     set_reegis_paths(paths)
 
 
-def has_option(section, option):
+def has_option(section: object, option: object) -> object:
     """Returns True if the given option exists in the given section."""
     return cfg.has_option(section, option)
 
