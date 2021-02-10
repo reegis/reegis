@@ -9,24 +9,24 @@ import reegis
 github = "@https://github.com/"
 if not os.environ.get("READTHEDOCS") == "True":
     requirements = [
-        "pandas == 1.1.4",
+        "pandas",
         "demandlib{0}oemof/demandlib/archive/v0.1.7b1.zip".format(github),
-        "tables == 3.6.1",
-        "shapely == 1.7.1",
-        "pvlib == 0.8.0",
-        "geopandas == 0.8.1",
-        "requests == 2.25",
-        "numpy == 1.19.4",
-        "workalendar == 13.0.0",
-        "pyproj == 3.0.0.post1",
-        "pytz == 2020.4",
+        "tables",
+        "shapely",
+        "pvlib",
+        "geopandas",
+        "requests",
+        "numpy",
+        "workalendar",
+        "pyproj",
+        "pytz",
         "windpowerlib{0}wind-python/windpowerlib/archive/v0.2.1b1.zip".format(
             github
         ),
-        "python-dateutil == 2.8.1",
-        "Rtree == 0.9.4",
-        "xlrd == 1.2.0",
-        "xlwt == 1.3.0",
+        "python-dateutil",
+        "Rtree",
+        "xlrd",
+        "xlwt",
     ]
 else:
     requirements = ["cycler"]
