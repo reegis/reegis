@@ -10,7 +10,7 @@ github = "@https://github.com/"
 if not os.environ.get("READTHEDOCS") == "True":
     requirements = [
         "pandas",
-        "demandlib{0}oemof/demandlib/archive/v0.1.7b1.zip".format(github),
+        "demandlib",
         "tables",
         "shapely",
         "pvlib",
@@ -20,9 +20,7 @@ if not os.environ.get("READTHEDOCS") == "True":
         "workalendar",
         "pyproj",
         "pytz",
-        "windpowerlib{0}wind-python/windpowerlib/archive/v0.2.1b1.zip".format(
-            github
-        ),
+        "windpowerlib",
         "python-dateutil",
         "Rtree",
         "xlrd",
@@ -38,7 +36,7 @@ def read(fname):
 
 setup(
     name="reegis",
-    version=reegis.__version__,
+    version="0.2.1",
     author="Uwe Krien",
     author_email="krien@uni-bremen.de",
     description="Open geospatial data model",
